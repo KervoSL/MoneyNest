@@ -462,13 +462,14 @@ function buildImportPanel() {
          ondragover="dmDragOver(event)" ondragleave="dmDragLeave(event)" ondrop="dmDrop(event)">
       <input type="file" id="dm-file-input" accept=".moneynest,.json" style="display:none" onchange="dmFileSelected(this)">
       <div class="dm-dropzone-inner">
-        <div class="dm-dropzone-icon">${ICONS.upload}</div>
-        <div class="dm-dropzone-title">Arrastra tu archivo aquí</div>
-        <div class="dm-dropzone-sub">o haz clic para seleccionar desde tu dispositivo</div>
-        <div class="dm-dropzone-formats">
+        <div class="dm-dropzone-icon" style="font-size:2.5rem;margin-bottom:10px">📂</div>
+        <div class="dm-dropzone-title">Arrastra tu backup aquí</div>
+        <div class="dm-dropzone-sub">o <strong style="color:var(--accent);text-decoration:underline;cursor:pointer">haz clic para abrir el explorador</strong></div>
+        <div class="dm-dropzone-formats" style="margin-top:10px">
           <span class="dm-format-tag">.moneynest</span>
           <span class="dm-format-tag">.json</span>
         </div>
+        <div style="margin-top:8px;font-size:.72rem;color:var(--text3)">Tus datos nunca salen del dispositivo</div>
       </div>
     </div>
 
@@ -481,8 +482,14 @@ function buildImportPanel() {
       <div id="dm-validation-row"></div>
 
       <!-- Progress bar -->
-      <div id="dm-progress-row" style="display:none">
-        <div class="dm-progress"><div class="dm-progress-bar" id="dm-progress-bar" style="width:0%"></div></div>
+      <div id="dm-progress-row" style="display:none;margin:16px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:.75rem;font-weight:600;color:var(--text2)" id="dm-progress-label">Leyendo archivo…</span>
+          <span style="font-size:.75rem;font-weight:700;color:var(--accent)" id="dm-progress-pct">0%</span>
+        </div>
+        <div style="width:100%;height:6px;background:var(--border);border-radius:99px;overflow:hidden">
+          <div id="dm-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#6366F1);border-radius:99px;transition:width .25s ease"></div>
+        </div>
       </div>
 
       <!-- Preview -->
@@ -526,69 +533,79 @@ window.dmFileSelected = function(input) {
   input.value = '';
 };
 
+function _setProgress(pct, label) {
+  const bar   = document.getElementById('dm-progress-bar')
+  const pctEl = document.getElementById('dm-progress-pct')
+  const lblEl = document.getElementById('dm-progress-label')
+  if (bar)   bar.style.width = pct + '%'
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%'
+  if (lblEl && label) lblEl.textContent = label
+}
+
 function _processFile(file) {
   // Validate extension
-  const name = file.name.toLowerCase();
+  const name = file.name.toLowerCase()
   if (!name.endsWith('.moneynest') && !name.endsWith('.json')) {
-    _showImportError(_dm('dm_tipo_no_soportado', 'Tipo de archivo no soportado. Usa archivos .moneynest o .json'));
-    return;
+    _showImportError(_dm('dm_tipo_no_soportado', 'Tipo de archivo no soportado. Usa archivos .moneynest o .json'))
+    return
   }
 
-  _importState.file = file;
+  _importState.file = file
 
   // Show file info
-  document.getElementById('dm-import-steps')?.classList.add('visible');
-  _renderFileInfo(file);
+  document.getElementById('dm-import-steps')?.classList.add('visible')
+  _renderFileInfo(file)
 
   // Show progress
-  const progressRow = document.getElementById('dm-progress-row');
-  if (progressRow) progressRow.style.display = 'block';
-  const bar = document.getElementById('dm-progress-bar');
-  if (bar) bar.style.width = '20%';
+  const progressRow = document.getElementById('dm-progress-row')
+  if (progressRow) progressRow.style.display = 'block'
+  _setProgress(5, 'Preparando archivo…')
 
   // Clear previous
-  _clearRows(['dm-validation-row','dm-preview-row','dm-error-row','dm-options-row']);
-  _updateImportFooter(false);
+  _clearRows(['dm-validation-row','dm-preview-row','dm-error-row','dm-options-row'])
+  _updateImportFooter(false)
 
   // Read file
-  const reader = new FileReader();
+  const reader = new FileReader()
   reader.onprogress = (e) => {
-    if (e.loaded && e.total && bar) {
-      bar.style.width = (20 + (e.loaded / e.total) * 40) + '%';
+    if (e.loaded && e.total) {
+      const pct = 10 + (e.loaded / e.total) * 55
+      _setProgress(pct, 'Leyendo archivo…')
     }
-  };
+  }
   reader.onload = (e) => {
-    if (bar) bar.style.width = '70%';
+    _setProgress(70, 'Validando datos…')
     setTimeout(() => {
       try {
-        const parsed = JSON.parse(e.target.result);
-        const result = _validate(parsed);
-        _importState.parsed = parsed;
-        _importState.validation = result;
+        const parsed = JSON.parse(e.target.result)
+        _setProgress(85, 'Analizando estructura…')
+        const result = _validate(parsed)
+        _importState.parsed = parsed
+        _importState.validation = result
 
-        if (bar) bar.style.width = '100%';
+        _setProgress(100, result.ok ? '¡Archivo listo!' : 'Error en el archivo')
         setTimeout(() => {
-          if (progressRow) progressRow.style.display = 'none';
-          _renderValidation(result);
+          if (progressRow) progressRow.style.display = 'none'
+          _renderValidation(result)
           if (result.ok) {
-            _renderPreview(result);
-            _renderOptions();
-            _updateImportFooter(true);
+            _renderPreview(result)
+            _renderOptions()
+            _updateImportFooter(true)
           } else {
-            _showImportError(result.errors.join(' '));
+            _showImportError(result.errors.join(' '))
           }
-        }, 400);
+        }, 500)
       } catch(err) {
-        if (progressRow) progressRow.style.display = 'none';
-        _showImportError(_dm('dm_error_json_malformed', 'No se pudo leer el archivo. ¿Está el JSON bien formado?'));
+        if (progressRow) progressRow.style.display = 'none'
+        _showImportError(_dm('dm_error_json_malformed', 'No se pudo leer el archivo. ¿Está el JSON bien formado?'))
       }
-    }, 200);
-  };
+    }, 200)
+  }
   reader.onerror = () => {
-    _showImportError(_dm('dm_error_leer_archivo', 'Error al leer el archivo.'));
-    if (progressRow) progressRow.style.display = 'none';
-  };
-  reader.readAsText(file);
+    _showImportError(_dm('dm_error_leer_archivo', 'Error al leer el archivo.'))
+    if (progressRow) progressRow.style.display = 'none'
+  }
+  reader.readAsText(file)
 }
 
 function _renderFileInfo(file) {
