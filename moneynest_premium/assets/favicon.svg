@@ -1,9 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Background matching the logo -->
-  <rect width="512" height="512" fill="#1a1a1a" rx="80"/>
-  <!-- M lettermark — matches the logo shape: wide outer legs, pointed center valley -->
-  <path d="M96 380 L96 160 L148 160 L256 290 L364 160 L416 160 L416 380 L364 380 L364 248 L280 352 L232 352 L148 248 L148 380 Z"
-        fill="#ffffff"/>
-  <!-- Small diamond accent bottom-right (matches logo) -->
-  <path d="M420 408 L430 420 L420 432 L410 420 Z" fill="rgba(255,255,255,0.6)"/>
+  <defs>
+    <linearGradient id="mnFaviconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D4AA"/>
+      <stop offset="100%" stop-color="#00A882"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0A0E17" rx="96"/>
+  <path d="M96 344 Q256 416 416 344" stroke="rgba(255,255,255,0.8)" stroke-width="34" fill="none" stroke-linecap="round"/>
+  <path d="M130 300 Q256 356 382 300" stroke="rgba(255,255,255,0.5)" stroke-width="22" fill="none" stroke-linecap="round"/>
+  <polyline points="115,300 195,207 275,253 393,115" stroke="url(#mnFaviconGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="333,103 393,115 380,172" stroke="url(#mnFaviconGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

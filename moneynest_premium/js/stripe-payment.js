@@ -99,9 +99,9 @@ window.MNPayment = (() => {
           <span>MoneyNest</span>
         </div>
         <div class="mnpo-left-emoji">💾</div>
-        <div class="mnpo-left-plan-name">Plan Local</div>
-        <div class="mnpo-left-price">5<span class="mnpo-left-cur">€</span></div>
-        <div class="mnpo-left-period">pago único · para siempre</div>
+        <div class="mnpo-left-plan-name">MoneyNest</div>
+        <div class="mnpo-left-price">6<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
+        <div class="mnpo-left-period">pago único · tuyo para siempre</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Acceso ilimitado a todo</li>
@@ -118,21 +118,21 @@ window.MNPayment = (() => {
           <span>MoneyNest</span>
         </div>
         <div class="mnpo-left-emoji">⚡</div>
-        <div class="mnpo-left-plan-name">Plan Pro</div>
+        <div class="mnpo-left-plan-name">MoneyNest + Sync</div>
         <div class="mnpo-left-price-stack">
           <div class="mnpo-left-price-row">
-            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--local">Local</span>
-            <span class="mnpo-left-price-val">5€</span>
+            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--local">MoneyNest</span>
+            <span class="mnpo-left-price-val">6,99€</span>
             <span class="mnpo-left-price-sub">único</span>
           </div>
           <div class="mnpo-left-price-plus">+</div>
           <div class="mnpo-left-price-row">
-            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--pro">Pro</span>
-            <span class="mnpo-left-price-val">5€</span>
+            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--pro">Sync</span>
+            <span class="mnpo-left-price-val">3€</span>
             <span class="mnpo-left-price-sub">/año</span>
           </div>
         </div>
-        <div class="mnpo-left-period">7 días gratis incluidos</div>
+        <div class="mnpo-left-period">Sync en la nube · anual</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Todo lo del Plan Local</li>
@@ -215,6 +215,13 @@ window.MNPayment = (() => {
 
   async function _handlePay() {
     _hideError();
+
+    // Guard: elements not ready yet
+    if (!_elements) {
+      _showError(_spt('payment_not_ready', 'El formulario de pago aún está cargando. Espera un momento.'));
+      return;
+    }
+
     _setLoading(true);
 
     const stripe = _getStripe();

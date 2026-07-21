@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   try {
     if (priceId === PRICE_LOCAL) {
       const pi = await stripe.paymentIntents.create({
-        amount: 500,
+        amount: 699,   // 6,99 € — MoneyNest pago único
         currency: 'eur',
         ...(email ? { receipt_email: email } : {}),
         metadata: { plan: 'local_lifetime', email },
