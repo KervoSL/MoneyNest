@@ -14813,7 +14813,7 @@ window.openCustomDebtModal = function() {
     </div>
   `
   document.body.appendChild(overlay)
-  setTimeout(() => overlay.classList.add('active'), 10)
+  setTimeout(() => overlay.classList.add('open'), 10)
 
   // Initialize calculation after DOM is ready
   requestAnimationFrame(() => {
@@ -14826,7 +14826,7 @@ window.openCustomDebtModal = function() {
 window.closeCustomDebtModal = function() {
   const overlay = document.getElementById('customDebtModalOverlay')
   if (overlay) {
-    overlay.classList.remove('active')
+    overlay.classList.remove('open')
     setTimeout(() => overlay.remove(), 200)
   }
 }
