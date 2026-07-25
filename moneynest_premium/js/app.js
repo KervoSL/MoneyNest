@@ -5205,9 +5205,10 @@ function renderDeudas() {
           <span style="background:${active.color}22;color:${active.color};font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px">✓ Estrategia activa</span>
         </div>
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">${active.desc}</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
           <span style="font-size:.85rem;font-weight:700;color:var(--accent)">💳 ${eur(aPago)}/mes</span>
           <span style="font-size:.78rem;color:var(--text2)">⏱ Libre en <strong style="color:var(--text)">${fmtMonths(aMeses)}</strong></span>
+          <button class="btn btn-primary btn-xs" onclick="event.stopPropagation();openApplyStrategyModal()">⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual')}</button>
         </div>
       </div>
       <div style="position:relative;flex-shrink:0">
@@ -5371,13 +5372,20 @@ function renderDeudas() {
         </div>
         <button class="btn btn-ghost btn-xs" onclick="window._customDebtStrategy=null;renderDeudas()">✕</button>
       </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px">
         <span style="font-size:.82rem;color:var(--text2)">💳 <strong style="color:var(--accent)">${eur(window._customDebtStrategy.monthlyPayment)}/mes</strong></span>
         <span style="font-size:.82rem;color:var(--text2)">⏱ Libre en <strong style="color:var(--text)">${fmtMonths(window._customDebtStrategy.months)}</strong></span>
         <span style="font-size:.82rem;color:var(--text2)">📅 <strong style="color:var(--text)">${window._customDebtStrategy.date}</strong></span>
         <span style="font-size:.82rem;color:var(--text2)">💰 Ahorro: <strong style="color:var(--green)">${eur(window._customDebtStrategy.savings)}</strong></span>
       </div>
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="openApplyStrategyModal()">
+        ⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual de este mes')}
+      </button>
     </div>` : ''}
+    <!-- Multi-payment button -->
+    <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:10px" onclick="openMultiPagoModal()">
+      💳📋 ${t('pago_multiple','Pagar varias deudas a la vez')}
+    </button>
     <!-- Libertad financiera card -->
     <div class="mn-freedom-card" style="margin-top:16px">
       <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🏁 ${t('libertad_financiera','Fecha de libertad financiera')}</div>
@@ -9212,6 +9220,41 @@ function debtAvalanche() {
   return [...S.deudas]
     .filter(d => (Number(d.importeTotal) - Number(d.importePagado || 0)) > 0)
     .sort((a, b) => Number(b.interes || 0) - Number(a.interes || 0))  // descending: highest interest first
+}
+
+/**
+ * Calcula cómo se repartiría el pago de UN mes entre las deudas
+ * según el orden dado (avalancha/nieve/personalizado).
+ * Devuelve un array [{id, nombre, importe}] — solo deudas con importe > 0
+ */
+function calcMonthlyAllocation(monthlyBudget, orderedDebts) {
+  if (!monthlyBudget || monthlyBudget <= 0 || !orderedDebts.length) return []
+  const debts = orderedDebts.map(d => ({
+    id: d.id,
+    nombre: d.nombre || '—',
+    balance: Math.max(0, (Number(d.importeTotal)||0) - (Number(d.importePagado)||0)),
+    minPay: Math.max(10, (Math.max(0,(Number(d.importeTotal)||0)-(Number(d.importePagado)||0))) * 0.02),
+    pay: 0
+  })).filter(d => d.balance > 0)
+
+  let remaining = monthlyBudget
+
+  // Pagos mínimos primero
+  debts.forEach(d => {
+    const minPay = Math.min(d.minPay, d.balance, remaining)
+    d.pay += minPay
+    remaining -= minPay
+  })
+
+  // El resto va a la primera deuda activa según el orden (avalancha/nieve)
+  for (let i = 0; i < debts.length; i++) {
+    if (remaining <= 0) break
+    const room = debts[i].balance - debts[i].pay
+    const extra = Math.min(remaining, room)
+    if (extra > 0) { debts[i].pay += extra; remaining -= extra }
+  }
+
+  return debts.filter(d => d.pay > 0.01).map(d => ({ id: d.id, nombre: d.nombre, importe: Math.round(d.pay * 100) / 100 }))
 }
 
 /**
@@ -15079,6 +15122,222 @@ window.saveCustomStrategy = function() {
     }
   } catch(_) {}
 })()
+
+// ─── APLICAR PAGO AUTOMÁTICO SEGÚN ESTRATEGIA ─────────────────────
+window.openApplyStrategyModal = function() {
+  const old = document.getElementById('applyStrategyOverlay')
+  if (old) old.remove()
+
+  // Determine payment amount + method from active strategy
+  let monthlyBudget, method, strategyLabel
+  if (window._customDebtStrategy) {
+    monthlyBudget = Number(window._customDebtStrategy.monthlyPayment) || 0
+    method = window._customDebtStrategy.method || 'avalanche'
+    strategyLabel = window._customDebtStrategy.name
+  } else {
+    const pend = S.deudas.reduce((a,d) => a + Math.max(0,(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)), 0)
+    const intMed = S.deudas.length ? S.deudas.reduce((a,d) => a+(Number(d.interes)||0),0)/S.deudas.length : 0
+    const mul = { conservador:0.6, moderado:1.0, agresivo:1.6 }[window._deudaStrat || 'moderado'] || 1.0
+    const calc = calcDebtStrategy(pend, intMed, mul)
+    monthlyBudget = calc.monthlyPayment
+    method = 'avalanche'
+    strategyLabel = { conservador:'🐢 Conservador', moderado:'⚖️ Moderado', agresivo:'🚀 Agresivo' }[window._deudaStrat || 'moderado']
+  }
+
+  if (!monthlyBudget || monthlyBudget <= 0) {
+    toast(t('sin_deudas_pendientes','No hay deudas pendientes para calcular'), 'info')
+    return
+  }
+
+  const orderedDebts = method === 'snowball' ? debtSnowball() : debtAvalanche()
+  const allocation = calcMonthlyAllocation(monthlyBudget, orderedDebts)
+
+  if (!allocation.length) {
+    toast(t('sin_deudas_pendientes','No hay deudas pendientes para calcular'), 'info')
+    return
+  }
+
+  const rows = allocation.map(a => {
+    const d = S.deudas.find(x => x.id === a.id)
+    const pendiente = d ? Math.max(0,(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)) : 0
+    return `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-radius:10px;margin-bottom:8px">
+      <div>
+        <div style="font-size:.85rem;font-weight:700;color:var(--text)">${a.nombre}</div>
+        <div style="font-size:.72rem;color:var(--text3)">Pendiente: ${eur(pendiente)}</div>
+      </div>
+      <div style="font-size:.95rem;font-weight:800;color:var(--accent)">${eur(a.importe)}</div>
+    </div>`
+  }).join('')
+
+  const total = allocation.reduce((s,a) => s + a.importe, 0)
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'applyStrategyOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual')}</span>
+        <button class="modal-close" onclick="document.getElementById('applyStrategyOverlay').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:.82rem;color:var(--text2);margin-bottom:14px">
+          ${t('reparto_segun_estrategia','Reparto según')} <strong style="color:var(--text)">${strategyLabel}</strong> — ${t('se_registrara_pago_hoy','se registrará como pago de hoy en cada deuda')}.
+        </div>
+        <div>${rows}</div>
+        <div style="display:flex;justify-content:space-between;padding:12px 14px;margin-top:6px;border-top:1.5px solid var(--border)">
+          <span style="font-size:.85rem;font-weight:700;color:var(--text2)">${t('total','Total')}</span>
+          <span style="font-size:1.05rem;font-weight:900;color:var(--accent)">${eur(total)}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('applyStrategyOverlay').remove()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="window._confirmApplyStrategy()">✅ ${t('confirmar_pagos','Confirmar pagos')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  setTimeout(() => overlay.classList.add('open'), 10)
+
+  window._pendingAllocation = allocation
+}
+
+window._confirmApplyStrategy = function() {
+  const allocation = window._pendingAllocation || []
+  const today = todayISO()
+  let anySaldada = false
+
+  allocation.forEach(a => {
+    const idx = S.deudas.findIndex(x => x.id === a.id)
+    if (idx < 0) return
+    S.deudas[idx].importePagado = Math.min(Number(S.deudas[idx].importeTotal), (Number(S.deudas[idx].importePagado)||0) + a.importe)
+    if (!S.deudas[idx].pagos) S.deudas[idx].pagos = []
+    S.deudas[idx].pagos.push({ fecha: today, importe: a.importe })
+    if (S.deudas[idx].importePagado >= Number(S.deudas[idx].importeTotal)) anySaldada = true
+  })
+
+  if (window.MNGamification) {
+    MNGamification.checkAchievement('pago_deuda')
+    MNGamification.checkAchievement('deuda_updated')
+    if (anySaldada) MNGamification.checkAchievement('deuda_saldada')
+    MNGamification.checkAchievement('data_check')
+  }
+  if (anySaldada && window.MNConfetti) setTimeout(() => MNConfetti.fire('debt'), 300)
+
+  const overlay = document.getElementById('applyStrategyOverlay')
+  if (overlay) overlay.remove()
+  window._pendingAllocation = null
+
+  save()
+  render()
+  toast(`✅ ${allocation.length} ${t('pagos_registrados','pagos registrados')}`)
+}
+
+// ─── PAGO MÚLTIPLE MANUAL ──────────────────────────────────────────
+window.openMultiPagoModal = function() {
+  const old = document.getElementById('multiPagoOverlay')
+  if (old) old.remove()
+
+  const pendientes = S.deudas.filter(d => (Number(d.importeTotal)||0) - (Number(d.importePagado)||0) > 0.01)
+  if (!pendientes.length) {
+    toast(t('sin_deudas_pendientes','No hay deudas pendientes para calcular'), 'info')
+    return
+  }
+
+  const rows = pendientes.map(d => {
+    const pend = Math.max(0,(Number(d.importeTotal)||0)-(Number(d.importePagado)||0))
+    return `
+    <div class="mn-multipago-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:8px">
+      <input type="checkbox" class="mn-multipago-check" data-id="${d.id}" data-max="${pend}" onchange="window._toggleMultiPagoRow(this)" style="width:18px;height:18px;flex-shrink:0;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.84rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.nombre||'—'}</div>
+        <div style="font-size:.7rem;color:var(--text3)">Pendiente: ${eur(pend)}</div>
+      </div>
+      <input type="number" class="mn-multipago-amount" data-id="${d.id}" placeholder="0.00" min="0.01" step="0.01" disabled
+        style="width:100px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:.85rem">
+    </div>`
+  }).join('')
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'multiPagoOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">💳📋 ${t('pago_multiple','Pagar varias deudas a la vez')}</span>
+        <button class="modal-close" onclick="document.getElementById('multiPagoOverlay').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:12px">${t('selecciona_deudas_pagar','Selecciona las deudas y el importe a pagar en cada una')}.</div>
+        <div>${rows}</div>
+        <div class="form-group" style="margin-top:10px">
+          <label style="font-size:.78rem">${t('fecha_pago','Fecha del pago')}</label>
+          <input type="date" id="multiPagoFecha" value="${todayISO()}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('multiPagoOverlay').remove()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="window._confirmMultiPago()">✅ ${t('registrar_pagos','Registrar pagos')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  setTimeout(() => overlay.classList.add('open'), 10)
+}
+
+window._toggleMultiPagoRow = function(checkbox) {
+  const id = checkbox.getAttribute('data-id')
+  const amountInput = document.querySelector(`.mn-multipago-amount[data-id="${id}"]`)
+  if (!amountInput) return
+  amountInput.disabled = !checkbox.checked
+  if (checkbox.checked && !amountInput.value) {
+    amountInput.value = checkbox.getAttribute('data-max')
+  }
+}
+
+window._confirmMultiPago = function() {
+  const checks = document.querySelectorAll('.mn-multipago-check:checked')
+  if (!checks.length) {
+    toast(t('selecciona_al_menos_una','Selecciona al menos una deuda'), 'error')
+    return
+  }
+  const fecha = document.getElementById('multiPagoFecha')?.value || todayISO()
+  let count = 0
+  let anySaldada = false
+
+  checks.forEach(chk => {
+    const id = chk.getAttribute('data-id')
+    const amountInput = document.querySelector(`.mn-multipago-amount[data-id="${id}"]`)
+    const importe = parseFloat(amountInput?.value)
+    if (!importe || importe <= 0) return
+    const idx = S.deudas.findIndex(x => x.id === id)
+    if (idx < 0) return
+    S.deudas[idx].importePagado = Math.min(Number(S.deudas[idx].importeTotal), (Number(S.deudas[idx].importePagado)||0) + importe)
+    if (!S.deudas[idx].pagos) S.deudas[idx].pagos = []
+    S.deudas[idx].pagos.push({ fecha, importe })
+    if (S.deudas[idx].importePagado >= Number(S.deudas[idx].importeTotal)) anySaldada = true
+    count++
+  })
+
+  if (!count) {
+    toast(t('err_importe_pago','Introduce un importe válido'), 'error')
+    return
+  }
+
+  if (window.MNGamification) {
+    MNGamification.checkAchievement('pago_deuda')
+    MNGamification.checkAchievement('deuda_updated')
+    if (anySaldada) MNGamification.checkAchievement('deuda_saldada')
+    MNGamification.checkAchievement('data_check')
+  }
+  if (anySaldada && window.MNConfetti) setTimeout(() => MNConfetti.fire('debt'), 300)
+
+  const overlay = document.getElementById('multiPagoOverlay')
+  if (overlay) overlay.remove()
+
+  save()
+  render()
+  toast(`✅ ${count} ${t('pagos_registrados','pagos registrados')}`)
+}
 
 
 
