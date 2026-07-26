@@ -5543,7 +5543,8 @@ function renderChartDeudaProyeccion(totalPendiente, mensualPago) {
  */
 function calcLibertad3Cards() {
   const input = document.getElementById('libertadN')
-  const unit  = document.getElementById('libertadUnit').value
+  const unitEl = document.getElementById('libertadUnit')
+  const unit  = unitEl?.value
   const box   = document.getElementById('libertad3Cards')
   if (!box) return
 
@@ -5623,7 +5624,8 @@ calcLibertad3Cards._apply = function(cuotaStr) {
 }
 
 function calcDeudaPersonalizada() {
-  const monthly = parseFloat(document.getElementById('deudaCalcInput').value)
+  const inputEl = document.getElementById('deudaCalcInput')
+  const monthly = parseFloat(inputEl?.value)
   const result  = document.getElementById('deudaCalcResult')
   if (!result) return
   if (!monthly || monthly <= 0) { result.innerHTML = '<span style="color:var(--red)">' + t('deuda_input_invalido') + '</span>'; return }
@@ -7321,6 +7323,12 @@ function borrarIngreso(id) {
 }
 
 // ─── GASTO CRUD ─────────────────────────────────────────────────
+window._toggleRecurrenteDay = function() {
+  const checked = document.getElementById('gastoRecurrente')?.checked
+  const dayRow  = document.getElementById('gastoRecurrenteDay')
+  if (dayRow) dayRow.style.display = checked ? 'block' : 'none'
+}
+
 function resetGastoForm() {
   document.getElementById('gastoId').value = ''
   document.getElementById('gastoModalTitle').textContent = t('modal_nuevo_gasto')
@@ -7330,6 +7338,10 @@ function resetGastoForm() {
   document.getElementById('gastoNotas').value = ''
   document.getElementById('gastoRecurrente').checked = false
   document.getElementById('gastoUpdateSaldo').checked = true
+  const dayRow = document.getElementById('gastoRecurrenteDay')
+  if (dayRow) dayRow.style.display = 'none'
+  const diaEl = document.getElementById('gastoRecurrenteDia')
+  if (diaEl) diaEl.value = new Date().getDate()
   poblarSelect('gastoCat','gasto')
   poblarCuentaSelect('gastoCuenta')
   poblarProveedorSelect('gastoProveedor','')
@@ -7346,6 +7358,8 @@ function editarGasto(id) {
   document.getElementById('gastoFecha').value = g.fecha||todayISO()
   document.getElementById('gastoNotas').value = g.notas||''
   document.getElementById('gastoRecurrente').checked = !!g.recurrente
+  const dayRow = document.getElementById('gastoRecurrenteDay')
+  if (dayRow) dayRow.style.display = g.recurrente ? 'block' : 'none'
   document.getElementById('gastoUpdateSaldo').checked = false
   poblarSelect('gastoCat','gasto',g.categoria||'')
   poblarCuentaSelect('gastoCuenta',g.cuentaId||'')
@@ -7382,7 +7396,19 @@ function guardarGasto() {
         if (c) c.saldo = (Number(c.saldo)||0) - importe
       }
     }
-    save(); updateStreak(); if (window.MNGamification) { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); } closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
+    save(); updateStreak(); if (window.MNGamification) { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); }
+    // If recurrente + día del mes → register in MNRecurring for auto-add next month
+    if (base.recurrente && !id && window.MNRecurring) {
+      const dia = parseInt(document.getElementById('gastoRecurrenteDia')?.value) || new Date().getDate()
+      try {
+        MNRecurring.addRecurring({
+          type: 'gasto', nombre: base.concepto, importe: base.importe,
+          categoria: base.categoria, cuentaId: base.cuentaId,
+          frecuencia: 'mensual', diaDelMes: dia, emoji: '💸'
+        })
+      } catch(e) {}
+    }
+    closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
   }
 
   // Warn if operation would leave account in negative balance
@@ -10919,8 +10945,8 @@ function _obRightHTML(step) {
           <span class="ob-pc-emoji">💾</span>
           <span class="ob-pc-tag ob-pc-tag--local">Pago único</span>
         </div>
-        <div class="ob-pc-name">Local</div>
-        <div class="ob-pc-price-main">5<span class="ob-pc-cur">€</span></div>
+        <div class="ob-pc-name">MoneyNest</div>
+        <div class="ob-pc-price-main">6,99<span class="ob-pc-cur">€</span></div>
         <div class="ob-pc-period">para siempre</div>
         <div class="ob-pc-divider"></div>
         <ul class="ob-pc-feats">

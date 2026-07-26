@@ -3301,6 +3301,7 @@ ize:.92rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3}
 .ob-theme-preview--light .ob-tp-side { background: #e8edf2; }
 .ob-tp-body { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 6px; }
 .ob-tp-card { border-radius: 3px; height: 14px; }
+.ob-tp-card--sm { width: 60%; }
 .ob-ob-tp-card--sm { height: 9px; }
 .ob-theme-preview--dark .ob-tp-card  { background: rgba(255,255,255,.06); }
 .ob-theme-preview--light .ob-tp-card { background: rgba(0,0,0,.07); }

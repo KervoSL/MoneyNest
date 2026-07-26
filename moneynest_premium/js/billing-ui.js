@@ -1096,7 +1096,7 @@ function initBillingUI() {
 async function openStripePortal() {
   // Requires the user to have a Supabase session and a Stripe customer ID.
   // Calls the create-portal Edge Function, which returns a redirect URL.
-  const PORTAL_ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal';
+  const PORTAL_ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal-session';
 
   // Show loading state
   if (typeof window.toast === 'function') toast('⏳ Abriendo portal de facturación…');

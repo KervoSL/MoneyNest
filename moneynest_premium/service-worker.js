@@ -1,5 +1,5 @@
 /* ─── MoneyNest Service Worker v4 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v4'
+const CACHE_NAME = 'moneynest-v5'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -9,8 +9,9 @@ const LOCAL_ASSETS = [
   './assets/icon-512.png',
   './assets/icon-with-text.png',
   './css/styles.css',
-  './css/animations.css',
   './css/billing.css',
+  './css/data-manager.css',
+  './css/premium-ux.css',
   './js/app.js',
 ]
 const REMOTE_ASSETS = [
