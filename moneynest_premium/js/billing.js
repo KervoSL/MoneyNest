@@ -6,7 +6,7 @@
  *  Planes:
  *    FREE_TRIAL   → 24h acceso completo (auto-asignado)
  *    LOCAL_LIFETIME → pago único 5€, offline-first, sin expiración
- *    PRO_ANNUAL   → 5€/año, 7 días trial desde local, cloud sync
+ *    PRO_ANNUAL   → 3€/año, 7 días trial desde local, cloud sync
  *
  *  Todo funciona con localStorage. Arquitectura lista para reemplazar
  *  con Stripe/Paddle/Supabase en producción.
@@ -44,7 +44,7 @@ const BILLING_PLANS = Object.freeze({
   LOCAL_LIFETIME: {
     id:          'local_lifetime',
     name:        'Local Lifetime',
-    price:       5,
+    price:       6.99,
     period:      'once',
     trialDays:   0,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'no_expiry'],
@@ -329,7 +329,7 @@ function activateLocal(email = null) {
     cancelledAt:   null,
     updatedAt:     now,
   });
-  _addInvoice({ plan: 'local_lifetime', amount: 5, currency: 'EUR', status: 'paid', email });
+  _addInvoice({ plan: 'local_lifetime', amount: 6.99, currency: 'EUR', status: 'paid', email });
   // Sync with MNAuth
   if (window.MNAuth?.buyLocal) window.MNAuth.buyLocal(email);
   document.dispatchEvent(new CustomEvent('mn:billing:activated', { detail: { plan: 'local_lifetime', sub } }));

@@ -5,7 +5,7 @@
  *    trial       → 24h de prueba gratuita (al registrarse)
  *    locked_local→ trial expirado, app bloqueada. Requiere Plan Local
  *    local       → pago único 5€. Datos en localStorage, sin expiración
- *    pro         → suscripción 5€/año (7 días gratis desde local).
+ *    pro         → suscripción 3€/año (7 días gratis desde local).
  *                  Si cancela → vuelve a local (nunca se bloquea de nuevo)
  *
  *  Uso (ES modules):
@@ -236,7 +236,7 @@ function buyLocal(email) {
 }
 
 /**
- * activatePro(email?) — activa el Plan Pro (5€/año).
+ * activatePro(email?) — activa el Plan Pro (3€/año).
  * • Si !proTrialUsed: incluye 7 días de prueba gratuita.
  * • Llama DESPUÉS de confirmar suscripción con tu pasarela.
  * @param {string} [email]
@@ -517,7 +517,7 @@ function _buildPaywallHTML(user) {
             <div class="pw-feat" style="padding:7px 12px"><span class="pw-feat-icon">✅</span>${_pw('paywall_local_feat3','Exportación PDF y Excel')}</div>
           </div>
           <button class="pw-btn-primary" id="pw-buy-local-btn" style="margin-bottom:0">
-            🔓 ${_pw('paywall_local_cta','Comprar Plan Local — 5€ →')}
+            🔓 ${_pw('paywall_local_cta','Comprar Plan Local — 6,99€ →')}
           </button>
         </div>
 
@@ -528,7 +528,7 @@ function _buildPaywallHTML(user) {
         ">
           <div style="font-size:.68rem;font-weight:700;color:#A5B4FC;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">⚡ ${_pw('paywall_pro_label','Plan Pro — todo incluido')}</div>
           <div style="font-size:1.6rem;font-weight:800;color:${text};letter-spacing:-.04em;line-height:1;margin-bottom:4px">
-            10€ <span style="font-size:.9rem;font-weight:600;color:${text2}">${_pw('paywall_pro_price_sub','Local + 5€/año Pro')}</span>
+            6,99€ <span style="font-size:.9rem;font-weight:600;color:${text2}">${_pw('paywall_pro_price_sub','Local + 3€/año Pro')}</span>
           </div>
           <div style="font-size:.75rem;color:#A5B4FC;margin-bottom:12px">${_pw('paywall_pro_trial','7 días gratis · Sin compromiso')}</div>
           <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;text-align:left">
@@ -590,7 +590,7 @@ function _buildPaywallHTML(user) {
           btn.disabled = false;
           btn.style.opacity = '1';
           btn.textContent = btn.id === 'pw-buy-local-btn'
-            ? '🔓 Comprar Plan Local — 5€ →'
+            ? '🔓 Comprar Plan Local — 6,99€ →'
             : '⚡ Activar Plan Pro — 7 días gratis →';
         }
       }

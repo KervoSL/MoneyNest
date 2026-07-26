@@ -2727,9 +2727,11 @@ const TRANSLATIONS = {
 
 let _currentLang = 'es'
 
-function t(key) {
+function t(key, fallback) {
   const lang = TRANSLATIONS[_currentLang] || TRANSLATIONS['es']
-  return lang[key] !== undefined ? lang[key] : (TRANSLATIONS['es'][key] || key)
+  if (lang[key] !== undefined) return lang[key]
+  if (TRANSLATIONS['es'][key] !== undefined) return TRANSLATIONS['es'][key]
+  return fallback !== undefined ? fallback : key
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -6305,6 +6307,53 @@ function renderConfiguracion() {
           <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
           <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
         </div>
+      </div>
+
+      <!-- Facturación -->
+      <div class="card" id="mn-billing-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🧾 Facturación</div>
+            <div class="card-subtitle">Tu plan, recibos y gestión de pago</div>
+          </div>
+        </div>
+        ${(() => {
+          const sub = window.MNBilling ? window.MNBilling.getSub() : null
+          const invoices = window.MNBilling ? window.MNBilling.getInvoices() : []
+          const planLabel = { free_trial: '⏳ Prueba gratuita', local_lifetime: '💾 MoneyNest', pro_annual: '☁️ MoneyNest + Sync' }[sub?.plan] || '⏳ Prueba gratuita'
+          const planColor = { free_trial: 'var(--gold)', local_lifetime: 'var(--accent)', pro_annual: '#A78BFA' }[sub?.plan] || 'var(--gold)'
+
+          return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+            <div>
+              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Plan actual</div>
+              <div style="font-size:1rem;font-weight:800;color:${planColor}">${planLabel}</div>
+            </div>
+            ${sub?.plan === 'free_trial' ? `<button class="btn btn-primary btn-sm" onclick="_showPaymentPrompt('')">🔓 Comprar MoneyNest</button>` : ''}
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+            <button class="btn btn-secondary btn-sm" style="width:100%" onclick="window._openStripePortal()">
+              💳 Gestionar facturación en Stripe
+            </button>
+            <div style="font-size:.7rem;color:var(--text3);text-align:center">Ver recibos, cambiar método de pago, cancelar — todo gestionado de forma segura por Stripe</div>
+          </div>
+
+          <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Historial de pagos</div>
+          ${invoices.length ? invoices.map(inv => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+              <div>
+                <div style="font-size:.8rem;font-weight:600;color:var(--text)">${inv.plan === 'local_lifetime' ? 'MoneyNest — pago único' : inv.plan === 'pro_annual' ? 'MoneyNest + Sync — anual' : inv.plan}</div>
+                <div style="font-size:.68rem;color:var(--text3)">${new Date(inv.date).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})} · ${inv.id}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:.85rem;font-weight:800;color:var(--text)">${inv.amount.toFixed(2).replace('.',',')}€</div>
+                <span style="font-size:.62rem;font-weight:700;color:var(--green);text-transform:uppercase">✓ ${inv.status === 'paid' ? 'Pagado' : inv.status}</span>
+              </div>
+            </div>`).join('')
+            : `<div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">Aún no tienes pagos registrados.</div>`}
+          `
+        })()}
       </div>
 
       <!-- Modo uso: personal / pareja -->
@@ -11810,6 +11859,43 @@ function finishOnboarding() {
       window.MNInstall.showOnboardingModal()
     }
   }, 15000)
+}
+
+window._openStripePortal = async function() {
+  const btn = event?.target
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Abriendo...' }
+  try {
+    let token = ''
+    try {
+      if (window.MNSupabaseAuth?.getSession) {
+        const session = await window.MNSupabaseAuth.getSession()
+        token = session?.access_token || ''
+      }
+    } catch(_) {}
+
+    const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      body: JSON.stringify({})
+    })
+    const data = await res.json()
+    if (res.ok && data.url) {
+      window.open(data.url, '_blank')
+      return
+    }
+    if (data.error === 'no_customer') {
+      toast('Aún no tienes ningún pago registrado con este email', 'info')
+    } else if (data.error === 'unauthorized') {
+      toast('Inicia sesión con el email de tu compra para gestionar tu facturación', 'info')
+    } else {
+      throw new Error(data.error || 'unknown')
+    }
+  } catch(e) {
+    console.warn('[Billing] Portal error:', e)
+    toast('No se pudo abrir el panel de facturación. Inténtalo más tarde.', 'error')
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💳 Gestionar facturación en Stripe' }
+  }
 }
 
 function _showPaymentPrompt(email) {

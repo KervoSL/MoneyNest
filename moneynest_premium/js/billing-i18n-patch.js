@@ -58,13 +58,13 @@
       // ── billing-ui.js — Paywall (overlay bloqueado) ─────────
       billing_lock_badge:             'Tu prueba ha expirado',
       billing_lock_title:             'Acceso bloqueado',
-      billing_lock_desc:              'Tu periodo de prueba gratuita de 24h ha concluido.<br>Desbloquea MoneyNest para siempre por un pago único de <strong>€5</strong>.',
+      billing_lock_desc:              'Tu periodo de prueba gratuita de 24h ha concluido.<br>Desbloquea MoneyNest para siempre por un pago único de <strong>€6.99</strong>.',
       billing_lock_feat1:             '✅ Todos tus datos están seguros',
       billing_lock_feat2:             '✅ Acceso ilimitado sin suscripción',
       billing_lock_feat3:             '✅ Exportación PDF y Excel',
       billing_lock_feat4:             '✅ Sin publicidad, sin rastreo',
-      billing_lock_cta:               '🔓 Desbloquear para siempre — €5 único',
-      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, €5/año)',
+      billing_lock_cta:               '🔓 Desbloquear para siempre — €6.99 único',
+      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, €6.99/año)',
       billing_lock_restore_q:         '¿Ya tienes licencia?',
       billing_lock_restore_link:      'Restaurar acceso',
 
@@ -104,7 +104,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funciona offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Sin fecha de expiración',
       billing_plan_feat_privado:      '✓ 💾 Datos solo en tu dispositivo',
-      billing_plan_cta_local:         '🔓 Desbloquear Forever — €5',
+      billing_plan_cta_local:         '🔓 Desbloquear Forever — €6.99',
       billing_plan_guarantee:         '✅ Pago único · Sin suscripción',
 
       // ── billing-ui.js — Plan Pro Annual ─────────────────────
@@ -116,10 +116,10 @@
       billing_plan_feat_backup:       '✓ 📦 Backup automático',
       billing_plan_feat_ai:           '✓ ✨ Insights con IA',
       billing_plan_feat_support:      '✓ ⭐ Soporte prioritario',
-      billing_plan_pro_price:         '€5 / año',
+      billing_plan_pro_price:         '€6.99 / año',
 
       // ── billing-ui.js — CTAs de compra ──────────────────────
-      billing_cta_activar_pro:        '⚡ Activar Pro — €5/año',
+      billing_cta_activar_pro:        '⚡ Activar Pro — €6.99/año',
       billing_cta_iniciar_trial:      '⚡ Iniciar 7 días gratis',
       billing_cta_try_pro:            '⚡ Probar 7 días gratis →',
 
@@ -130,7 +130,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Sin cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ Sin multi-dispositivo',
       billing_local_feat_no_backup:   '✗ 📦 Sin backup automático',
-      billing_local_paid:             '€5 — pagado ✓',
+      billing_local_paid:             '€6.99 — pagado ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 días gratis',
       billing_local_account_title:    '⚙️ Tu cuenta Local',
@@ -205,7 +205,7 @@
 
       // ── billing-ui.js — Export gating ───────────────────────
       billing_export_tooltip:         'Disponible en Plan Local o Pro',
-      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — €5 único',
+      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — €6.99 único',
 
       // ── billing-ui.js — Checkout / Éxito ────────────────────
       billing_success_local_title:    '¡Plan Local activado!',
@@ -240,8 +240,8 @@
       payment_success_pro_sub:        '7 días de prueba gratuita iniciados. Disfruta de MoneyNest Pro.',
       payment_error_generic:          'Error al procesar el pago. Inténtalo de nuevo.',
       payment_error_init:             'No se pudo iniciar el pago. Inténtalo de nuevo.',
-      payment_local_plan_title:       'Activar Local — 5€',
-      payment_pro_plan_title:         'Activar Pro — 10€ primer año',
+      payment_local_plan_title:       'Activar Local — 6,99€',
+      payment_pro_plan_title:         'Activar Pro — 6,99€ primer año',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -250,7 +250,7 @@
     en: {
       billing_step_conectando:        'Connecting to payment server…',
       billing_step_verificando:       'Verifying payment method…',
-      billing_step_procesando:        'Processing payment of €5.00…',
+      billing_step_procesando:        'Processing payment of €6.99.00…',
       billing_step_activando:         'Activating licence…',
       billing_step_listo:             'Done!',
       billing_step_iniciando_pro:     'Starting Pro subscription…',
@@ -280,13 +280,13 @@
 
       billing_lock_badge:             'Your trial has expired',
       billing_lock_title:             'Access locked',
-      billing_lock_desc:              'Your free 24h trial has ended.<br>Unlock MoneyNest forever with a one-time payment of <strong>€5</strong>.',
+      billing_lock_desc:              'Your free 24h trial has ended.<br>Unlock MoneyNest forever with a one-time payment of <strong>€6.99</strong>.',
       billing_lock_feat1:             '✅ All your data is safe',
       billing_lock_feat2:             '✅ Unlimited access, no subscription',
       billing_lock_feat3:             '✅ PDF and Excel export',
       billing_lock_feat4:             '✅ No ads, no tracking',
-      billing_lock_cta:               '🔓 Unlock forever — €5 one-time',
-      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €5/yr)',
+      billing_lock_cta:               '🔓 Unlock forever — €6.99 one-time',
+      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €6.99/yr)',
       billing_lock_restore_q:         'Already have a licence?',
       billing_lock_restore_link:      'Restore access',
 
@@ -320,7 +320,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Works offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Never expires',
       billing_plan_feat_privado:      '✓ 💾 Data stays on your device',
-      billing_plan_cta_local:         '🔓 Unlock Forever — €5',
+      billing_plan_cta_local:         '🔓 Unlock Forever — €6.99',
       billing_plan_guarantee:         '✅ One-time payment · No subscription',
 
       billing_plan_pro_name:          'Pro',
@@ -331,9 +331,9 @@
       billing_plan_feat_backup:       '✓ 📦 Automatic backup',
       billing_plan_feat_ai:           '✓ ✨ AI insights',
       billing_plan_feat_support:      '✓ ⭐ Priority support',
-      billing_plan_pro_price:         '€5 / year',
+      billing_plan_pro_price:         '€6.99 / year',
 
-      billing_cta_activar_pro:        '⚡ Activate Pro — €5/yr',
+      billing_cta_activar_pro:        '⚡ Activate Pro — €6.99/yr',
       billing_cta_iniciar_trial:      '⚡ Start 7-day free trial',
       billing_cta_try_pro:            '⚡ Try 7 days free →',
 
@@ -343,7 +343,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ No cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ No multi-device',
       billing_local_feat_no_backup:   '✗ 📦 No automatic backup',
-      billing_local_paid:             '€5 — paid ✓',
+      billing_local_paid:             '€6.99 — paid ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 days free',
       billing_local_account_title:    '⚙️ Your Local account',
@@ -411,7 +411,7 @@
       billing_invoice_paid:           'Paid',
 
       billing_export_tooltip:         'Available with Local or Pro plan',
-      billing_export_blocked_toast:   '🔒 Export available with Local Plan — one-time €5',
+      billing_export_blocked_toast:   '🔒 Export available with Local Plan — one-time €6.99',
 
       billing_success_local_title:    'Local plan activated!',
       billing_success_local_sub:      'Permanent access. You will never see the lock again.',
@@ -442,7 +442,7 @@
       payment_success_pro_sub:        '7-day free trial started. Enjoy MoneyNest Pro.',
       payment_error_generic:          'Error processing payment. Please try again.',
       payment_error_init:             'Could not start payment. Please try again.',
-      payment_local_plan_title:       'Activate Local — €5',
+      payment_local_plan_title:       'Activate Local — €6.99',
       payment_pro_plan_title:         'Activate Pro — €10 first year',
     },
 

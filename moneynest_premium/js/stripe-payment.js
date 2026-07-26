@@ -84,13 +84,13 @@ window.MNPayment = (() => {
     const isLocal = priceId === MNStripeConfig.prices.local;
     const titleEl = document.getElementById('mnPoTitle');
     if (titleEl) titleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'Activar Local — 5€')
-      : _spt('payment_pro_plan_title',   'Activar Pro — 10€ primer año');
+      ? _spt('payment_local_plan_title', 'Activar MoneyNest — 6,99€')
+      : _spt('payment_pro_plan_title',   'Activar Sync — 3€/año');
 
     const rightTitleEl = document.getElementById('mnPoRightTitle');
     if (rightTitleEl) rightTitleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'Activar Local — 5€')
-      : _spt('payment_pro_plan_title',   'Activar Pro — 10€ primer año');
+      ? _spt('payment_local_plan_title', 'Activar MoneyNest — 6,99€')
+      : _spt('payment_pro_plan_title',   'Activar Sync — 3€/año');
 
     document.getElementById('mnPoPlanSummary').innerHTML = isLocal ? `
       <div class="mnpo-left-inner mnpo-left-inner--local">
@@ -457,7 +457,26 @@ window.MNPayment = (() => {
       paymentElement.on('ready', () => _setLoading(false));
 
     } catch (err) {
-      _showError(err.message ?? _spt('payment_error_init', 'No se pudo iniciar el pago. Inténtalo de nuevo.'));
+      // Fallback: if the embedded payment-intent endpoint is unavailable,
+      // try the redirect-based Stripe Checkout flow instead.
+      console.warn('[MNPayment] Embedded payment failed, trying checkout redirect fallback:', err);
+      try {
+        const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceId, email }),
+        });
+        const checkoutData = await checkoutRes.json();
+        if (checkoutRes.ok && checkoutData.url) {
+          window.location.href = checkoutData.url;
+          return;
+        }
+        throw new Error(checkoutData.error ?? 'checkout_fallback_failed');
+      } catch (fallbackErr) {
+        console.error('[MNPayment] Checkout fallback also failed:', fallbackErr);
+        _showError(_spt('payment_error_init', 'No se pudo iniciar el pago. Comprueba tu conexión e inténtalo de nuevo.'));
+        _setLoading(false);
+      }
     }
   }
 

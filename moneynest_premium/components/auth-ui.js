@@ -440,7 +440,7 @@ function _buildGuestPlanView(user) {
       <div class="mn-auth-cta-label">🔓 ${_t('auth_desbloquear_ahora','Desbloquear ahora')}</div>
       <div class="mn-auth-cta-desc">${_t('auth_plan_local_desc','Con el Plan Local (5€ único) nunca expira.')}</div>
       <button class="mn-btn-secondary mn-btn-full" id="mn-buy-local-btn" style="margin-top:12px">
-        💾 ${_t('auth_comprar_local','Comprar Plan Local — 5€ →')}
+        💾 ${_t('auth_comprar_local','Comprar Plan Local — 6,99€ →')}
       </button>
     </div>
 

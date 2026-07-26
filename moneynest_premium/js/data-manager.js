@@ -231,7 +231,7 @@ function buildExportPanel() {
     background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);
     color:#F59E0B;font-size:.65rem;font-weight:700;
     padding:2px 8px;border-radius:99px;
-  ">🔒 Local / Pro</span>`;
+  ">🔒 Premium</span>`;
 
   const pdfBtn = canExportReports
     ? `<button class="dm-export-card dm-export-card--pdf" onclick="dmExportPDF()">
@@ -242,11 +242,11 @@ function buildExportPanel() {
         </div>
         <span class="dm-card-arrow">${ICONS.arrow}</span>
       </button>`
-    : `<button class="dm-export-card" style="opacity:.6;cursor:default" onclick="dmToast('El PDF requiere Plan Local o Pro 🔒','warn')">
+    : `<button class="dm-export-card" style="opacity:.6;cursor:default" onclick="dmToast('El PDF requiere MoneyNest 🔒','warn')">
         <div class="dm-card-icon dm-card-icon--pdf">📄</div>
         <div class="dm-card-content">
           <div class="dm-card-title">Informe PDF completo ${lockBadge}</div>
-          <div class="dm-card-desc">Disponible desde el Plan Local (5€)</div>
+          <div class="dm-card-desc">Disponible con MoneyNest (6,99€)</div>
         </div>
       </button>`;
 
@@ -259,11 +259,11 @@ function buildExportPanel() {
         </div>
         <span class="dm-card-arrow">${ICONS.arrow}</span>
       </button>`
-    : `<button class="dm-export-card" style="opacity:.6;cursor:default" onclick="dmToast('El Excel requiere Plan Local o Pro 🔒','warn')">
+    : `<button class="dm-export-card" style="opacity:.6;cursor:default" onclick="dmToast('El Excel requiere MoneyNest 🔒','warn')">
         <div class="dm-card-icon dm-card-icon--excel">📊</div>
         <div class="dm-card-content">
           <div class="dm-card-title">Excel completo ${lockBadge}</div>
-          <div class="dm-card-desc">Disponible desde el Plan Local (5€)</div>
+          <div class="dm-card-desc">Disponible con MoneyNest (6,99€)</div>
         </div>
       </button>`;
 
@@ -304,7 +304,7 @@ function buildExportPanel() {
           background:linear-gradient(135deg,#00D4AA,#00A882);color:#0A0E17;
           border:none;border-radius:10px;padding:10px 20px;
           font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit;
-        ">🔓 Desbloquear con Plan Local — 5€ →</button>
+        ">🔓 Desbloquear MoneyNest — 6,99€ →</button>
       </div>` : ''}
     </div>
 
@@ -379,7 +379,7 @@ window.dmExportJSON = function() {
 window.dmExportPDF = function() {
   const plan = (typeof window.MNAuth !== 'undefined') ? window.MNAuth.getUser().plan : 'trial';
   if (plan !== 'local' && plan !== 'pro') {
-    dmToast(_dm('dm_pdf_requiere_plan', '🔒 El PDF requiere Plan Local o Pro'), 'warn');
+    dmToast(_dm('dm_pdf_requiere_plan', '🔒 El PDF requiere MoneyNest'), 'warn');
     if (window.MNAuthUI) MNAuthUI.showAuthModal('plan');
     return;
   }
@@ -391,7 +391,7 @@ window.dmExportPDF = function() {
 window.dmExportExcel = function() {
   const plan = (typeof window.MNAuth !== 'undefined') ? window.MNAuth.getUser().plan : 'trial';
   if (plan !== 'local' && plan !== 'pro') {
-    dmToast(_dm('dm_excel_requiere_plan', '🔒 El Excel requiere Plan Local o Pro'), 'warn');
+    dmToast(_dm('dm_excel_requiere_plan', '🔒 El Excel requiere MoneyNest'), 'warn');
     if (window.MNAuthUI) MNAuthUI.showAuthModal('plan');
     return;
   }
@@ -858,7 +858,7 @@ window.openDmPanel = function(id) {
   if (id === 'dm-import-panel') {
     const plan = (typeof window.MNAuth !== 'undefined') ? window.MNAuth.getUser().plan : 'trial';
     if (plan === 'trial') {
-      dmToast(_dm('dm_importar_requiere_plan', '🔒 Importar datos requiere Plan Local o Pro'), 'warn');
+      dmToast(_dm('dm_importar_requiere_plan', '🔒 Importar datos requiere MoneyNest'), 'warn');
       if (window.MNAuthUI) MNAuthUI.showAuthModal('plan');
       return;
     }
