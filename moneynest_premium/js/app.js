@@ -152,6 +152,29 @@ if (!window.MNAuth) {
 const LANG_STORAGE_KEY = 'mn7_lang'
 const TRANSLATIONS = {
   es: {
+    // Missing keys audit fix — auth flow, hints, modals
+    auth_email_requerido: 'Introduce un email válido',
+    auth_error_enviar: 'No se pudo enviar el código. Inténtalo de nuevo.',
+    auth_error_reenviar: 'No se pudo reenviar el código.',
+    loading_entrando: 'Entrando...',
+    loading_creando_cuenta: 'Creando cuenta...',
+    loading_verificando: 'Verificando...',
+    loading_enviando: 'Enviando...',
+    loading_enviado: '✓ Enviado',
+    btn_verificar_codigo: 'Verificar código',
+    btn_reenviar: 'Reenviar código',
+    btn_enviar_email: 'Enviar por email',
+    btn_confirmar_venta: 'Confirmar venta',
+    modal_proveedor_nuevo: 'Nuevo proveedor',
+    modal_proveedor_editar: 'Editar proveedor',
+    modal_devengo_nuevo: 'Nuevo devengo',
+    modal_devengo_editar: 'Editar devengo',
+    modal_activo_nuevo: 'Nuevo activo',
+    modal_activo_editar: 'Editar activo',
+    cuenta_hint_selecciona: 'Selecciona una cuenta',
+    cuenta_disponible: 'Disponible: ',
+    toast_inversion_liquidada: '💰 Inversión liquidada',
+    debt_importe_valido: 'Introduce un importe mensual válido.',
     // Nav
     nav_principal: 'Principal', nav_finanzas: 'Finanzas',
     nav_planificacion: 'Planificación', nav_patrimonio_sec: 'Patrimonio',
@@ -618,6 +641,29 @@ const TRANSLATIONS = {
     minutos: 'm',
 },
   en: {
+    // Missing keys audit fix — auth flow, hints, modals
+    auth_email_requerido: 'Enter a valid email',
+    auth_error_enviar: 'Could not send the code. Try again.',
+    auth_error_reenviar: 'Could not resend the code.',
+    loading_entrando: 'Signing in...',
+    loading_creando_cuenta: 'Creating account...',
+    loading_verificando: 'Verifying...',
+    loading_enviando: 'Sending...',
+    loading_enviado: '✓ Sent',
+    btn_verificar_codigo: 'Verify code',
+    btn_reenviar: 'Resend code',
+    btn_enviar_email: 'Send by email',
+    btn_confirmar_venta: 'Confirm sale',
+    modal_proveedor_nuevo: 'New provider',
+    modal_proveedor_editar: 'Edit provider',
+    modal_devengo_nuevo: 'New accrual',
+    modal_devengo_editar: 'Edit accrual',
+    modal_activo_nuevo: 'New asset',
+    modal_activo_editar: 'Edit asset',
+    cuenta_hint_selecciona: 'Select an account',
+    cuenta_disponible: 'Available: ',
+    toast_inversion_liquidada: '💰 Investment liquidated',
+    debt_importe_valido: 'Enter a valid monthly amount.',
     nav_principal: 'Main', nav_finanzas: 'Finance',
     nav_planificacion: 'Planning', nav_patrimonio_sec: 'Net Worth',
     nav_sistema: 'System',
@@ -6358,7 +6404,7 @@ function renderConfiguracion() {
         })()}
       </div>
 
-      <!-- Modo uso: personal / pareja -->
+      <!-- Modo uso: personal / pareja (próximamente v2) -->
       <div class="card">
         <div class="card-header">
           <div>
@@ -6366,38 +6412,15 @@ function renderConfiguracion() {
             <div class="card-subtitle">Personal · Pareja · Familia</div>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-          ${['personal','couple','family'].map(mode => {
-            const labels = { personal: ['👤','Personal','Solo tú. Datos privados en este dispositivo.'], couple: ['💑','Pareja','Dos personas, un presupuesto compartido. Requiere sync en la nube (3€/año).'], family: ['👨‍👩‍👧','Familia','Hasta 4 miembros con gastos comunes y separados. Requiere sync (3€/año).'] }
-            const [icon,lbl,desc] = labels[mode]
-            const isActive = (S.usuario.mode || 'personal') === mode
-            const needsSync = mode !== 'personal'
-            return `<button onclick="window._setUserMode('${mode}')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${isActive?'var(--accent)':'var(--border)'};background:${isActive?'var(--accent-dim)':'var(--bg2)'};cursor:pointer;text-align:left;width:100%;transition:all .15s;font-family:inherit">
-              <span style="font-size:1.3rem;flex-shrink:0;margin-top:1px">${icon}</span>
-              <div>
-                <div style="font-size:.84rem;font-weight:700;color:${isActive?'var(--accent)':'var(--text)'}">${lbl} ${isActive?'<span style="font-size:.65rem;font-weight:700;background:var(--accent);color:#042b20;border-radius:4px;padding:1px 5px;margin-left:4px">activo</span>':''}</div>
-                <div style="font-size:.72rem;color:var(--text2);margin-top:2px;line-height:1.4">${desc}</div>
-                ${needsSync?`<div style="font-size:.68rem;color:var(--gold);margin-top:3px">☁️ Sincronización requerida</div>`:''}
-              </div>
-            </button>`
-          }).join('')}
+        <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border-radius:12px;border:1px dashed var(--border2)">
+          <span style="font-size:1.8rem;flex-shrink:0">🚧</span>
+          <div>
+            <div style="font-size:.88rem;font-weight:700;color:var(--text)">Próximamente en la v2</div>
+            <div style="font-size:.78rem;color:var(--text2);margin-top:3px;line-height:1.5">
+              Compartir presupuesto con tu pareja o familia, con sincronización en la nube, llegará en una próxima actualización.
+            </div>
+          </div>
         </div>
-        ${(S.usuario.mode === 'couple' || S.usuario.mode === 'family') ? `
-        <div style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
-          <div style="font-size:.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Miembros del grupo</div>
-          <div class="form-group" style="margin-bottom:8px">
-            <label style="font-size:.75rem">Nombre compañero/a</label>
-            <input type="text" id="partnerNameInput" value="${S.usuario.partnerName||''}" placeholder="Nombre de tu pareja o familiar" style="font-size:.82rem">
-          </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label style="font-size:.75rem">Email (para invitar)</label>
-            <input type="email" id="partnerEmailInput" value="${S.usuario.partnerEmail||''}" placeholder="email@ejemplo.com" style="font-size:.82rem">
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="window._savePartner()" style="width:100%">💾 Guardar y enviar invitación</button>
-          <div style="margin-top:8px;padding:8px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:6px;font-size:.72rem;color:var(--text2);line-height:1.5">
-            ☁️ La sincronización en tiempo real requiere el plan Sync (3€/año). <a href="#" onclick="event.preventDefault();window._showSyncInfo()" style="color:var(--accent)">Más info →</a>
-          </div>
-        </div>` : ''}
       </div>
 
       <!-- Instalar app -->
@@ -9119,48 +9142,6 @@ function toggleMode() {
 
 function updateModeUI() {
   // Personal-only: nothing to toggle
-}
-
-window._setUserMode = function(mode) {
-  S.usuario.mode = mode
-  save()
-  renderConfiguracion()
-  toast(mode === 'personal' ? '👤 Modo personal activado' : mode === 'couple' ? '💑 Modo pareja activado' : '👨‍👩‍👧 Modo familia activado')
-}
-
-window._savePartner = function() {
-  const name  = document.getElementById('partnerNameInput')?.value.trim()
-  const email = document.getElementById('partnerEmailInput')?.value.trim()
-  if (!name) { toast('Introduce el nombre del compañero', 'error'); return }
-  S.usuario.partnerName  = name
-  S.usuario.partnerEmail = email || ''
-  save()
-  toast(`✅ Guardado. ${email ? 'Invitación enviada a ' + email : ''}`)
-  renderConfiguracion()
-}
-
-window._showSyncInfo = function() {
-  const overlay = document.createElement('div')
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:24px'
-  overlay.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:20px;width:min(400px,100%);padding:28px 24px;font-family:inherit;position:relative">
-    <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:6px">☁️ Sincronización en la nube</div>
-    <div style="font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:16px">
-      El modo pareja y familia requieren sincronización para que ambos dispositivos vean los mismos datos en tiempo real.<br><br>
-      <strong style="color:var(--text)">Plan Sync — 3€/año</strong><br>
-      ✓ Sincronización en tiempo real<br>
-      ✓ Hasta 4 dispositivos<br>
-      ✓ Backup automático diario<br>
-      ✓ Acceso desde cualquier lugar
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="padding:10px 14px;background:var(--accent-dim);border:1px solid rgba(0,212,170,.3);border-radius:10px;font-size:.8rem;color:var(--text2)">
-        💡 Disponible próximamente. Apúntate a la lista de espera.
-      </div>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.84rem;cursor:pointer;font-family:inherit">Cerrar</button>
-    </div>
-  </div>`
-  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove() })
-  document.body.appendChild(overlay)
 }
 
 // ════════════════════════════════════════════════════════════════
