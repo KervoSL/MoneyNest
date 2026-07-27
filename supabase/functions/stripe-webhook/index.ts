@@ -72,7 +72,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
                                     ? session.payment_intent : null,
       stripe_customer_id:         custId,
       stripe_price_id:            session.metadata?.priceId ?? '',
-      amount:                     session.amount_total ?? 500,
+      amount:                     session.amount_total ?? 699,
       currency:                   session.currency ?? 'eur',
       status:                     'completed',
       product_type:               'local_lifetime',

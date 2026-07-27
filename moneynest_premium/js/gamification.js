@@ -374,7 +374,6 @@
       if (trigger === 'deuda_added') {
         if (deudas.length >= 1) unlock('primera_deuda');
         if (deudas.length >= 5) unlock('cinco_deudas');
-        unlock('pagina_deudas');
       }
 
       if (trigger === 'pago_deuda') {
@@ -407,7 +406,6 @@
 
       if (trigger === 'custom_debt') {
         unlock('estrategia_deuda');
-        unlock('estratega');
       }
       if (trigger === 'avalanche_used')  unlock('avalancha_usada');
       if (trigger === 'snowball_used')   unlock('snowball_usada');
