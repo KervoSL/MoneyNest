@@ -57,7 +57,7 @@ window.PLANS = PLANS
 const DEFAULT_USER = Object.freeze({
   id:           null,
   email:        null,
-  plan:         'local',  // plan pro removed
+  plan:         'trial',
   trialEndsAt:  null,
   cloudEnabled: false,
   createdAt:    null,
@@ -93,7 +93,7 @@ function _generateUserId() {
 function initUser() {
   let user = getUser()
   if (!user.id) {
-    user = { ...DEFAULT_USER, id: _generateUserId(), plan: 'local', trialEndsAt: null, createdAt: Date.now() }
+    user = { ...DEFAULT_USER, id: _generateUserId(), plan: 'trial', trialEndsAt: Date.now() + TRIAL_DAYS * 86400000, createdAt: Date.now() }
     saveUser(user)
   } else if (!user.createdAt) {
     saveUser({ ...user, createdAt: Date.now() })
@@ -101,7 +101,22 @@ function initUser() {
   return user
 }
 
-function checkAccess() { return { ok: true, reason: null } }
+function checkAccess() {
+  const user = getUser()
+  if (user.plan === 'locked_local') {
+    bloquearApp(user)
+    return { ok: false, reason: 'locked_local' }
+  }
+  if (user.plan === 'trial') {
+    if (user.trialEndsAt && Date.now() > user.trialEndsAt) {
+      patchUser({ plan: 'locked_local' })
+      bloquearApp(user)
+      return { ok: false, reason: 'trial_expired' }
+    }
+    return { ok: true, reason: null }
+  }
+  return { ok: true, reason: null }
+}
 
 function upgradeTrial(email) {
   const trialEndsAt = Date.now() + TRIAL_DAYS * 86400000
@@ -131,7 +146,56 @@ function isTrialExpired() {
 
 function isGuest() { return getUser().plan === 'locked_local'; }
 
-function bloquearApp(user) { /* pro plan removed */ }
+function bloquearApp(user) {
+  document.body.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif">
+      <div style="position:relative;width:min(460px,100%);background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0));border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:36px 32px;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00D4AA,#6366F1)"></div>
+        <div style="text-align:center">
+          <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.3);color:#FB7185;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px">● Tu prueba ha expirado</span>
+          <div style="font-size:3rem;margin-bottom:8px">🔒</div>
+          <div style="font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:10px">Acceso bloqueado</div>
+          <div style="font-size:.9rem;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:26px">
+            Tu período de prueba gratuita de 24h ha concluido.<br>Desbloquea MoneyNest para siempre por un pago único de <strong style="color:#fff">6,99€</strong>.
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
+          ${['Todos tus datos están seguros','Acceso ilimitado sin suscripción','Exportación PDF y Excel','Sin publicidad, sin rastreo'].map(f => `
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;font-size:.78rem;color:rgba(255,255,255,0.8);font-weight:600">
+              <span style="color:#00D4AA">✅</span> ${f}
+            </div>`).join('')}
+        </div>
+        <button id="mn-lock-unlock-btn" style="width:100%;padding:16px;border-radius:14px;border:none;background:#00D4AA;color:#042b20;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,212,170,.25)">
+          🔒 Desbloquear para siempre — 6,99€ único
+        </button>
+        <div style="text-align:center;margin-top:16px;font-size:.78rem;color:rgba(255,255,255,0.4)">
+          ¿Ya tienes licencia? <a id="mn-lock-restore-link" href="#" style="color:#00D4AA;font-weight:700;text-decoration:none">Restaurar acceso</a>
+        </div>
+      </div>
+    </div>`
+
+  const unlockBtn = document.getElementById('mn-lock-unlock-btn')
+  if (unlockBtn) unlockBtn.addEventListener('click', () => {
+    const priceId = window.MNStripeConfig?.prices?.local
+    if (window.MNPayment && priceId) {
+      MNPayment.open(priceId, user?.email || '')
+      const onPaid = () => {
+        document.removeEventListener('mn:paymentSuccess', onPaid)
+        location.reload()
+      }
+      document.addEventListener('mn:paymentSuccess', onPaid)
+    }
+  })
+  const restoreLink = document.getElementById('mn-lock-restore-link')
+  if (restoreLink) restoreLink.addEventListener('click', (e) => {
+    e.preventDefault()
+    const email = prompt('Introduce el email con el que compraste MoneyNest:')
+    if (!email) return
+    toast && toast('Buscando tu licencia...', 'info')
+    // Restore is handled by re-checking Supabase-linked plan on next payment portal / support contact
+    alert('Si ya compraste MoneyNest, contacta con soporte para restaurar tu acceso con tu email de compra.')
+  })
+}
 
 // Expose on window for debugging / external use.
 // Si js/auth.js (v2) ya cargó antes, ya definió window.MNAuth con funciones
