@@ -5702,14 +5702,14 @@ function calcLibertad3Cards() {
     </div>
 
     <!-- Desglose /mes /semana /día -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+    <div class="mn-3col-grid" style="margin-bottom:10px">
       ${[
         { label:t('al_mes','/mes'),    amount:mensual, color:'#00D4AA' },
         { label:t('a_la_semana','/sem'),amount:semanal,color:'#6366F1' },
         { label:t('al_dia','/día'),   amount:diario,  color:'#F59E0B' },
       ].map(c=>`
-        <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 8px;text-align:center">
-          <div style="font-size:.95rem;font-weight:900;color:${c.color};letter-spacing:-.03em">${eur(c.amount)}</div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 8px;text-align:center;min-width:0">
+          <div style="font-size:.95rem;font-weight:900;color:${c.color};letter-spacing:-.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eur(c.amount)}</div>
           <div style="font-size:.62rem;color:var(--text3);margin-top:2px;font-weight:600">${c.label}</div>
         </div>`).join('')}
     </div>
@@ -7282,6 +7282,10 @@ function confirmar(msg, onOk, opts={}) {
   const btn = document.getElementById('confirmBtn')
   btn.textContent = opts.btnLabel||'Eliminar'
   btn.onclick = ()=>{ closeModal('confirmModal'); onOk() }
+  const cancelBtn = document.getElementById('confirmCancelBtn')
+  if (cancelBtn) {
+    cancelBtn.onclick = () => { closeModal('confirmModal'); if (typeof opts.onCancel === 'function') opts.onCancel() }
+  }
   openModal('confirmModal')
 }
 
@@ -7367,7 +7371,7 @@ function guardarIngreso() {
   const importe  = parseFloat(document.getElementById('ingresoImporte').value)
   if (!concepto || !importe || importe <= 0) { toast(t('err_concepto_importe'),'error'); _unlock(); return }
   const cuentaId   = document.getElementById('ingresoCuenta').value || null
-  if (!cuentaId) { toast(t('err_selecciona_cuenta'),'error'); return }
+  if (!cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
   const cat        = getOrCreateCat('ingresoCat','ingresoCatCustomInput','ingreso') || S.categorias.ingreso[0]
   const fecha      = document.getElementById('ingresoFecha').value || todayISO()
   const updateSaldo= document.getElementById('ingresoUpdateSaldo').checked
@@ -7460,7 +7464,7 @@ function guardarGasto() {
   const importe  = parseFloat(document.getElementById('gastoImporte').value)
   if (!concepto || !importe || importe <= 0) { toast('Concepto e importe requeridos','error'); _unlock(); return }
   const cuentaId   = document.getElementById('gastoCuenta').value || null
-  if (!cuentaId) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
+  if (!cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
   const cat        = getOrCreateCat('gastoCat','gastoCatCustomInput','gasto') || S.categorias.gasto[0]
   const fecha      = document.getElementById('gastoFecha').value || todayISO()
   const updateSaldo= document.getElementById('gastoUpdateSaldo').checked
@@ -7505,7 +7509,7 @@ function guardarGasto() {
       confirmar(
         '"' + cuentaGasto.nombre + '" ' + t('confirm_saldo_neg') + ' (' + eur((Number(cuentaGasto.saldo)||0) - importe) + ')',
         _doSaveGasto,
-        {titulo:t('confirm_saldo_neg_titulo'), icono:'⚠️', btnLabel:t('confirm_saldo_neg_btn')}
+        {titulo:t('confirm_saldo_neg_titulo'), icono:'⚠️', btnLabel:t('confirm_saldo_neg_btn'), onCancel:_unlock}
       )
       return
     }
@@ -7575,7 +7579,7 @@ function guardarInversion() {
   const cuentaId = document.getElementById('invCuenta').value || null
   const id = document.getElementById('invId').value
 
-  if (!id && !cuentaId) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
+  if (!id && !cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
 
   const cat = getOrCreateCat('invCat','invCatCustomInput','inversion') || S.categorias.inversion[0]
   const rentabilidad = parseFloat(document.getElementById('invRentabilidad').value)||0
@@ -7602,7 +7606,7 @@ function guardarInversion() {
         'Esta operación dejará la cuenta "' + cuentaInv.nombre + '" con saldo negativo (' +
         eur((Number(cuentaInv.saldo)||0) - importe) + '). ¿Deseas continuar?',
         _doSaveInv,
-        {titulo:'⚠️ Saldo insuficiente', icono:'⚠️', btnLabel:'Continuar igualmente'}
+        {titulo:'⚠️ Saldo insuficiente', icono:'⚠️', btnLabel:'Continuar igualmente', onCancel:_unlock}
       )
       return
     }
@@ -10106,18 +10110,18 @@ function renderAnalisis() {
     <!-- Bar chart: 3 historical months + 1 projected -->
     <div class="chart-container" style="height:240px;margin-bottom:16px"><canvas id="chartProximoMes"></canvas></div>
     <!-- Summary cards -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+    <div class="mn-3col-grid">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;min-width:0">
         <div style="font-size:.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💰 ${t('ingresos_estimados','Ingresos')}</div>
-        <div style="font-size:1rem;font-weight:800;color:var(--green)">${eur(avgInc3)}</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eur(avgInc3)}</div>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;min-width:0">
         <div style="font-size:.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💸 ${t('gastos_estimados','Gastos')}</div>
-        <div style="font-size:1rem;font-weight:800;color:var(--red)">${eur(avgGas3)}</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--red);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eur(avgGas3)}</div>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;min-width:0">
         <div style="font-size:.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">📈 ${t('ahorro_estimado','Ahorro')}</div>
-        <div style="font-size:1rem;font-weight:800;color:${cfPlanner>=0?'var(--accent)':'var(--red)'}">${cfPlanner>=0?'+':''}${eur(cfPlanner)}</div>
+        <div style="font-size:1rem;font-weight:800;color:${cfPlanner>=0?'var(--accent)':'var(--red)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cfPlanner>=0?'+':''}${eur(cfPlanner)}</div>
       </div>
     </div>
   </div>` : ''}
@@ -10131,13 +10135,13 @@ function renderAnalisis() {
         <div class="card-subtitle">${t('proyeccion_sub','Últimos 3 meses de media')} · ${cfPlanner>=0?'+':''}${eur(cfPlanner)}/${t('mes_lbl','mes')}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <div class="mn-scenario-grid">
       ${planScenarios.map(s=>`
-        <div style="background:${s.bg};border:1px solid ${s.border};border-radius:12px;padding:16px 12px;text-align:center">
+        <div style="background:${s.bg};border:1px solid ${s.border};border-radius:12px;padding:16px 12px;text-align:center;min-width:0">
           <div style="font-size:1.4rem;margin-bottom:6px">${s.icon}</div>
-          <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:${s.color};margin-bottom:6px">${s.label}</div>
-          <div style="font-size:1.1rem;font-weight:800;color:var(--text)">${eur(s.val)}</div>
-          <div style="font-size:.72rem;font-weight:700;color:${s.dif>=0?'var(--green)':'var(--red)'};margin-top:3px">${s.dif>=0?'+':''}${eur(s.dif)}</div>
+          <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:${s.color};margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.label}</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eur(s.val)}</div>
+          <div style="font-size:.72rem;font-weight:700;color:${s.dif>=0?'var(--green)':'var(--red)'};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.dif>=0?'+':''}${eur(s.dif)}</div>
           <div style="font-size:.65rem;color:var(--text3);margin-top:2px">${t('en_12_meses','en 12 meses')}</div>
         </div>`).join('')}
     </div>

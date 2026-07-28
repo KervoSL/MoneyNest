@@ -873,6 +873,16 @@ textarea{resize:vertical;min-height:70px}
 .insight-text{font-size:.82rem;color:var(--text2);line-height:1.5}
 .insight-text strong{color:var(--text)}
 
+/* ─── PROJECTION SCENARIO CARDS (Conservador/Moderado/Optimista) ── */
+.mn-scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:640px){
+  .mn-scenario-grid{grid-template-columns:1fr;gap:8px}
+}
+.mn-3col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:480px){
+  .mn-3col-grid{grid-template-columns:1fr;gap:8px}
+}
+
 /* ─── INVEST CARDS ───────────────────────────────────────────── */
 .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px}
 @media(max-width:640px){
@@ -960,11 +970,11 @@ textarea{resize:vertical;min-height:70px}
 .stat-val{font-size:.88rem;font-weight:700;color:var(--text)}
 
 /* ─── DONUT LEGEND ───────────────────────────────────────────── */
-.legend{display:flex;flex-direction:column;gap:6px;margin-top:12px}
-.legend-item{display:flex;align-items:center;justify-content:space-between;font-size:.78rem}
+.legend{display:flex;flex-direction:column;gap:6px;margin-top:12px;min-width:0}
+.legend-item{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;min-width:0;gap:6px}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.legend-label{color:var(--text2);flex:1;margin-left:8px}
-.legend-val{font-weight:700;color:var(--text)}
+.legend-label{color:var(--text2);flex:1;margin-left:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend-val{font-weight:700;color:var(--text);flex-shrink:0;white-space:nowrap}
 
 /* ─── CONFIRM MODAL ──────────────────────────────────────────── */
 #confirmModal .modal{max-width:380px;text-align:center}
