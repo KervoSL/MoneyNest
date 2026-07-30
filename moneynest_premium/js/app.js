@@ -707,6 +707,21 @@ const TRANSLATIONS = {
   en: {
     // Missing keys audit fix — auth flow, hints, modals
     auth_email_requerido: 'Enter a valid email',
+    // Projection/strategy keys (previously misplaced inside chartDefaults)
+    proyeccion_titulo: 'Wealth projection',
+    proyeccion_sub: 'Last 3 months average',
+    escenario_conservador: 'Conservative',
+    escenario_moderado: 'Moderate',
+    escenario_optimista: 'Optimistic',
+    proyeccion_negativa: 'Negative projection',
+    proyeccion_negativa_msg: 'Reduce expenses or increase income.',
+    proyeccion_excelente: 'Excellent projection',
+    proyeccion_excelente_msg: 'Consider investing the surplus.',
+    de_ingresos: 'of income',
+    mes_lbl: 'month',
+    crear_estrategia: 'Create strategy',
+    personaliza_pago: 'Customize your monthly payment',
+    desbloquear: 'Unlock',
     auth_error_enviar: 'Could not send the code. Try again.',
     auth_error_reenviar: 'Could not resend the code.',
     loading_entrando: 'Signing in...',
@@ -6594,23 +6609,7 @@ function chartDefaults() {
       tooltip: {
         backgroundColor: tooltipBg(),
         borderColor: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)',
-     
-      // ── Added missing EN keys ──
-      proyeccion_titulo: 'Wealth projection',
-      proyeccion_sub: 'Last 3 months average',
-      escenario_conservador: 'Conservative',
-      escenario_moderado: 'Moderate',
-      escenario_optimista: 'Optimistic',
-      proyeccion_negativa: 'Negative projection',
-      proyeccion_negativa_msg: 'Reduce expenses or increase income.',
-      proyeccion_excelente: 'Excellent projection',
-      proyeccion_excelente_msg: 'Consider investing the surplus.',
-      de_ingresos: 'of income',
-      mes_lbl: 'month',
-      crear_estrategia: 'Create strategy',
-      personaliza_pago: 'Customize your monthly payment',
-      desbloquear: 'Unlock',
-   borderWidth: 1,
+        borderWidth: 1,
         titleColor: tooltipText(),
         bodyColor: isLight ? '#475569' : '#94A3B8',
         padding: { x: 14, y: 10 },
@@ -6629,8 +6628,10 @@ function chartDefaults() {
 
 // Scales estándar para gráficos de línea/barra
 function _chartScales(yCallback) {
+  const isNarrow = typeof window !== 'undefined' && window.innerWidth < 480
   return {
-    x: { grid: { color: 'transparent' }, border: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 } } },
+    x: { grid: { color: 'transparent' }, border: { color: 'transparent' },
+      ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: isNarrow ? 6 : 12 } },
     y: { grid: { color: gridColor() }, border: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, callback: yCallback || (v => v) } }
   }
 }
@@ -6823,7 +6824,7 @@ function renderChartIngVsGas() {
         }
       },
       scales: {
-        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 } }, border: { color: 'transparent' } },
+        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
         y: { grid: { color: gridColor() }, border: { color: 'transparent' },
           ticks: { color: labelColor(), font: { size: 11 }, callback: v => eur(v) },
           suggestedMin: 0, suggestedMax: maxVal > 0 ? maxVal * 1.15 : 100

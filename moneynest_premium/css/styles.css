@@ -101,7 +101,7 @@ img{max-width:100%;display:block}
 }
 
 /* ─── LAYOUT ─────────────────────────────────────────────────── */
-.app{display:flex;min-height:100vh;will-change:filter}
+.app{display:flex;min-height:100vh}
 
 /* SIDEBAR */
 .sidebar{
