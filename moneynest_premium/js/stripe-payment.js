@@ -9,6 +9,7 @@ window.MNPayment = (() => {
   let _stripe   = null;
   let _elements = null;
   let _overlay  = null;
+  let _promoCode = null;
 
   function _getStripe() {
     if (!_stripe) _stripe = Stripe(MNStripeConfig.publishableKey);
@@ -41,6 +42,21 @@ window.MNPayment = (() => {
           <div class="mnpo-right" id="mnPoBody">
             <div class="mnpo-right-title" id="mnPoRightTitle">${_spt('payment_title','Pago seguro')}</div>
             <div class="mnpo-right-sub">${_spt('payment_ssl','Tu información está cifrada con SSL')}</div>
+
+            <!-- Discount code -->
+            <div class="mnpo-promo-wrap">
+              <button type="button" class="mnpo-promo-toggle" id="mnPoPromoToggle">
+                🏷️ ${_spt('payment_promo_toggle','¿Tienes un código de descuento?')}
+              </button>
+              <div class="mnpo-promo-box" id="mnPoPromoBox" style="display:none">
+                <div class="mnpo-promo-input-row">
+                  <input type="text" id="mnPoPromoInput" class="mnpo-promo-input" placeholder="${_spt('payment_promo_placeholder','Código de descuento')}" autocomplete="off" autocapitalize="characters">
+                  <button type="button" class="mnpo-promo-apply-btn" id="mnPoPromoApplyBtn">${_spt('payment_promo_apply','Aplicar')}</button>
+                </div>
+                <div class="mnpo-promo-msg" id="mnPoPromoMsg" style="display:none"></div>
+              </div>
+            </div>
+
             <div class="mnpo-stripe-wrap">
               <div id="mnPoElement"></div>
             </div>
@@ -78,6 +94,41 @@ window.MNPayment = (() => {
     el.querySelector('.mnpo-backdrop').addEventListener('click', close);
     document.getElementById('mnPoPayBtn').addEventListener('click', _handlePay);
     document.getElementById('mnPoSuccessBtn').addEventListener('click', close);
+
+    // Discount code toggle + apply
+    const promoToggle = document.getElementById('mnPoPromoToggle');
+    const promoBox    = document.getElementById('mnPoPromoBox');
+    if (promoToggle && promoBox) {
+      promoToggle.addEventListener('click', () => {
+        const isOpen = promoBox.style.display !== 'none';
+        promoBox.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) setTimeout(() => document.getElementById('mnPoPromoInput')?.focus(), 50);
+      });
+    }
+    const promoApplyBtn = document.getElementById('mnPoPromoApplyBtn');
+    if (promoApplyBtn) promoApplyBtn.addEventListener('click', _applyPromoCode);
+    const promoInput = document.getElementById('mnPoPromoInput');
+    if (promoInput) promoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _applyPromoCode(); } });
+  }
+
+  function _applyPromoCode() {
+    const input  = document.getElementById('mnPoPromoInput');
+    const msgEl  = document.getElementById('mnPoPromoMsg');
+    const applyBtn = document.getElementById('mnPoPromoApplyBtn');
+    if (!input || !msgEl) return;
+    const code = (input.value || '').trim().toUpperCase();
+    if (!code) {
+      msgEl.style.display = 'block';
+      msgEl.className = 'mnpo-promo-msg error';
+      msgEl.textContent = _spt('payment_promo_empty', 'Introduce un código');
+      return;
+    }
+    _promoCode = code;
+    input.disabled = true;
+    if (applyBtn) { applyBtn.disabled = true; applyBtn.textContent = '✓'; }
+    msgEl.style.display = 'block';
+    msgEl.className = 'mnpo-promo-msg pending';
+    msgEl.textContent = _spt('payment_promo_saved', 'Código guardado — se validará y aplicará al confirmar el pago');
   }
 
   function _setPlanSummary(priceId) {
@@ -356,6 +407,7 @@ window.MNPayment = (() => {
     _buildOverlay();
     _activePriceId = priceId;
     _activeEmail   = email ?? '';
+    _promoCode     = null;
 
     // Cerrar cualquier modal que esté abierto por encima (authModal, billingCheckoutModal)
     const authModal = document.getElementById('authModal');
@@ -380,7 +432,7 @@ window.MNPayment = (() => {
       const res = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, email }),
+        body: JSON.stringify({ priceId, email, promoCode: _promoCode || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'server_error');
@@ -464,7 +516,7 @@ window.MNPayment = (() => {
         const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, email }),
+          body: JSON.stringify({ priceId, email, promoCode: _promoCode || undefined }),
         });
         const checkoutData = await checkoutRes.json();
         if (checkoutRes.ok && checkoutData.url) {

@@ -2056,6 +2056,38 @@
   color: #FB7185; font-size: .78rem; font-weight: 600; line-height: 1.5;
 }
 
+/* Discount / promo code */
+.mnpo-promo-wrap { margin: 2px 0 4px; }
+.mnpo-promo-toggle {
+  background: none; border: none; padding: 0; margin: 0;
+  color: #00D4AA; font-size: .78rem; font-weight: 700; font-family: inherit;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+}
+.mnpo-promo-toggle:hover { text-decoration: underline; }
+.mnpo-promo-box { margin-top: 10px; animation: mnpoFadeIn .18s ease; }
+@keyframes mnpoFadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.mnpo-promo-input-row { display: flex; gap: 8px; }
+.mnpo-promo-input {
+  flex: 1; min-width: 0; padding: 11px 14px; border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+  color: #fff; font-size: .85rem; font-family: inherit; font-weight: 700;
+  letter-spacing: .03em; text-transform: uppercase;
+}
+.mnpo-promo-input::placeholder { text-transform: none; letter-spacing: normal; font-weight: 500; color: rgba(255,255,255,0.35); }
+.mnpo-promo-input:focus { outline: none; border-color: #00D4AA; }
+.mnpo-promo-apply-btn {
+  padding: 0 18px; border-radius: 10px; border: none;
+  background: rgba(0,212,170,0.15); color: #00D4AA;
+  font-size: .8rem; font-weight: 800; font-family: inherit; cursor: pointer;
+  white-space: nowrap; transition: background .15s;
+}
+.mnpo-promo-apply-btn:hover { background: rgba(0,212,170,0.25); }
+.mnpo-promo-apply-btn:disabled { opacity: .5; cursor: default; }
+.mnpo-promo-msg { margin-top: 8px; font-size: .76rem; font-weight: 600; line-height: 1.4; }
+.mnpo-promo-msg.ok { color: #00D4AA; }
+.mnpo-promo-msg.pending { color: rgba(255,255,255,0.5); }
+.mnpo-promo-msg.error { color: #FB7185; }
+
 .mnpo-pay-btn {
   width: 100%; padding: 16px; border-radius: 14px; border: none;
   background: linear-gradient(135deg, #00D4AA 0%, #00A882 100%);
