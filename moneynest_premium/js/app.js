@@ -4939,7 +4939,6 @@ function renderGastos() {
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> ${t('page_gastos')}</div><div class="page-sub">${_gPeriodLabel()} · ${t('control_salidas')}</div></div>
     <div class="section-actions">
-      <button class="btn btn-ghost btn-sm" onclick="window.MNCSVImport&&MNCSVImport.openModal()" title="${t('importar_csv_title','Importar extracto bancario CSV')}">📂 ${t('importar_csv','Importar CSV')}</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('gastoModal');resetGastoForm()">${t('btn_nuevo_gasto')}</button>
     </div>
   </div>
@@ -6252,6 +6251,7 @@ function renderCuentas() {
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg> ${t('page_cuentas','Cuentas')}</div><div class="page-sub">${t('cuentas_page_sub','Dinero disponible y valor total por cuenta')}</div></div>
     <div class="section-actions">
+      <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 Importar extracto</button>
       <button class="btn btn-ghost btn-sm" onclick="openModal('transModal');poblarTransModal()">⇄ Transferir</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('cuentaModal');resetCuentaForm()">+ Nueva cuenta</button>
     </div>
