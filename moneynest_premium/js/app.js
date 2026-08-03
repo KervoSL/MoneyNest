@@ -7266,14 +7266,15 @@ function openModal(id) {
     return
   }
   const el = document.getElementById(id)
-  if (el) { el.classList.add('open'); document.body.style.overflow='hidden' }
+  if (el) { el.classList.add('open'); _pushScrollLock() }
 }
 function closeModal(id) {
   const el = document.getElementById(id)
-  if (el) { el.classList.remove('open'); document.body.style.overflow='' }
+  if (el) { const wasOpen = el.classList.contains('open'); el.classList.remove('open'); if (wasOpen) _popScrollLock() }
 }
 function closeAllModals() {
-  document.querySelectorAll('.modal-overlay.open').forEach(el=>{ el.classList.remove('open'); document.body.style.overflow='' })
+  document.querySelectorAll('.modal-overlay.open').forEach(el=>{ el.classList.remove('open') })
+  _forceReleaseScrollLock()
 }
 
 function confirmar(msg, onOk, opts={}) {
@@ -8500,7 +8501,7 @@ function mnCerrarSesion() {
       if (ov) {
         ov.style.display = 'flex'
         requestAnimationFrame(() => ov.classList.add('ob-visible'))
-        document.body.style.overflow = 'hidden'
+        _pushScrollLock()
         obRender()
       }
     },
@@ -9117,12 +9118,46 @@ function toggleSidebar() {
   const ov = document.getElementById('sidebarOverlay')
   const isOpen = sb.classList.toggle('open')
   ov.classList.toggle('open', isOpen)
-  document.body.style.overflow = isOpen ? 'hidden' : ''
+  if (isOpen) _pushScrollLock(); else _popScrollLock()
 }
 function closeSidebar() {
+  const wasOpen = document.getElementById('sidebar').classList.contains('open')
   document.getElementById('sidebar').classList.remove('open')
   document.getElementById('sidebarOverlay').classList.remove('open')
+  if (wasOpen) _popScrollLock()
+}
+// Robust cross-browser (incl. iOS Safari) scroll lock, reference-counted so
+// nested overlays (e.g. a confirm dialog opened on top of a form modal) don't
+// prematurely unlock the body when the inner one closes.
+// `overflow:hidden` alone does NOT reliably block background scroll/touch on
+// iOS Safari — position:fixed + restoring scrollY on release is the standard fix.
+let _scrollLockCount = 0
+let _scrollLockY = 0
+function _pushScrollLock() {
+  if (_scrollLockCount === 0) {
+    _scrollLockY = window.scrollY || window.pageYOffset || 0
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${_scrollLockY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+  }
+  _scrollLockCount++
+}
+function _popScrollLock() {
+  _scrollLockCount = Math.max(0, _scrollLockCount - 1)
+  if (_scrollLockCount === 0) _forceReleaseScrollLock()
+}
+function _forceReleaseScrollLock() {
+  document.body.style.position = ''
+  document.body.style.top = ''
+  document.body.style.left = ''
+  document.body.style.right = ''
+  document.body.style.width = ''
   document.body.style.overflow = ''
+  window.scrollTo(0, _scrollLockY)
+  _scrollLockCount = 0
 }
 
 // ─── TOAST — PREMIUM SYSTEM ────────────────────────────────────
@@ -11286,7 +11321,7 @@ async function obNext() {
         _setObSeen()
         _setTutDone()
         document.getElementById('onboardingOverlay').style.display = 'none'
-        document.body.style.overflow = ''
+        _forceReleaseScrollLock()
         render()
         toast(`${t('bienvenido_de_vuelta', 'Bienvenido de vuelta')}! 👋`)
         return
@@ -11419,6 +11454,7 @@ function _obShowOtpOverlay(email) {
   `
 
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => document.getElementById('obOtpD0')?.focus(), 100)
 }
 
@@ -11514,6 +11550,7 @@ function _obCloseOtpOverlay() {
     overlay.style.opacity = '0'
     overlay.style.transition = 'opacity 150ms'
     setTimeout(() => overlay.remove(), 150)
+    window._popScrollLock && window._popScrollLock()
   }
 }
 
@@ -11899,7 +11936,7 @@ function finishOnboarding() {
   if (obData.lang) { _currentLang = obData.lang; try { localStorage.setItem(LANG_STORAGE_KEY, obData.lang) } catch(e){} }
   _setObSeen()
   document.getElementById('onboardingOverlay').style.display = 'none'
-  document.body.style.overflow = ''
+  _forceReleaseScrollLock()
   applyTheme()
   updateModeUI()
 
@@ -12010,13 +12047,14 @@ function _showPaymentPrompt(email) {
         <button onclick="window._startStripeCheckout('local')" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent);color:#042b20;font-size:.95rem;font-weight:800;cursor:pointer;font-family:inherit">
           🔓 Comprar MoneyNest — 6,99€
         </button>
-        <button onclick="document.getElementById('mn-payment-prompt').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">
+        <button onclick="document.getElementById('mn-payment-prompt').remove();window._popScrollLock&&window._popScrollLock()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">
           Ahora no — recordar más tarde
         </button>
       </div>
     </div>
   `
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
 
   window._startStripeCheckout = function(type) {
@@ -12045,7 +12083,7 @@ function skipOnboarding() {
   _setObSeen()
   _setTutDone()
   document.getElementById('onboardingOverlay').style.display = 'none'
-  document.body.style.overflow = ''
+  _forceReleaseScrollLock()
   render()
   _updateSidebarLang()
   toast(t('page_configuracion') + ' — ⚙️')
@@ -12081,7 +12119,7 @@ function checkOnboarding() {
   if (ov) {
     ov.style.display = 'flex'
     requestAnimationFrame(() => ov.classList.add('ob-visible'))
-    document.body.style.overflow = 'hidden'
+    _pushScrollLock()
     console.log('[checkOnboarding] Onboarding overlay displayed')
   } else {
     console.error('[checkOnboarding] Onboarding overlay element not found!')
@@ -14551,11 +14589,12 @@ function _showMisionComplete() {
       <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);letter-spacing:-.04em;margin-bottom:8px">¡Misiones completadas!</div>
       <div style="font-size:.875rem;color:var(--text2);line-height:1.6;margin-bottom:28px">Ya conoces lo esencial de ${APP_NAME}. ¿Qué quieres hacer con los datos de práctica?</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="document.getElementById('misionCompleteOverlay').remove();toast(t('toast_datos_guardados','✅ Datos guardados — ¡bienvenido!'))" style="padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#00D4AA,#00A882);color:#0A0E17;font-size:.9rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(0,212,170,.3)">${t('mision_mantener','Mantener datos y continuar 🚀')}</button>
-        <button onclick="document.getElementById('misionCompleteOverlay').remove();const s=defaultState();s.usuario.nombre=S.usuario.nombre;s.theme=S.theme;S=s;save();render();toast(t('toast_app_reiniciada','App reiniciada — empieza con tus datos reales 🚀'))" style="padding:13px;border-radius:12px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s">${t('mision_empezar_limpio','Empezar limpio (borrar práctica)')}</button>
+        <button onclick="document.getElementById('misionCompleteOverlay').remove();window._popScrollLock&&window._popScrollLock();toast(t('toast_datos_guardados','✅ Datos guardados — ¡bienvenido!'))" style="padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#00D4AA,#00A882);color:#0A0E17;font-size:.9rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(0,212,170,.3)">${t('mision_mantener','Mantener datos y continuar 🚀')}</button>
+        <button onclick="document.getElementById('misionCompleteOverlay').remove();window._popScrollLock&&window._popScrollLock();const s=defaultState();s.usuario.nombre=S.usuario.nombre;s.theme=S.theme;S=s;save();render();toast(t('toast_app_reiniciada','App reiniciada — empieza con tus datos reales 🚀'))" style="padding:13px;border-radius:12px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s">${t('mision_empezar_limpio','Empezar limpio (borrar práctica)')}</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -15018,6 +15057,7 @@ window.openCustomDebtModal = function() {
     </div>
   `
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 
   // Initialize calculation after DOM is ready
@@ -15033,6 +15073,7 @@ window.closeCustomDebtModal = function() {
   if (overlay) {
     overlay.classList.remove('open')
     setTimeout(() => overlay.remove(), 200)
+    window._popScrollLock && window._popScrollLock()
   }
 }
 
@@ -15378,7 +15419,7 @@ window.openApplyStrategyModal = function(customId) {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
         <span class="modal-title">⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual')}</span>
-        <button class="modal-close" onclick="document.getElementById('applyStrategyOverlay').remove()">✕</button>
+        <button class="modal-close" onclick="document.getElementById('applyStrategyOverlay').remove();window._popScrollLock&&window._popScrollLock()">✕</button>
       </div>
       <div class="modal-body">
         <div style="font-size:.82rem;color:var(--text2);margin-bottom:14px">
@@ -15391,11 +15432,12 @@ window.openApplyStrategyModal = function(customId) {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('applyStrategyOverlay').remove()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('applyStrategyOverlay').remove();window._popScrollLock&&window._popScrollLock()">${t('btn_cancelar','Cancelar')}</button>
         <button class="btn btn-primary btn-sm" onclick="window._confirmApplyStrategy()">✅ ${t('confirmar_pagos','Confirmar pagos')}</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 
   window._pendingAllocation = allocation
@@ -15464,7 +15506,7 @@ window.openMultiPagoModal = function() {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
         <span class="modal-title">💳📋 ${t('pago_multiple','Pagar varias deudas a la vez')}</span>
-        <button class="modal-close" onclick="document.getElementById('multiPagoOverlay').remove()">✕</button>
+        <button class="modal-close" onclick="document.getElementById('multiPagoOverlay').remove();window._popScrollLock&&window._popScrollLock()">✕</button>
       </div>
       <div class="modal-body">
         <div style="font-size:.8rem;color:var(--text2);margin-bottom:12px">${t('selecciona_deudas_pagar','Selecciona las deudas y el importe a pagar en cada una')}.</div>
@@ -15475,11 +15517,12 @@ window.openMultiPagoModal = function() {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('multiPagoOverlay').remove()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('multiPagoOverlay').remove();window._popScrollLock&&window._popScrollLock()">${t('btn_cancelar','Cancelar')}</button>
         <button class="btn btn-primary btn-sm" onclick="window._confirmMultiPago()">✅ ${t('registrar_pagos','Registrar pagos')}</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 }
 

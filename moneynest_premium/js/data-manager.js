@@ -871,7 +871,7 @@ window.openDmPanel = function(id) {
   const panel   = document.getElementById(id);
   if (overlay) overlay.classList.add('open');
   if (panel)   panel.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock(); else document.body.style.overflow = 'hidden';
 };
 
 window.closeDmPanel = function(id) {
@@ -882,14 +882,14 @@ window.closeDmPanel = function(id) {
   const anyOpen = document.querySelector('.dm-panel.open');
   if (!anyOpen) {
     document.getElementById('dm-overlay')?.classList.remove('open');
-    document.body.style.overflow = '';
+    if (typeof window._popScrollLock === 'function') window._popScrollLock(); else document.body.style.overflow = '';
   }
 };
 
 window.closeDmOverlay = function() {
   document.querySelectorAll('.dm-panel').forEach(p => p.classList.remove('open'));
   document.getElementById('dm-overlay')?.classList.remove('open');
-  document.body.style.overflow = '';
+  if (typeof window._popScrollLock === 'function') window._popScrollLock(); else document.body.style.overflow = '';
 };
 
 // ══════════════════════════════════════════════════════════════

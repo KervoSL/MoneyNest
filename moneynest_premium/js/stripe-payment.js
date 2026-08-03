@@ -426,7 +426,7 @@ window.MNPayment = (() => {
 
     // Open overlay
     _overlay.classList.add('mnpo--open');
-    document.body.style.overflow = 'hidden';
+    if (typeof window._pushScrollLock === 'function') window._pushScrollLock(); else document.body.style.overflow = 'hidden';
 
     try {
       const res = await fetch(ENDPOINT, {
@@ -535,7 +535,7 @@ window.MNPayment = (() => {
   function close() {
     if (!_overlay) return;
     _overlay.classList.remove('mnpo--open');
-    document.body.style.overflow = '';
+    if (typeof window._popScrollLock === 'function') window._popScrollLock(); else document.body.style.overflow = '';
     // Small delay so close animation plays before cleanup
     setTimeout(() => {
       if (_elements) {

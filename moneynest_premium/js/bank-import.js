@@ -395,6 +395,7 @@
     }
     _render();
     setTimeout(() => ov.classList.add('open'), 10);
+    if (typeof window._pushScrollLock === 'function') window._pushScrollLock(); else document.body.style.overflow = 'hidden';
   }
 
   function closeWizard() {
@@ -402,6 +403,7 @@
     if (!ov) return;
     ov.classList.remove('open');
     setTimeout(() => { ov.innerHTML = ''; }, 200);
+    if (typeof window._popScrollLock === 'function') window._popScrollLock(); else document.body.style.overflow = '';
   }
 
   // ════════════════════════════════════════════════════════════════
