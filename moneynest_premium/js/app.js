@@ -6716,7 +6716,7 @@ function renderChartPatrimonio() {
         }
       },
       scales: {
-        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 } }, border: { color: 'transparent' } },
+        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
         y: { grid: { color: gridColor(), drawBorder: false }, ticks: { color: labelColor(), font: { size: 11 }, callback: v => eur(v) },
           suggestedMin: minVal - yPad,
           suggestedMax: maxVal + yPad,
@@ -6773,7 +6773,7 @@ function renderChartCashFlow() {
         }
       },
       scales: {
-        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 } }, border: { color: 'transparent' } },
+        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
         y: { grid: { color: gridColor() }, border: { color: 'transparent' },
           ticks: { color: labelColor(), font: { size: 11 }, callback: v => (v >= 0 ? '+' : '') + eur(v) },
           afterDataLimits: scale => { const m = Math.max(Math.abs(scale.min), Math.abs(scale.max)); scale.min = -m; scale.max = m }
@@ -6954,7 +6954,7 @@ function renderLineEvo(canvasId, type) {
       }]
     },
     options: { ...chartDefaults(), scales: {
-      x: { grid:{color:'transparent'}, border:{color:'transparent'}, ticks:{color:labelColor(),font:{size:11}} },
+      x: { grid:{color:'transparent'}, border:{color:'transparent'}, ticks:{color:labelColor(),font:{size:11},autoSkip:true,maxRotation:60,minRotation:0,maxTicksLimit:(typeof window!=='undefined'&&window.innerWidth<480)?6:12} },
       y: { grid:{color:gridColor()}, border:{color:'transparent'}, ticks:{color:labelColor(),font:{size:11},callback:v=>eur(v)} }
     }}
   })
@@ -7089,11 +7089,7 @@ function renderChartInvROI() {
         }
       },
       scales: {
-        x: {
-          grid: { color: 'transparent' },
-          ticks: { color: labelColor(), font: { size: 10 } },
-          border: { color: 'transparent' }
-        },
+        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
         y: {
           grid: { color: gridColor() },
           border: { color: 'transparent' },
@@ -10217,7 +10213,7 @@ function renderAnalisis() {
             }
           },
           scales: {
-            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 } }, border: { color: 'transparent' } },
+            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
             y: { grid: { color: gridColor() }, border: { color: 'transparent' },
               ticks: { color: labelColor(), font: { size: 10 }, callback: v => (v >= 0 ? '+' : '') + eur(v) },
               afterDataLimits: s => { const mx = Math.max(Math.abs(s.min), Math.abs(s.max)); s.min = -mx * 1.1; s.max = mx * 1.1 }
@@ -10261,7 +10257,7 @@ function renderAnalisis() {
             tooltip: { ...chartDefaults().plugins.tooltip, callbacks: { label: c => ' ' + eur(c.raw) } }
           },
           scales: {
-            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 } }, border: { color: 'transparent' } },
+            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
             y: { grid: { color: gridColor() }, border: { color: 'transparent' },
               ticks: { color: labelColor(), font: { size: 10 }, callback: v => eur(v) }
             }
@@ -10300,7 +10296,7 @@ function renderAnalisis() {
             tooltip: { ...chartDefaults().plugins.tooltip, callbacks: { title: i => i[0].label, label: c => ' ' + c.dataset.label + ': ' + eur(c.raw) } }
           },
           scales: {
-            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 } }, border: { color: 'transparent' } },
+            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
             y: { grid: { color: gridColor() }, border: { color: 'transparent' },
               ticks: { color: labelColor(), font: { size: 10 }, callback: v => eur(v) },
               suggestedMin: 0, suggestedMax: allVals.length ? Math.max(...allVals) * 1.2 : 100
@@ -10373,7 +10369,7 @@ function renderAnalisis() {
             }
           },
           scales: {
-            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 } }, border: { color: 'transparent' } },
+            x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 10 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
             y: {
               grid: { color: gridColor() },
               border: { color: 'transparent' },
@@ -10399,7 +10395,7 @@ function renderAnalisis() {
         {label:'Optimista',   data:mkSeries(1.2),borderColor:'#10B981',fill:false,tension:.4,pointRadius:0,borderWidth:2},
         {label:'Moderado',    data:mkSeries(1.0),borderColor:'#00D4AA',fill:'+1',tension:.4,pointRadius:0,borderWidth:2,backgroundColor:'rgba(0,212,170,0.06)'},
         {label:'Conservador', data:mkSeries(0.8),borderColor:'#F87171',borderDash:[4,3],fill:false,tension:.4,pointRadius:0,borderWidth:1.5}
-      ]},options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{display:true,labels:{color:labelColor(),boxWidth:10,font:{size:10}}}},scales:{x:{grid:{color:gridColor()},ticks:{color:labelColor(),font:{size:10}}},y:{grid:{color:gridColor()},ticks:{color:labelColor(),font:{size:10},callback:v=>eur(v)}}}}})
+      ]},options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{display:true,labels:{color:labelColor(),boxWidth:10,font:{size:10}}}},scales:{x:{grid:{color:gridColor()},ticks:{color:labelColor(),font:{size:10},autoSkip:true,maxRotation:60,minRotation:0,maxTicksLimit:(typeof window!=='undefined'&&window.innerWidth<480)?6:12}},y:{grid:{color:gridColor()},ticks:{color:labelColor(),font:{size:10},callback:v=>eur(v)}}}}})
     }
   },60)
 }
@@ -10581,7 +10577,7 @@ function renderDebtAdvisor() {
           }
         },
         scales: {
-          x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 9 }, maxTicksLimit: 8 }, border: { color: 'transparent' } },
+          x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 9 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 8 }, border: { color: 'transparent' } },
           y: { grid: { color: gridColor() }, border: { color: 'transparent' },
             ticks: { color: labelColor(), font: { size: 9 }, callback: v => eur(v) },
             suggestedMin: 0
@@ -10648,7 +10644,7 @@ function renderProjectionChart() {
     options: { ...chartDefaults(),
       plugins: { ...chartDefaults().plugins, legend:{ display:true, labels:{ color:labelColor(), boxWidth:10, font:{size:10} } } },
       scales: {
-        x: { grid:{color:gridColor()}, ticks:{color:labelColor(),font:{size:10}} },
+        x: { grid:{color:gridColor()}, ticks:{color:labelColor(),font:{size:10},autoSkip:true,maxRotation:60,minRotation:0,maxTicksLimit:(typeof window!=='undefined'&&window.innerWidth<480)?6:12} },
         y: { grid:{color:gridColor()}, ticks:{color:labelColor(),font:{size:10},callback:v=>eur(v)} }
       }
     }
@@ -13248,7 +13244,7 @@ function renderChartPatrimonioPage() {
         }
       },
       scales: {
-        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 } }, border: { color: 'transparent' } },
+        x: { grid: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 12 }, border: { color: 'transparent' } },
         y: { grid: { color: gridColor() }, border: { color: 'transparent' },
           ticks: { color: labelColor(), font: { size: 11 }, callback: v => eur(v) },
           suggestedMin: minVal - yPad,
@@ -15253,7 +15249,7 @@ function renderCustomDebtChart(customPay, customMonths, basePay, baseMonths, tot
       scales: {
         x: {
           title: { display: true, text: t('meses','Meses'), color: 'rgba(255,255,255,0.5)', font: { size: 10, weight: '600' } },
-          ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } },
+          ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, autoSkip: true, maxRotation: 0, maxTicksLimit: (typeof window !== 'undefined' && window.innerWidth < 480) ? 6 : 10 },
           grid: { color: 'rgba(255,255,255,0.05)' }
         },
         y: {
