@@ -221,8 +221,8 @@
     const s = document.createElement('style');
     s.id = 'mn-bi-style';
     s.textContent = `
-      #mnBankImportOverlay .modal { max-width: 620px; width: 94vw; max-height: 88vh; padding:0; overflow:hidden; }
-      .mnbi-wrap { display:flex; flex-direction:column; max-height:88vh; }
+      #mnBankImportOverlay .modal { max-width: 620px; width: 94vw; max-height: 88vh; max-height: 88dvh; padding:0; overflow:hidden; }
+      .mnbi-wrap { display:flex; flex-direction:column; max-height:88vh; max-height:88dvh; }
       .mnbi-head { padding:22px 26px 0; flex-shrink:0; }
       .mnbi-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
       .mnbi-title { font-size:1.15rem; font-weight:800; color:var(--text); display:flex; align-items:center; gap:9px; }
@@ -331,7 +331,7 @@
       .mnbi-summary-row span:last-child { color:var(--text); font-weight:700; }
 
       /* Footer nav */
-      .mnbi-footer { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:18px 26px; border-top:1px solid var(--border); flex-shrink:0; }
+      .mnbi-footer { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:18px 26px calc(18px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--border); flex-shrink:0; }
       .mnbi-btn-back { background:none; border:none; color:var(--text2); font-size:.85rem; font-weight:700; cursor:pointer; padding:10px 6px; display:flex; align-items:center; gap:5px; }
       .mnbi-btn-back:hover { color:var(--text); }
       .mnbi-btn-primary {
