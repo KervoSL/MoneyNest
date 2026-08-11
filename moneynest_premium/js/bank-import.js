@@ -27,6 +27,8 @@
       rows: [],                 // normalized {date, description, amount, isExpense, merchantKey}
       duplicates: [],
       format: 'generic',
+      bankConfidence: 'none',   // 'high' | 'medium' | 'low' | 'none' — ver detectBankWithConfidence()
+      suggestedBank: null,      // banco sugerido cuando la confianza no es 'high' (por nombre de archivo/fechas)
       accountMode: 'new',       // 'new' | 'existing'
       accountId: '',
       newAccountName: '',
@@ -65,6 +67,73 @@
     if (has('value date') && has('description') && (has('income') || has('expenses'))) return 'ing';
     if (h.includes('id') && has('status') && has('target currency')) return 'wise';
     return 'generic';
+  }
+
+  // ── Confidence-aware detection (for the Step 2 UI only) ──────────
+  // detectBankFormat() above is the authoritative, parser-facing signal
+  // (column headers) and its return value drives normalizeRow() — it stays
+  // untouched here. This wraps it with two extra, weaker signals (filename,
+  // and date-format consistency in the sample rows) purely to power the
+  // "Banco detectado" / "Banco no identificado" messaging and to offer a
+  // helpful suggestion in the manual picker. It never changes ST.format
+  // on its own — only an explicit user click (_pickBank) does that.
+  const BANK_FILENAME_HINTS = {
+    revolut:   ['revolut'],
+    n26:       ['n26'],
+    bbva:      ['bbva'],
+    santander: ['santander'],
+    caixabank: ['caixabank', 'caixa', 'lacaixa', 'la-caixa', 'la_caixa'],
+    sabadell:  ['sabadell', 'bancsabadell'],
+    ing:       ['ing-direct', 'ingdirect', 'ing_direct', 'ing-bank'],
+    wise:      ['wise', 'transferwise'],
+  };
+  // International fintechs tend to export ISO dates; these Spanish retail
+  // banks tend to export DD/MM/YYYY — used only to corroborate a filename
+  // guess, never as a standalone detector (too weak / too common a format).
+  const BANKS_ISO_DATES = new Set(['revolut', 'n26', 'wise', 'ing']);
+  const BANKS_EU_DATES  = new Set(['bbva', 'santander', 'caixabank', 'sabadell']);
+
+  function _looksISODate(s) { return /^\d{4}-\d{2}-\d{2}/.test(String(s || '').trim()); }
+  function _looksEUDate(s)  { return /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/.test(String(s || '').trim()); }
+
+  function _guessBankFromFilename(filename) {
+    const name = (filename || '').toLowerCase();
+    for (const key of Object.keys(BANK_FILENAME_HINTS)) {
+      if (BANK_FILENAME_HINTS[key].some(hint => name.includes(hint))) return key;
+    }
+    return null;
+  }
+
+  function _sampleDateStrings(rawRows, headers) {
+    const dateKey = headers.find(h => /fecha|date/i.test(h || '')) || headers[0];
+    return rawRows.slice(0, 5).map(r => r[dateKey]).filter(Boolean);
+  }
+
+  // Returns { format, confidence, reason }.
+  // confidence: 'high' (column headers matched a known layout — same as
+  // detectBankFormat), 'medium' (filename guess corroborated by consistent
+  // date formatting in the sample rows), 'low' (filename guess only,
+  // unconfirmed), or 'none' (no usable signal at all).
+  function detectBankWithConfidence(headers, rawRows, filename) {
+    const byHeaders = detectBankFormat(headers);
+    if (byHeaders !== 'generic') {
+      return { format: byHeaders, confidence: 'high', reason: 'headers' };
+    }
+
+    const guess = _guessBankFromFilename(filename);
+    if (!guess) return { format: 'generic', confidence: 'none', reason: 'none' };
+
+    const samples = _sampleDateStrings(rawRows || [], headers || []);
+    if (samples.length) {
+      const wantsISO = BANKS_ISO_DATES.has(guess);
+      const wantsEU  = BANKS_EU_DATES.has(guess);
+      const check = wantsISO ? _looksISODate : (wantsEU ? _looksEUDate : () => true);
+      const matches = samples.filter(check).length;
+      if (matches / samples.length >= 0.8) {
+        return { format: guess, confidence: 'medium', reason: 'filename+dates' };
+      }
+    }
+    return { format: guess, confidence: 'low', reason: 'filename' };
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -359,11 +428,16 @@
       .mnbi-bank-sub { font-size:.75rem; color:var(--text2); }
       .mnbi-bank-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
       @media(max-width:480px){ .mnbi-bank-grid{grid-template-columns:repeat(2,1fr)} }
-      .mnbi-bank-opt { padding:14px 10px; border-radius:12px; border:1.5px solid var(--border); background:var(--bg2); text-align:center; cursor:pointer; transition:all .15s; }
+      .mnbi-bank-opt { position:relative; padding:14px 10px; border-radius:12px; border:1.5px solid var(--border); background:var(--bg2); text-align:center; cursor:pointer; transition:all .15s; }
       .mnbi-bank-opt:hover { border-color:var(--border2); }
       .mnbi-bank-opt.selected { border-color:var(--accent); background:var(--accent-dim); }
       .mnbi-bank-opt-emoji { font-size:1.5rem; margin-bottom:4px; }
       .mnbi-bank-opt-name { font-size:.76rem; font-weight:700; color:var(--text); }
+      .mnbi-bank-suggested-badge {
+        position:absolute; top:-8px; right:-6px; background:linear-gradient(90deg,var(--accent),#6366F1);
+        color:#04231b; font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+        padding:2px 6px; border-radius:99px; box-shadow:0 2px 8px rgba(0,0,0,.35);
+      }
 
       .mnbi-radio-row { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
       .mnbi-radio-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; border:1.5px solid var(--border); background:var(--bg2); cursor:pointer; transition:all .15s; }
@@ -627,6 +701,8 @@
     ST.rawRows  = [];
     ST.rows     = [];
     ST.format   = 'generic';
+    ST.bankConfidence = 'none';
+    ST.suggestedBank  = null;
     _renderStep1();
   }
 
@@ -693,6 +769,7 @@
       return;
     }
     const format = detectBankFormat(headers);
+    const detection = detectBankWithConfidence(headers, rawRows, file.name);
     const normalized = rawRows.map(r => {
       try { const n = normalizeRow(r, format); n.merchantKey = merchantKeyFor(n.description); return n; }
       catch { return null; }
@@ -708,7 +785,9 @@
     ST.headers  = headers;
     ST.rawRows  = rawRows;
     ST.rows     = normalized;
-    ST.format   = format;
+    ST.format   = format; // unchanged contract: only header-based detection drives parsing
+    ST.bankConfidence = detection.confidence;
+    ST.suggestedBank  = (detection.confidence === 'low' || detection.confidence === 'medium') ? detection.format : null;
     _renderStep1();
   }
 
@@ -761,16 +840,27 @@
   // ── STEP 2 — BANK + ACCOUNT ────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
   function _renderStep2() {
-    const detected = ST.format !== 'generic';
+    const hasChosenBank = ST.format !== 'generic';
     const bank = BANKS[ST.format] || BANKS.generic;
-    if (!ST.newAccountName) ST.newAccountName = detected ? bank.label : '';
+    if (!ST.newAccountName) ST.newAccountName = hasChosenBank ? bank.label : '';
+    const autoDetected = hasChosenBank && ST.bankConfidence === 'high';
 
     const cuentas = _cuentas();
-    const bankPicker = !detected ? `
-      <div class="mnbi-sub" style="margin-bottom:10px">${_t('bi_s2_elige_banco', 'No hemos podido detectar el banco automáticamente. Elige uno:')}</div>
-      <div class="mnbi-bank-grid">
+    const suggested = ST.suggestedBank ? BANKS[ST.suggestedBank] : null;
+    const bankPicker = !hasChosenBank ? `
+      <div class="mnbi-bank-card" style="background:var(--bg2);border-color:var(--border)">
+        <div class="mnbi-bank-emoji">❓</div>
+        <div>
+          <div class="mnbi-bank-name">${_t('bi_banco_no_identificado', 'Banco no identificado')}</div>
+          <div class="mnbi-bank-sub">${suggested
+            ? _t('bi_s2_elige_banco_sugerido', `No estamos seguros, pero podría ser ${suggested.label}. Confírmalo o elige otro:`)
+            : _t('bi_s2_elige_banco', 'No hemos podido detectar el banco automáticamente. Elige uno:')}</div>
+        </div>
+      </div>
+      <div class="mnbi-bank-grid" style="margin-top:14px">
         ${Object.entries(BANKS).filter(([k]) => k !== 'generic').map(([key, b]) => `
           <div class="mnbi-bank-opt ${ST.format === key ? 'selected' : ''}" onclick="MNBankImport._pickBank('${key}')">
+            ${ST.suggestedBank === key ? `<div class="mnbi-bank-suggested-badge">${_t('bi_sugerido', 'Sugerido')}</div>` : ''}
             <div class="mnbi-bank-opt-emoji">${b.emoji}</div>
             <div class="mnbi-bank-opt-name">${b.label}</div>
           </div>`).join('')}
@@ -778,7 +868,7 @@
       <div class="mnbi-bank-card">
         <div class="mnbi-bank-emoji">${bank.emoji}</div>
         <div>
-          <div class="mnbi-bank-name">${_t('bi_banco_detectado', 'Banco detectado')}: ${bank.label}</div>
+          <div class="mnbi-bank-name">${autoDetected ? _t('bi_banco_detectado', 'Banco detectado') : _t('bi_banco_seleccionado', 'Banco seleccionado')}: ${bank.label}</div>
           <div class="mnbi-bank-sub">${_t('bi_banco_no_es', '¿No es correcto?')} <a href="#" onclick="event.preventDefault();MNBankImport._forceManualBank()" style="color:var(--accent)">${_t('bi_cambiar', 'Cambiar')}</a></div>
         </div>
       </div>`;
@@ -788,7 +878,12 @@
       <div class="mnbi-h1">${_t('bi_s2_titulo', '¿Dónde quieres importar estos movimientos?')}</div>
       ${bankPicker}
 
-      <div class="mnbi-radio-row" style="margin-top:20px">
+      <div class="mnbi-sub" style="margin-top:22px;margin-bottom:10px;font-weight:700;color:var(--text)">
+        ${hasChosenBank
+          ? _t('bi_pregunta_cuenta_banco', `¿Quieres crear una cuenta para ${bank.label} o utilizar una existente?`)
+          : _t('bi_pregunta_cuenta_generica', '¿Quieres crear una cuenta nueva o utilizar una existente?')}
+      </div>
+      <div class="mnbi-radio-row">
         <div class="mnbi-radio-card ${ST.accountMode === 'new' ? 'selected' : ''}" onclick="MNBankImport._setAccountMode('new')">
           <div class="mnbi-radio-dot"><div class="mnbi-radio-dot-inner"></div></div>
           <div>
@@ -828,8 +923,23 @@
     _shell(body, footer);
   }
 
-  function _pickBank(key) { ST.format = key; ST.newAccountName = BANKS[key].label; _renderStep2(); }
-  function _forceManualBank() { ST.format = '__none__'; _renderStep2(); }
+  function _pickBank(key) {
+    ST.format = key;
+    ST.newAccountName = BANKS[key].label;
+    // A manual pick is not the same as an auto-detection; keep 'high'
+    // only if the header-based detector already agreed with this bank.
+    ST.bankConfidence = (detectBankFormat(ST.headers) === key) ? 'high' : 'manual';
+    _renderStep2();
+  }
+  function _forceManualBank() {
+    ST.format = 'generic'; // NOT '__none__': that sentinel matched no BANKS
+                            // key nor the 'generic' check used everywhere
+                            // else, so "Cambiar" was showing a bogus
+                            // "Banco detectado: Genérico" card instead of
+                            // the manual picker.
+    ST.bankConfidence = 'none';
+    _renderStep2();
+  }
   function _setAccountMode(mode) {
     if (mode === 'existing' && !_cuentas().length) return;
     ST.accountMode = mode;
@@ -1216,7 +1326,7 @@
     _runImport: _runImport,
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
-    detectBankFormat, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
+    detectBankFormat, detectBankWithConfidence, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
