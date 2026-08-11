@@ -4125,6 +4125,10 @@ function goTo(page) {
   destroyAllCharts()
   syncBottomNav(page)
   render()
+  // Evita que la página nueva herede el scroll de la anterior
+  // (p.ej. venir de un Dashboard scrolleado hacia abajo).
+  const contentEl = document.getElementById('content')
+  if (contentEl) contentEl.scrollTop = 0
   _updateSidebarLang()
   updateDocTitle()
   // Achievement tracking: page visits
