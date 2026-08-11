@@ -29,6 +29,9 @@
       format: 'generic',
       bankConfidence: 'none',   // 'high' | 'medium' | 'low' | 'none' — ver detectBankWithConfidence()
       suggestedBank: null,      // banco sugerido cuando la confianza no es 'high' (por nombre de archivo/fechas)
+      columnMapping: null,      // resultado de detectColumns() para formato 'generic'
+      columnMappingAmbiguous: false,
+      _mappingMode: null,       // 'amount' | 'split' — se calcula al entrar en la pantalla de mapping
       accountMode: 'new',       // 'new' | 'existing'
       accountId: '',
       newAccountName: '',
@@ -276,7 +279,80 @@
     return isNaN(d) ? new Date() : d;
   }
 
-  function normalizeRow(row, format) {
+  // ════════════════════════════════════════════════════════════════
+  // ── COLUMN DETECTION (unknown/generic format files) ────────────
+  // ════════════════════════════════════════════════════════════════
+  // Synonym lists covering common column-naming variants across banks
+  // and export tools. Order doesn't matter for matching (exact match
+  // is always tried before substring match, see _matchColumn).
+  const COLUMN_SYNONYMS = {
+    date:        ['fecha operacion', 'fecha operación', 'fecha valor', 'f.valor', 'fecha', 'date', 'value date', 'transaction date', 'posting date', 'started date'],
+    description: ['concepto', 'descripcion', 'descripción', 'description', 'detalle', 'memo', 'beneficiario', 'merchant', 'name'],
+    amount:      ['importe', 'amount', 'monto', 'cantidad'],
+    debit:       ['debe', 'debit', 'cargo', 'salida', 'gasto', 'expenses'],
+    credit:      ['haber', 'credit', 'abono', 'entrada', 'ingreso', 'income'],
+    balance:     ['saldo', 'balance', 'disponible'],
+    reference:   ['referencia', 'reference', 'ref', 'nº operación', 'n operacion', 'id'],
+  };
+
+  function _normHeader(h) {
+    return (h || '').toLowerCase().trim()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents for matching
+  }
+
+  // 'high' = header matches a synonym exactly (after accent/case normalization).
+  // 'medium' = header merely contains the synonym as a substring (weaker —
+  // e.g. a column called "Fecha de nacimiento" would match "fecha" this way).
+  function _matchColumn(headers, synonyms) {
+    const normed = headers.map(_normHeader);
+    const normSyns = synonyms.map(_normHeader);
+    for (const syn of normSyns) {
+      const idx = normed.findIndex(h => h === syn);
+      if (idx !== -1) return { key: headers[idx], confidence: 'high' };
+    }
+    for (const syn of normSyns) {
+      const idx = normed.findIndex(h => h.includes(syn));
+      if (idx !== -1) return { key: headers[idx], confidence: 'medium' };
+    }
+    return null;
+  }
+
+  // Detects the semantic role of each column in a generic/unrecognized
+  // CSV or XLSX. Returns { date, description, amount, debit, credit,
+  // balance, reference, ambiguous }, where each field is either
+  // { key, confidence } or null, and `ambiguous` is true whenever we
+  // can't confidently identify date + description + (amount OR a
+  // debit/credit pair) — the minimum needed to build a transaction.
+  function detectColumns(headers) {
+    headers = headers || [];
+    const date        = _matchColumn(headers, COLUMN_SYNONYMS.date);
+    const description = _matchColumn(headers, COLUMN_SYNONYMS.description);
+    const amount       = _matchColumn(headers, COLUMN_SYNONYMS.amount);
+    const debit         = _matchColumn(headers, COLUMN_SYNONYMS.debit);
+    const credit         = _matchColumn(headers, COLUMN_SYNONYMS.credit);
+    let balance       = _matchColumn(headers, COLUMN_SYNONYMS.balance);
+    let reference     = _matchColumn(headers, COLUMN_SYNONYMS.reference);
+
+    // A single column shouldn't be claimed by two different fields
+    // (e.g. loose substring matching could match "Concepto" for both
+    // description and, mistakenly, reference) — core fields win.
+    const claimedKeys = new Set([date, description, amount, debit, credit].filter(Boolean).map(m => m.key));
+    if (balance && claimedKeys.has(balance.key)) balance = null;
+    if (reference && claimedKeys.has(reference.key)) reference = null;
+
+    const confidentCore = !!(
+      date && date.confidence === 'high' &&
+      description && description.confidence === 'high' &&
+      (
+        (amount && amount.confidence === 'high') ||
+        (debit && credit && debit.confidence === 'high' && credit.confidence === 'high')
+      )
+    );
+
+    return { date, description, amount, debit, credit, balance, reference, ambiguous: !confidentCore };
+  }
+
+  function normalizeRow(row, format, columnMap) {
     let date, description, amount;
     switch (format) {
       case 'revolut':
@@ -301,24 +377,42 @@
         description = row['Concepto'] || '';
         amount = _parseAmount(row['Importe'] || '0');
         break;
-      case 'ing':
+      case 'ing': {
         date = _parseDate(row['Value Date'] || row['Date'] || '');
         description = row['Description'] || row['Name'] || '';
-        amount = _parseAmount(row['Income'] || row['Amount'] || row['Expenses'] || '0');
+        // ING sometimes splits into separate Income/Expenses columns
+        // instead of one signed Amount column. Expenses must be
+        // negated — previously it wasn't, so expenses were silently
+        // misclassified as income (isExpense = amount < 0 was false).
+        if (row['Amount'] !== undefined && row['Amount'] !== '') {
+          amount = _parseAmount(row['Amount']);
+        } else {
+          const inc = _parseAmount(row['Income'] || '0');
+          const exp = _parseAmount(row['Expenses'] || '0');
+          amount = inc !== 0 ? inc : -Math.abs(exp);
+        }
         break;
+      }
       case 'wise':
         date = _parseDate(row['Created on'] || row['Date'] || '');
         description = row['Description'] || row['Merchant'] || '';
         amount = _parseAmount(row['Amount'] || row['Target amount (after fees)'] || '0');
         break;
       default: {
-        const keys = Object.keys(row);
-        const dateKey = keys.find(k => /fecha|date/i.test(k)) || keys[0];
-        const descKey = keys.find(k => /concepto|description|descripcion|detalle|merchant/i.test(k)) || keys[1];
-        const amtKey  = keys.find(k => /importe|amount|monto/i.test(k)) || keys[2];
-        date = _parseDate(row[dateKey] || '');
-        description = row[descKey] || '';
-        amount = _parseAmount(row[amtKey] || '0');
+        const map = columnMap || detectColumns(Object.keys(row));
+        const dateKey = map.date && map.date.key;
+        const descKey = map.description && map.description.key;
+        date = _parseDate(dateKey ? row[dateKey] : '');
+        description = descKey ? row[descKey] : '';
+        if (map.amount && map.amount.key) {
+          amount = _parseAmount(row[map.amount.key] || '0');
+        } else if ((map.debit && map.debit.key) || (map.credit && map.credit.key)) {
+          const debitVal  = map.debit  && map.debit.key  ? _parseAmount(row[map.debit.key]  || '0') : 0;
+          const creditVal = map.credit && map.credit.key ? _parseAmount(row[map.credit.key] || '0') : 0;
+          amount = creditVal !== 0 ? Math.abs(creditVal) : -Math.abs(debitVal);
+        } else {
+          amount = 0;
+        }
       }
     }
     return {
@@ -621,6 +715,7 @@
   function _render() {
     if (ST.step === 'progress') return _renderProgress();
     if (ST.step === 'success')  return _renderSuccess();
+    if (ST.step === 'mapping')  return _renderColumnMapping();
     if (ST.step === 1) return _renderStep1();
     if (ST.step === 2) return _renderStep2();
     if (ST.step === 3) return _renderStep3();
@@ -629,6 +724,7 @@
   }
 
   function _goBack() {
+    if (ST.step === 'mapping') { ST.step = 1; _renderStep1(); return; }
     if (typeof ST.step !== 'number') return;
     // If returning to step 4 after having skipped categorization, show the choice screen again
     if (ST.step === 5 && ST.categorizeChoice === false) ST.categorizeChoice = null;
@@ -703,6 +799,9 @@
     ST.format   = 'generic';
     ST.bankConfidence = 'none';
     ST.suggestedBank  = null;
+    ST.columnMapping  = null;
+    ST.columnMappingAmbiguous = false;
+    ST._mappingMode = null;
     _renderStep1();
   }
 
@@ -770,8 +869,12 @@
     }
     const format = detectBankFormat(headers);
     const detection = detectBankWithConfidence(headers, rawRows, file.name);
+    // Known bank layouts already have a fixed, tested column mapping
+    // hardcoded per-format in normalizeRow — column detection only
+    // matters for files we couldn't match to a known bank layout.
+    const colMap = format === 'generic' ? detectColumns(headers) : null;
     const normalized = rawRows.map(r => {
-      try { const n = normalizeRow(r, format); n.merchantKey = merchantKeyFor(n.description); return n; }
+      try { const n = normalizeRow(r, format, colMap); n.merchantKey = merchantKeyFor(n.description); return n; }
       catch { return null; }
     }).filter(Boolean);
 
@@ -788,6 +891,8 @@
     ST.format   = format; // unchanged contract: only header-based detection drives parsing
     ST.bankConfidence = detection.confidence;
     ST.suggestedBank  = (detection.confidence === 'low' || detection.confidence === 'medium') ? detection.format : null;
+    ST.columnMapping  = colMap;
+    ST.columnMappingAmbiguous = !!(colMap && colMap.ambiguous);
     _renderStep1();
   }
 
@@ -834,6 +939,144 @@
     }
 
     if (window.toast) toast(_t('bi_err_formato', 'Solo se admiten archivos .csv, .xlsx o .xls'), 'error');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ── COLUMN MAPPING (shown only when detection is ambiguous) ────
+  // ════════════════════════════════════════════════════════════════
+  const MAPPING_FIELDS = [
+    { key: 'date',        label: 'Fecha',      required: true  },
+    { key: 'description', label: 'Concepto',   required: true  },
+    { key: 'balance',     label: 'Saldo',      required: false },
+    { key: 'reference',   label: 'Referencia', required: false },
+  ];
+
+  function _mappingIsValid() {
+    const m = ST.columnMapping || {};
+    const hasDate = !!(m.date && m.date.key);
+    const hasDesc = !!(m.description && m.description.key);
+    const hasAmount = ST._mappingMode === 'split'
+      ? !!((m.debit && m.debit.key) || (m.credit && m.credit.key))
+      : !!(m.amount && m.amount.key);
+    return hasDate && hasDesc && hasAmount;
+  }
+
+  function _fieldSelect(field, label, required) {
+    const m = ST.columnMapping || {};
+    const current = m[field] && m[field].key ? m[field].key : '';
+    const options = ST.headers.map(h => `<option value="${h}" ${h === current ? 'selected' : ''}>${h}</option>`).join('');
+    return `
+      <div style="margin-bottom:12px">
+        <label style="font-size:.78rem;color:var(--text2);font-weight:600">${label}${required ? '' : ` (${_t('bi_opcional', 'opcional')})`}</label>
+        <select class="mnbi-select" onchange="MNBankImport._setMappingField('${field}', this.value)">
+          <option value="">${_t('bi_selecciona_columna', '— Selecciona una columna —')}</option>
+          ${options}
+        </select>
+      </div>`;
+  }
+
+  function _renderColumnMapping() {
+    if (!ST._mappingMode) {
+      const m = ST.columnMapping || {};
+      ST._mappingMode = (!m.amount && (m.debit || m.credit)) ? 'split' : 'amount';
+    }
+    const m = ST.columnMapping || {};
+
+    const amountSection = ST._mappingMode === 'split'
+      ? _fieldSelect('debit', _t('bi_col_debe', 'Debe / Gasto'), true) + _fieldSelect('credit', _t('bi_col_haber', 'Haber / Ingreso'), true)
+      : _fieldSelect('amount', _t('bi_col_importe', 'Importe'), true);
+
+    const previewRows = (ST.rawRows || []).slice(0, 4);
+    const previewCols = [
+      { field: 'date', label: 'Fecha' },
+      { field: 'description', label: 'Concepto' },
+      ...(ST._mappingMode === 'split' ? [{ field: 'debit', label: 'Debe' }, { field: 'credit', label: 'Haber' }] : [{ field: 'amount', label: 'Importe' }]),
+    ];
+    const previewHtml = previewRows.length ? `
+      <div class="mnbi-table-wrap" style="margin-top:18px">
+        <table class="mnbi-table">
+          <thead><tr>${previewCols.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${previewRows.map(r => `<tr>${previewCols.map(c => {
+              const key = m[c.field] && m[c.field].key;
+              const val = key ? (r[key] ?? '') : '—';
+              return `<td class="mnbi-desc">${val || '—'}</td>`;
+            }).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : '';
+
+    const body = `
+      <div class="mnbi-h1">${_t('bi_mapping_titulo', 'Columnas del archivo')}</div>
+      <div class="mnbi-sub">${_t('bi_mapping_sub', 'No hemos podido identificar todas las columnas con seguridad. Indícanos qué es cada una:')}</div>
+
+      <div class="mnbi-radio-row" style="margin-bottom:16px">
+        <div class="mnbi-radio-card ${ST._mappingMode === 'amount' ? 'selected' : ''}" onclick="MNBankImport._setMappingMode('amount')">
+          <div class="mnbi-radio-dot"><div class="mnbi-radio-dot-inner"></div></div>
+          <div>
+            <div class="mnbi-radio-label">${_t('bi_mapping_una_columna', 'Una sola columna de importe')}</div>
+            <div class="mnbi-radio-sub">${_t('bi_mapping_una_columna_sub', 'Importe / Amount (positivo = ingreso, negativo = gasto)')}</div>
+          </div>
+        </div>
+        <div class="mnbi-radio-card ${ST._mappingMode === 'split' ? 'selected' : ''}" onclick="MNBankImport._setMappingMode('split')">
+          <div class="mnbi-radio-dot"><div class="mnbi-radio-dot-inner"></div></div>
+          <div>
+            <div class="mnbi-radio-label">${_t('bi_mapping_dos_columnas', 'Columnas separadas')}</div>
+            <div class="mnbi-radio-sub">${_t('bi_mapping_dos_columnas_sub', 'Debe/Haber, Cargo/Abono, Gasto/Ingreso...')}</div>
+          </div>
+        </div>
+      </div>
+
+      ${_fieldSelect('date', _t('bi_col_fecha', 'Fecha'), true)}
+      ${_fieldSelect('description', _t('bi_col_concepto', 'Concepto / Descripción'), true)}
+      ${amountSection}
+      ${_fieldSelect('balance', _t('bi_col_saldo', 'Saldo'), false)}
+      ${_fieldSelect('reference', _t('bi_col_referencia', 'Referencia'), false)}
+
+      ${previewHtml}
+    `;
+
+    const footer = `
+      <button class="mnbi-btn-back" onclick="MNBankImport._back()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        ${_t('bi_atras', 'Atrás')}
+      </button>
+      <button class="mnbi-btn-primary" ${_mappingIsValid() ? '' : 'disabled'} onclick="MNBankImport._confirmColumnMapping()">
+        ${_t('bi_continuar', 'Continuar')}
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+    _shell(body, footer, { showSteps: false });
+  }
+
+  function _setMappingMode(mode) {
+    ST._mappingMode = mode;
+    _renderColumnMapping();
+  }
+
+  function _setMappingField(field, key) {
+    if (!ST.columnMapping) ST.columnMapping = {};
+    ST.columnMapping[field] = key ? { key, confidence: 'manual' } : null;
+    _renderColumnMapping();
+  }
+
+  function _confirmColumnMapping() {
+    if (!_mappingIsValid()) return;
+    // Clear whichever amount fields don't apply to the chosen mode, so
+    // normalizeRow's generic branch doesn't accidentally use stale values.
+    if (ST._mappingMode === 'amount') {
+      ST.columnMapping.debit = null;
+      ST.columnMapping.credit = null;
+    } else {
+      ST.columnMapping.amount = null;
+    }
+    const map = ST.columnMapping;
+    ST.rows = (ST.rawRows || []).map(r => {
+      try { const n = normalizeRow(r, 'generic', map); n.merchantKey = merchantKeyFor(n.description); return n; }
+      catch { return null; }
+    }).filter(Boolean);
+    ST.columnMappingAmbiguous = false;
+    ST.step = 2;
+    _renderStep2();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1306,7 +1549,10 @@
     open: openWizard,
     close: closeWizard,
     _back: _goBack,
-    _toStep2: () => { ST.step = 2; _renderStep2(); },
+    _toStep2: () => {
+      if (ST.columnMappingAmbiguous) { ST.step = 'mapping'; _renderColumnMapping(); return; }
+      ST.step = 2; _renderStep2();
+    },
     _toStep3: () => {
       if (ST.accountMode === 'new') ST.newAccountName = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName;
       if (ST.accountMode === 'existing') ST.accountId = document.getElementById('mnbiExistingAccount')?.value || ST.accountId;
@@ -1318,6 +1564,9 @@
     _pickBank: _pickBank,
     _forceManualBank: _forceManualBank,
     _setAccountMode: _setAccountMode,
+    _setMappingMode: _setMappingMode,
+    _setMappingField: _setMappingField,
+    _confirmColumnMapping: _confirmColumnMapping,
     _chooseCategorize: _chooseCategorize,
     _backToChoice: _backToChoice,
     _filterGroups: _filterGroups,
@@ -1326,7 +1575,7 @@
     _runImport: _runImport,
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
-    detectBankFormat, detectBankWithConfidence, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
+    detectBankFormat, detectBankWithConfidence, detectColumns, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
