@@ -70,18 +70,53 @@
   // ════════════════════════════════════════════════════════════════
   // ── CSV PARSER ─────────────────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
+
+  // Counts occurrences of `ch` in `line` that are OUTSIDE quoted spans,
+  // so a separator character appearing inside a quoted field (e.g.
+  // "Doe, John") never throws off delimiter detection.
+  function _countOutsideQuotes(line, ch) {
+    let count = 0, inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQ && line[i + 1] === '"') { i++; continue; } // escaped quote, stays inside
+        inQ = !inQ;
+        continue;
+      }
+      if (c === ch && !inQ) count++;
+    }
+    return count;
+  }
+
+  function _detectSeparator(headerLine) {
+    const candidates = [';', ',', '\t'];
+    let sep = ',', best = 0;
+    candidates.forEach(c => {
+      const n = _countOutsideQuotes(headerLine, c);
+      if (n > best) { best = n; sep = c; }
+    });
+    return sep;
+  }
+
   function parseCSV(text) {
+    // Strip a leading UTF-8 BOM (common in "CSV UTF-8" exports from Excel),
+    // which would otherwise silently corrupt the first header's name.
+    text = String(text || '').replace(/^\uFEFF/, '');
     const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
     if (lines.length < 2) return { headers: [], rows: [] };
 
-    const sep = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+    const sep = _detectSeparator(lines[0]);
 
     function splitLine(line) {
       const cells = [];
       let cur = '', inQ = false;
       for (let i = 0; i < line.length; i++) {
         const c = line[i];
-        if (c === '"') { inQ = !inQ; continue; }
+        if (c === '"') {
+          if (inQ && line[i + 1] === '"') { cur += '"'; i++; continue; } // escaped "" -> literal "
+          inQ = !inQ;
+          continue;
+        }
         if (c === sep && !inQ) { cells.push(cur.trim()); cur = ''; continue; }
         cur += c;
       }
@@ -90,27 +125,85 @@
     }
 
     const headers = splitLine(lines[0]);
-    const rows = lines.slice(1).map(l => {
-      const vals = splitLine(l);
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
-      return obj;
-    });
+    const rows = lines.slice(1)
+      .map(l => {
+        const vals = splitLine(l);
+        // Skip rows that are entirely blank once split (e.g. a stray ";;;" line)
+        if (!vals.some(v => v !== '')) return null;
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+        return obj;
+      })
+      .filter(Boolean);
     return { headers, rows };
   }
 
+  // Robust amount parser: supports negative sign, accounting-style
+  // parentheses for negatives, and both European (1.234,56) and US
+  // (1,234.56) thousands/decimal separator conventions. The LAST '.'
+  // or ',' found is treated as the decimal separator; anything before
+  // it is treated as thousands grouping and stripped.
   function _parseAmount(str) {
-    if (!str) return 0;
-    return parseFloat(String(str).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+    if (str === null || str === undefined) return 0;
+    let s = String(str).trim();
+    if (!s) return 0;
+
+    let negative = false;
+    if (/^\(.*\)$/.test(s)) { negative = true; s = s.slice(1, -1); }
+    s = s.replace(/[^\d.,\-]/g, '');
+    if (s.indexOf('-') !== -1) { negative = true; s = s.replace(/-/g, ''); }
+    if (!s) return 0;
+
+    const lastDot = s.lastIndexOf('.');
+    const lastComma = s.lastIndexOf(',');
+    const lastSepIdx = Math.max(lastDot, lastComma);
+
+    let normalized;
+    if (lastSepIdx === -1) {
+      normalized = s;
+    } else {
+      const intPart = s.slice(0, lastSepIdx).replace(/[.,]/g, '');
+      const fracPart = s.slice(lastSepIdx + 1).replace(/[.,]/g, '');
+      const totalSeps = (s.match(/[.,]/g) || []).length;
+      // A single separator followed by exactly 3 digits is ambiguous
+      // ("1.234" / "1,234") — treat as thousands grouping (no decimals),
+      // since bank amounts here are always whole or 2-decimal EUR values.
+      if (fracPart.length === 3 && totalSeps === 1) {
+        normalized = intPart + fracPart;
+      } else {
+        normalized = intPart + '.' + fracPart;
+      }
+    }
+    const n = parseFloat(normalized);
+    if (isNaN(n)) return 0;
+    return negative ? -n : n;
   }
 
   function _parseDate(str) {
     if (!str) return new Date();
-    const iso = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) return new Date(str.slice(0, 10));
-    const eu = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (eu) return new Date(`${eu[3]}-${eu[2].padStart(2, '0')}-${eu[1].padStart(2, '0')}`);
-    const d = new Date(str);
+    const s = String(str).trim();
+
+    // ISO: YYYY-MM-DD or YYYY/MM/DD
+    let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) {
+      const d = new Date(`${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`);
+      if (!isNaN(d)) return d;
+    }
+    // EU: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY (dot separator common in DE/AT/CH exports)
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+    if (m) {
+      const d = new Date(`${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`);
+      if (!isNaN(d)) return d;
+    }
+    // EU with 2-digit year: DD/MM/YY, DD.MM.YY
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})$/);
+    if (m) {
+      const yy = parseInt(m[3], 10);
+      const year = yy < 70 ? 2000 + yy : 1900 + yy;
+      const d = new Date(`${year}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`);
+      if (!isNaN(d)) return d;
+    }
+    const d = new Date(s);
     return isNaN(d) ? new Date() : d;
   }
 
@@ -564,12 +657,34 @@
     const nonEmpty = aoa.filter(r => Array.isArray(r) && r.some(c => String(c || '').trim() !== ''));
     if (nonEmpty.length < 2) return { headers: [], rows: [] };
     const headers = nonEmpty[0].map(h => String(h || '').trim());
+
+    // SheetJS will happily "parse" arbitrary binary garbage (it guesses at
+    // legacy formats) instead of throwing — guard against that by rejecting
+    // headers that contain control characters or are unreasonably long,
+    // which is a strong signal the "file" isn't really a spreadsheet.
+    const looksCorrupt = headers.some(h => /[\x00-\x08\x0E-\x1F]/.test(h) || h.length > 300);
+    if (looksCorrupt) throw new Error('XLSX content looks corrupted or unreadable');
+
     const rows = nonEmpty.slice(1).map(vals => {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = vals[i] != null ? String(vals[i]).trim() : ''; });
       return obj;
     });
     return { headers, rows };
+  }
+
+  // Best-effort text decoding: try strict UTF-8 first (handles the vast
+  // majority of modern exports); if the bytes aren't valid UTF-8, fall back
+  // to Windows-1252 (superset of ISO-8859-1), which is what many older
+  // Spanish/European bank export tools still use. Prevents "Ã±", "Â·" style
+  // mojibake from corrupting descriptions/categories on import.
+  function _decodeBestEffort(arrayBuffer) {
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(arrayBuffer);
+    } catch (_) {
+      try { return new TextDecoder('windows-1252').decode(arrayBuffer); }
+      catch (_e2) { return new TextDecoder('utf-8').decode(arrayBuffer); } // last resort, lossy
+    }
   }
 
   function _processParsedFile(file, headers, rawRows) {
@@ -582,6 +697,11 @@
       try { const n = normalizeRow(r, format); n.merchantKey = merchantKeyFor(n.description); return n; }
       catch { return null; }
     }).filter(Boolean);
+
+    if (!normalized.length) {
+      if (window.toast) toast(_t('bi_err_columnas', 'No se han podido reconocer las columnas del archivo'), 'error');
+      return;
+    }
 
     ST.fileName = file.name;
     ST.fileSize = file.size;
@@ -598,7 +718,9 @@
     if (_isCSVFile(file)) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const csvText = e.target.result;
+        let csvText;
+        try { csvText = _decodeBestEffort(e.target.result); }
+        catch { if (window.toast) toast(_t('bi_err_lectura', 'No se pudo leer el archivo'), 'error'); return; }
         ST.csvText = csvText;
         let parsed;
         try { parsed = parseCSV(csvText); }
@@ -608,7 +730,7 @@
       reader.onerror = () => {
         if (window.toast) toast(_t('bi_err_lectura', 'No se pudo leer el archivo. Inténtalo de nuevo.'), 'error');
       };
-      reader.readAsText(file, 'UTF-8');
+      reader.readAsArrayBuffer(file);
       return;
     }
 
@@ -1095,5 +1217,6 @@
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
     detectBankFormat, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
+    parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
