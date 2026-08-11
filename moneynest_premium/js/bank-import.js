@@ -253,6 +253,11 @@
       .mnbi-file-icon { width:42px; height:42px; border-radius:10px; background:var(--accent); color:#042b20; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
       .mnbi-file-name { font-size:.88rem; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .mnbi-file-meta { font-size:.75rem; color:var(--text2); margin-top:2px; }
+      .mnbi-file-remove {
+        background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer;
+        padding:6px 8px; border-radius:8px; flex-shrink:0; line-height:1;
+      }
+      .mnbi-file-remove:hover { background:rgba(244,63,94,.12); color:var(--red); }
 
       /* Bank detection */
       .mnbi-bank-card { display:flex; align-items:center; gap:14px; padding:18px 20px; border-radius:16px; background:var(--accent-dim); border:1.5px solid rgba(0,212,170,.3); margin-bottom:20px; }
@@ -472,14 +477,15 @@
     const body = `
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 1 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
       <div class="mnbi-h1">${_t('bi_s1_titulo', 'Sube tu extracto bancario')}</div>
-      <div class="mnbi-sub">${_t('bi_s1_sub', 'Exporta el movimiento de tu banco en formato CSV y arrástralo aquí.')}</div>
+      <div class="mnbi-sub">${_t('bi_s1_sub', 'Exporta el movimiento de tu banco en formato CSV o Excel (XLSX) y arrástralo aquí.')}</div>
 
+      ${hasFile ? '' : `
       <div class="mnbi-dropzone" id="mnbiDropzone" onclick="document.getElementById('mnbiFileInput').click()">
         <div class="mnbi-dropzone-icon">📄</div>
-        <div class="mnbi-dropzone-title">${_t('bi_s1_drop', 'Arrastra tu CSV aquí')}</div>
+        <div class="mnbi-dropzone-title">${_t('bi_s1_drop', 'Arrastra tu CSV o XLSX aquí')}</div>
         <div class="mnbi-dropzone-sub">${_t('bi_s1_o_click', 'o haz clic para seleccionar un archivo')}</div>
-      </div>
-      <input type="file" id="mnbiFileInput" accept=".csv,text/csv" style="display:none">
+      </div>`}
+      <input type="file" id="mnbiFileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none">
 
       ${hasFile ? `
       <div class="mnbi-file-card">
@@ -489,6 +495,7 @@
           <div class="mnbi-file-meta">${_fmtFileSize(ST.fileSize)} · ${ST.rows.length} ${_t('bi_transacciones_encontradas', 'transacciones encontradas')}</div>
         </div>
         <span style="color:var(--accent);font-size:1.3rem">✓</span>
+        <button type="button" class="mnbi-file-remove" title="${_t('bi_cambiar_archivo', 'Cambiar archivo')}" onclick="MNBankImport._clearFile()">✕</button>
       </div>` : ''}
     `;
     const footer = `
@@ -510,7 +517,24 @@
         if (file) _readFile(file);
       });
     }
-    if (input) input.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) _readFile(f); });
+    if (input) input.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (f) _readFile(f);
+      // Reset value so selecting the SAME file again still fires 'change'
+      // (needed after an error, or to re-pick the same file on iOS/Android).
+      e.target.value = '';
+    });
+  }
+
+  function _clearFile() {
+    ST.fileName = '';
+    ST.fileSize = 0;
+    ST.csvText  = '';
+    ST.headers  = [];
+    ST.rawRows  = [];
+    ST.rows     = [];
+    ST.format   = 'generic';
+    _renderStep1();
   }
 
   function _fmtFileSize(bytes) {
@@ -519,35 +543,96 @@
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  function _readFile(file) {
-    if (!/\.csv$/i.test(file.name) && file.type !== 'text/csv') {
-      if (window.toast) toast(_t('bi_err_formato', 'Solo se admiten archivos .csv'), 'error');
+  function _isCSVFile(file) {
+    return /\.csv$/i.test(file.name) || file.type === 'text/csv';
+  }
+  function _isXLSXFile(file) {
+    return /\.xlsx?$/i.test(file.name) ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel';
+  }
+
+  // Convert a SheetJS worksheet into the same {headers, rows} shape parseCSV()
+  // produces, so both formats can flow through the exact same downstream code.
+  function parseXLSX(arrayBuffer) {
+    if (!window.XLSX) throw new Error('XLSX library not loaded');
+    const wb = window.XLSX.read(arrayBuffer, { type: 'array' });
+    const sheetName = wb.SheetNames[0];
+    if (!sheetName) return { headers: [], rows: [] };
+    const sheet = wb.Sheets[sheetName];
+    const aoa = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+    const nonEmpty = aoa.filter(r => Array.isArray(r) && r.some(c => String(c || '').trim() !== ''));
+    if (nonEmpty.length < 2) return { headers: [], rows: [] };
+    const headers = nonEmpty[0].map(h => String(h || '').trim());
+    const rows = nonEmpty.slice(1).map(vals => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] != null ? String(vals[i]).trim() : ''; });
+      return obj;
+    });
+    return { headers, rows };
+  }
+
+  function _processParsedFile(file, headers, rawRows) {
+    if (!rawRows.length) {
+      if (window.toast) toast(_t('bi_err_vacio', 'El archivo está vacío o no tiene filas válidas'), 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const csvText = e.target.result;
-      const { headers, rows: rawRows } = parseCSV(csvText);
-      if (!rawRows.length) {
-        if (window.toast) toast(_t('bi_err_vacio', 'El archivo está vacío o no tiene filas válidas'), 'error');
+    const format = detectBankFormat(headers);
+    const normalized = rawRows.map(r => {
+      try { const n = normalizeRow(r, format); n.merchantKey = merchantKeyFor(n.description); return n; }
+      catch { return null; }
+    }).filter(Boolean);
+
+    ST.fileName = file.name;
+    ST.fileSize = file.size;
+    ST.headers  = headers;
+    ST.rawRows  = rawRows;
+    ST.rows     = normalized;
+    ST.format   = format;
+    _renderStep1();
+  }
+
+  function _readFile(file) {
+    if (!file) return;
+
+    if (_isCSVFile(file)) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const csvText = e.target.result;
+        ST.csvText = csvText;
+        let parsed;
+        try { parsed = parseCSV(csvText); }
+        catch { if (window.toast) toast(_t('bi_err_lectura', 'No se pudo leer el archivo'), 'error'); return; }
+        _processParsedFile(file, parsed.headers, parsed.rows);
+      };
+      reader.onerror = () => {
+        if (window.toast) toast(_t('bi_err_lectura', 'No se pudo leer el archivo. Inténtalo de nuevo.'), 'error');
+      };
+      reader.readAsText(file, 'UTF-8');
+      return;
+    }
+
+    if (_isXLSXFile(file)) {
+      if (!window.XLSX) {
+        if (window.toast) toast(_t('bi_err_xlsx_no_disponible', 'No se pudo cargar el soporte para Excel. Prueba con un CSV.'), 'error');
         return;
       }
-      const format = detectBankFormat(headers);
-      const normalized = rawRows.map(r => {
-        try { const n = normalizeRow(r, format); n.merchantKey = merchantKeyFor(n.description); return n; }
-        catch { return null; }
-      }).filter(Boolean);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        let parsed;
+        try { parsed = parseXLSX(e.target.result); }
+        catch { if (window.toast) toast(_t('bi_err_xlsx_invalido', 'No se pudo leer el archivo Excel. ¿Está dañado?'), 'error'); return; }
+        ST.csvText = '';
+        _processParsedFile(file, parsed.headers, parsed.rows);
+      };
+      reader.onerror = () => {
+        if (window.toast) toast(_t('bi_err_lectura', 'No se pudo leer el archivo. Inténtalo de nuevo.'), 'error');
+      };
+      reader.readAsArrayBuffer(file);
+      return;
+    }
 
-      ST.fileName = file.name;
-      ST.fileSize = file.size;
-      ST.csvText  = csvText;
-      ST.headers  = headers;
-      ST.rawRows  = rawRows;
-      ST.rows     = normalized;
-      ST.format   = format;
-      _renderStep1();
-    };
-    reader.readAsText(file, 'UTF-8');
+    if (window.toast) toast(_t('bi_err_formato', 'Solo se admiten archivos .csv, .xlsx o .xls'), 'error');
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -997,6 +1082,7 @@
     },
     _toStep4: () => { ST.step = 4; _renderStep4(); },
     _toStep5: () => { ST.step = 5; _renderStep5(); },
+    _clearFile: _clearFile,
     _pickBank: _pickBank,
     _forceManualBank: _forceManualBank,
     _setAccountMode: _setAccountMode,
@@ -1008,6 +1094,6 @@
     _runImport: _runImport,
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
-    detectBankFormat, parseCSV, normalizeRow, merchantKeyFor,
+    detectBankFormat, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
   };
 })();
