@@ -1069,15 +1069,19 @@ textarea{resize:vertical;min-height:70px}
 /* ─── OVERLAY SIDEBAR MOBILE ─────────────────────────────────── */
 .sidebar-overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.6);z-index:99;
+  background:rgba(0,0,0,0.6);z-index:210;
   -webkit-tap-highlight-color:transparent;
   backdrop-filter:blur(2px);
   -webkit-backdrop-filter:blur(2px);
+  pointer-events:none;
+  touch-action:none;
 }
 .sidebar-overlay.open{
   display:block;
   pointer-events:all;
-  /* In mobile the sidebar is position:fixed, overlay covers full screen */
+  /* In mobile the sidebar is position:fixed, overlay covers full screen.
+     z-index must stay above .bottom-nav (200) or the bottom bar visually
+     and interactively blocks the lower part of the open sidebar. */
 }
 
 /* ─── 1100px: tighten sidebar on mid-range laptops ─────────── */
@@ -1093,13 +1097,20 @@ textarea{resize:vertical;min-height:70px}
   .sidebar{
     position:fixed;left:0;top:0;bottom:0;
     height:100vh;height:100dvh;
-    z-index:100;
+    /* Above .sidebar-overlay (210) and .bottom-nav (200) so the open drawer
+       is never visually cut off or touch-blocked by the bottom tab bar. */
+    z-index:220;
     transform:translateX(-100%);
     box-shadow:0 0 0 rgba(0,0,0,0);
+    padding-top:env(safe-area-inset-top,0px);
+    visibility:hidden;
+    transition:transform .3s ease, visibility 0s linear .3s;
   }
   .sidebar.open{
     transform:translateX(0);
     box-shadow:8px 0 32px rgba(0,0,0,0.6);
+    visibility:visible;
+    transition:transform .3s ease, visibility 0s linear 0s;
   }
   .sidebar-nav{
     padding:8px 0 80px 0;
@@ -1120,6 +1131,7 @@ textarea{resize:vertical;min-height:70px}
     bottom:0;
     background:var(--bg2);
     padding:8px 0;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
     margin:0;
     border-top:1px solid var(--border);
   }
