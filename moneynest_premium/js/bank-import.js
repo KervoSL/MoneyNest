@@ -459,15 +459,95 @@
     return null;
   }
 
-  function merchantKeyFor(description) {
+  // ════════════════════════════════════════════════════════════════
+  // ── SMART MERCHANT GROUPING ────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // Known brand/service name patterns collapse ANY matching description
+  // to one canonical merchant key, regardless of store numbers, branch
+  // cities, card-network suffixes ("UBER *TRIP"), or — for P2P/generic
+  // bank services like Bizum — the variable recipient/sender name
+  // attached to each transaction. Longer/more specific patterns win over
+  // shorter ones (checked by matched-pattern length, not list order), so
+  // e.g. "UBER EATS" is never swallowed by the bare "UBER" rule.
+  const KNOWN_MERCHANTS = [
+    // Groceries / supermarkets
+    { canonical: 'MERCADONA', patterns: ['MERCADONA'] },
+    { canonical: 'CARREFOUR', patterns: ['CARREFOUR'] },
+    { canonical: 'LIDL', patterns: ['LIDL'] },
+    { canonical: 'DIA', patterns: ['DIA SUPERMERCADO', 'SUPERMERCADOS DIA'] },
+    { canonical: 'ALCAMPO', patterns: ['ALCAMPO'] },
+    { canonical: 'EROSKI', patterns: ['EROSKI'] },
+    { canonical: 'CONSUM', patterns: ['CONSUM'] },
+    { canonical: 'ALDI', patterns: ['ALDI'] },
+    { canonical: 'EL CORTE INGLES', patterns: ['EL CORTE INGLES', 'CORTE INGLES'] },
+    // Ride-hailing / transport (UBER EATS checked before bare UBER)
+    { canonical: 'UBER EATS', patterns: ['UBER EATS', 'UBEREATS'] },
+    { canonical: 'UBER', patterns: ['UBER'] },
+    { canonical: 'CABIFY', patterns: ['CABIFY'] },
+    { canonical: 'RENFE', patterns: ['RENFE'] },
+    // Food delivery / restaurants
+    { canonical: 'GLOVO', patterns: ['GLOVO'] },
+    { canonical: 'JUST EAT', patterns: ['JUST EAT', 'JUSTEAT'] },
+    { canonical: 'MCDONALDS', patterns: ['MCDONALD'] },
+    { canonical: 'STARBUCKS', patterns: ['STARBUCKS'] },
+    // Streaming / subscriptions / tech
+    { canonical: 'NETFLIX', patterns: ['NETFLIX'] },
+    { canonical: 'SPOTIFY', patterns: ['SPOTIFY'] },
+    { canonical: 'AMAZON PRIME', patterns: ['AMAZON PRIME'] },
+    { canonical: 'AMAZON', patterns: ['AMAZON'] },
+    { canonical: 'APPLE', patterns: ['APPLE.COM', 'APPLE STORE'] },
+    // Clothing
+    { canonical: 'ZARA', patterns: ['ZARA'] },
+    { canonical: 'H&M', patterns: ['H&M'] },
+    // P2P transfers / generic bank services — the whole point is to
+    // collapse away the variable name that follows (a person, a company).
+    { canonical: 'BIZUM', patterns: ['BIZUM'] },
+    { canonical: 'TRANSFERENCIA', patterns: ['TRANSFERENCIA'] },
+    { canonical: 'TRASPASO', patterns: ['TRASPASO'] },
+    { canonical: 'RECIBO', patterns: ['RECIBO DOMICILIADO', 'RECIBO'] },
+    { canonical: 'NOMINA', patterns: ['NOMINA'] },
+  ];
+
+  function _matchKnownMerchant(descriptionUpper) {
+    let best = null; // { canonical, len }
+    for (const rule of KNOWN_MERCHANTS) {
+      for (const p of rule.patterns) {
+        if (descriptionUpper.includes(p) && (!best || p.length > best.len)) {
+          best = { canonical: rule.canonical, len: p.length };
+        }
+      }
+    }
+    return best ? best.canonical : null;
+  }
+
+  // Legal-entity suffixes and short Spanish stopwords that shouldn't lead
+  // (or occupy a slot in) the fallback grouping key for unrecognized merchants.
+  const MERCHANT_STOPWORDS = new Set(['EL', 'LA', 'LOS', 'LAS', 'DE', 'DEL', 'Y', 'SL', 'SA', 'SLU', 'SAU', 'SCP', 'CB']);
+
+  function _fallbackMerchantKey(description) {
     let s = (description || '').toUpperCase();
-    s = s.replace(/\d{3,}/g, '');           // strip long number sequences (refs, card numbers)
+    s = s.replace(/\d{3,}/g, '');           // strip long number sequences (refs, card numbers, store codes)
     s = s.replace(/\b\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?\b/g, ''); // strip dates
-    s = s.replace(/[^A-ZÁÉÍÓÚÑ\s]/g, ' ');  // strip punctuation
+    s = s.replace(/[^A-ZÁÉÍÓÚÑ&\s]/g, ' '); // strip punctuation (keep & for brands like H&M)
     s = s.replace(/\s+/g, ' ').trim();
-    // Keep first 2-3 significant words as the grouping key
-    const words = s.split(' ').filter(w => w.length > 1);
-    return (words.slice(0, 2).join(' ') || s || 'DESCONOCIDO').trim();
+    const words = s.split(' ').filter(w => w.length > 1 && !MERCHANT_STOPWORDS.has(w));
+    // Up to 3 significant words — long enough to keep multi-word chain
+    // names intact (e.g. "CORTE INGLES") without pulling in every trailing
+    // branch/location word for shorter ones.
+    return (words.slice(0, 3).join(' ') || s || 'DESCONOCIDO').trim();
+  }
+
+  // Produces a clean, canonical merchant grouping key from a raw
+  // transaction description — WITHOUT touching the original description
+  // itself, which callers keep separately (row.description stays intact;
+  // only row.merchantKey is derived from it). Known brands/services
+  // collapse every variant to one key; unrecognized merchants fall back
+  // to a normalized-but-heuristic key.
+  function merchantKeyFor(description) {
+    const d = (description || '').toUpperCase();
+    const known = _matchKnownMerchant(d);
+    if (known) return known;
+    return _fallbackMerchantKey(description);
   }
 
   function prettyMerchant(key) {
