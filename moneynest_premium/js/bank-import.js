@@ -38,6 +38,8 @@
       newAccountTipo: 'banco',  // mismo esquema que el modal real de Cuentas (banco/efectivo/cripto/inversion/ahorro/otro)
       groups: [],               // [{key, sample, count, total, category, isNew}]
       categorizeChoice: null,   // 'now' | 'skip'
+      categorizeView: 'groups', // 'groups' | 'individual'
+      _selectedForBulk: {},     // { [rowIndexInSTrows]: true } — seleccion multiple en vista individual
       rememberMappings: true,
       newCategoriesCreated: [],
     };
@@ -426,6 +428,37 @@
 
   // Build a "merchant key" by stripping numbers/dates/reference codes so
   // similar transactions ("MERCADONA MADRID 4521", "MERCADONA 8871 BCN") group together.
+  // ════════════════════════════════════════════════════════════════
+  // ── AUTOMATIC CATEGORIZATION (merchant-name pattern matching) ──
+  // ════════════════════════════════════════════════════════════════
+  // Maps common merchant-name patterns to the EXACT category strings from
+  // the app's real default gasto model (Vivienda/Alimentación/Transporte/
+  // Salud/Ocio/Ropa/Educación/Suscripciones/Restaurantes/Tecnología/
+  // Seguros/Otro) — never invents categories outside that set. A guess is
+  // only ever applied if that exact category also exists in the user's
+  // live category list (_gastoCats()), so a customized/renamed category
+  // set is respected instead of silently reintroducing removed ones.
+  const AUTO_CATEGORY_RULES = [
+    { category: 'Alimentación', patterns: ['MERCADONA', 'CARREFOUR', 'LIDL', 'DIA SUPERMERCADO', 'ALCAMPO', 'EROSKI', 'CONSUM', 'ALDI', 'HIPERCOR', 'SUPERMERCADO', 'FRUTERIA', 'CHARCUTERIA'] },
+    { category: 'Restaurantes', patterns: ['MCDONALD', 'BURGER KING', 'KFC', 'TELEPIZZA', 'DOMINOS', 'GLOVO', 'UBER EATS', 'UBEREATS', 'JUST EAT', 'JUSTEAT', 'STARBUCKS', 'RESTAURANTE', 'CAFETERIA', 'CERVECERIA'] },
+    { category: 'Transporte', patterns: ['CABIFY', 'RENFE', 'METRO DE', 'REPSOL', 'CEPSA', 'GASOLINERA', 'PARKING', 'BLABLACAR', 'IBERIA', 'VUELING', 'RYANAIR', 'AUTOPISTA', 'PEAJE'] },
+    { category: 'Suscripciones', patterns: ['NETFLIX', 'SPOTIFY', 'HBO', 'DISNEY PLUS', 'DISNEY+', 'YOUTUBE PREMIUM', 'ICLOUD', 'APPLE.COM/BILL', 'PLAYSTATION PLUS', 'XBOX GAME PASS', 'AMAZON PRIME'] },
+    { category: 'Tecnología', patterns: ['APPLE STORE', 'MEDIAMARKT', 'PCCOMPONENTES', 'FNAC', 'WORTEN', 'MICROSOFT STORE'] },
+    { category: 'Salud', patterns: ['FARMACIA', 'CLINICA', 'HOSPITAL', 'DENTISTA', 'FISIOTERAPIA', 'OPTICA'] },
+    { category: 'Seguros', patterns: ['MAPFRE', 'MUTUA MADRILE', 'AXA SEGUROS', 'ALLIANZ', 'LINEA DIRECTA', 'DIRECT SEGUROS'] },
+    { category: 'Vivienda', patterns: ['IBERDROLA', 'ENDESA', 'NATURGY', 'ELECTRICIDAD', 'CANAL DE ISABEL', 'AGUAS DE', 'COMUNIDAD DE PROPIETARIOS'] },
+    { category: 'Ropa', patterns: ['ZARA', 'H&M', 'MANGO', 'PULL AND BEAR', 'PULL&BEAR', 'BERSHKA', 'STRADIVARIUS', 'NIKE', 'ADIDAS', 'DECATHLON', 'PRIMARK'] },
+    { category: 'Educación', patterns: ['UNIVERSIDAD', 'ACADEMIA', 'COURSERA', 'UDEMY', 'LIBRERIA'] },
+  ];
+
+  function _autoDetectCategory(description) {
+    const d = (description || '').toUpperCase();
+    for (const rule of AUTO_CATEGORY_RULES) {
+      if (rule.patterns.some(p => d.includes(p))) return rule.category;
+    }
+    return null;
+  }
+
   function merchantKeyFor(description) {
     let s = (description || '').toUpperCase();
     s = s.replace(/\d{3,}/g, '');           // strip long number sequences (refs, card numbers)
@@ -603,6 +636,10 @@
       .mnbi-remember-row { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--bg2); border:1px solid var(--border); margin-bottom:6px; }
       .mnbi-remember-row input { width:18px; height:18px; flex-shrink:0; cursor:pointer; accent-color:var(--accent); }
       .mnbi-remember-row label { font-size:.8rem; color:var(--text2); font-weight:600; cursor:pointer; }
+      .mnbi-cat-tabs { display:flex; gap:6px; margin-bottom:14px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:4px; }
+      .mnbi-cat-tab { flex:1; background:none; border:none; padding:8px 6px; border-radius:9px; font-size:.76rem; font-weight:700; color:var(--text2); cursor:pointer; font-family:inherit; transition:all .15s; }
+      .mnbi-cat-tab.active { background:var(--accent); color:#04231b; }
+      .mnbi-bulk-bar { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:var(--accent-dim); border:1px solid rgba(0,212,170,.35); margin-bottom:10px; font-size:.78rem; font-weight:700; color:var(--text); }
 
       /* Summary */
       .mnbi-summary-list { display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:18px; }
@@ -1349,6 +1386,10 @@
   // ════════════════════════════════════════════════════════════════
   function _buildGroups() {
     const map = _loadMap();
+    const realCats = _gastoCats();
+    const prevByKey = {};
+    (ST.groups || []).forEach(g => { prevByKey[g.key] = g; });
+
     const byKey = {};
     (ST._cleanRows || ST.rows).filter(r => r.isExpense).forEach(r => {
       const k = r.merchantKey;
@@ -1358,7 +1399,20 @@
     });
     ST.groups = Object.values(byKey)
       .sort((a, b) => b.count - a.count)
-      .map(g => ({ ...g, category: map[g.key] || '', isMapped: !!map[g.key] }));
+      .map(g => {
+        // Preserve a choice already made earlier in this same session first.
+        if (prevByKey[g.key] && prevByKey[g.key].category) {
+          return { ...g, category: prevByKey[g.key].category, isMapped: prevByKey[g.key].isMapped, isAuto: prevByKey[g.key].isAuto };
+        }
+        // Then a category the user has taught before (remembered mapping).
+        if (map[g.key]) return { ...g, category: map[g.key], isMapped: true, isAuto: false };
+        // Then automatic detection by merchant name — only if that exact
+        // category still exists in the user's real category list, so a
+        // customized category set is never contradicted.
+        const guess = _autoDetectCategory(g.sample);
+        if (guess && realCats.includes(guess)) return { ...g, category: guess, isMapped: false, isAuto: true };
+        return { ...g, category: '', isMapped: false, isAuto: false };
+      });
   }
 
   function _renderStep4() {
@@ -1392,15 +1446,31 @@
 
     if (ST.categorizeChoice === false) { ST.step = 5; return _renderStep5(); }
 
-    // Categorize now — grouped merchant list
+    // Categorize now — grouped merchant list (default) or individual view
     if (!ST.groups.length) _buildGroups();
-    const cats = _gastoCats();
 
-    const body = `
+    const view = ST.categorizeView || 'groups';
+    const tabs = `
+      <div class="mnbi-cat-tabs">
+        <button type="button" class="mnbi-cat-tab ${view === 'groups' ? 'active' : ''}" onclick="MNBankImport._setCategorizeView('groups')">🏪 ${_t('bi_vista_comercio', 'Por comercio')}</button>
+        <button type="button" class="mnbi-cat-tab ${view === 'individual' ? 'active' : ''}" onclick="MNBankImport._setCategorizeView('individual')">📋 ${_t('bi_vista_individual', 'Movimiento a movimiento')}</button>
+      </div>`;
+
+    const body = view === 'individual' ? `
+      <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 4 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
+      <div class="mnbi-h1">${_t('bi_s4b_titulo', 'Asigna una categoría a cada comercio')}</div>
+      <div class="mnbi-sub">${_t('bi_s4_individual_sub', 'Marca varios movimientos y aplica una categoría a todos a la vez, o cambia uno solo.')}</div>
+      ${tabs}
+      ${_individualViewHtml()}
+      <div class="mnbi-remember-row">
+        <input type="checkbox" id="mnbiRememberMappings" ${ST.rememberMappings ? 'checked' : ''} onchange="MNBankImport._setRemember(this.checked)">
+        <label for="mnbiRememberMappings">${_t('bi_recordar_mapeos', 'Recordar estas categorías para futuras importaciones')}</label>
+      </div>
+    ` : `
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 4 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
       <div class="mnbi-h1">${_t('bi_s4b_titulo', 'Asigna una categoría a cada comercio')}</div>
       <div class="mnbi-sub">${ST.groups.length} ${_t('bi_comercios_detectados', 'comercios detectados')} · ${_t('bi_s4b_sub', 'se aplicará a todos los movimientos de ese grupo')}</div>
-
+      ${tabs}
       <input type="text" class="mnbi-input mnbi-group-search" id="mnbiGroupSearch" placeholder="🔍 ${_t('bi_buscar_comercio', 'Buscar comercio...')}" oninput="MNBankImport._filterGroups(this.value)">
 
       <div class="mnbi-group-list" id="mnbiGroupList">
@@ -1422,7 +1492,126 @@
         ${_t('bi_continuar', 'Continuar')}
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>`;
+    const prevScroll = document.getElementById('mnbiIndivTableWrap')?.scrollTop || 0;
     _shell(body, footer);
+    const wrap = document.getElementById('mnbiIndivTableWrap');
+    if (wrap) wrap.scrollTop = prevScroll;
+  }
+
+  function _effectiveCategoryFor(r) {
+    if (r._categoryOverride) return r._categoryOverride;
+    const g = ST.groups.find(x => x.key === r.merchantKey);
+    return (g && g.category) || '';
+  }
+
+  function _catOptionsHtml(selected) {
+    const cats = _gastoCats();
+    return `<option value="">${_t('bi_elegir', 'Elegir...')}</option>` +
+      cats.map(c => `<option value="${c}" ${selected === c ? 'selected' : ''}>${_catEmoji(c)} ${c}</option>`).join('') +
+      `<option value="__new__">➕ ${_t('bi_nueva_categoria', 'Nueva categoría...')}</option>`;
+  }
+
+  function _individualViewHtml() {
+    const expenseRows = (ST._cleanRows || ST.rows).filter(r => r.isExpense);
+    const selectedCount = Object.keys(ST._selectedForBulk || {}).length;
+    const allSelected = expenseRows.length > 0 && expenseRows.every(r => ST._selectedForBulk[ST.rows.indexOf(r)]);
+
+    const bulkBar = selectedCount > 0 ? `
+      <div class="mnbi-bulk-bar">
+        <span>${selectedCount} ${selectedCount === 1 ? _t('bi_seleccionado', 'seleccionado') : _t('bi_seleccionados', 'seleccionados')}</span>
+        <select class="mnbi-select" id="mnbiBulkCatSelect" style="flex:1">${_catOptionsHtml('')}</select>
+        <button type="button" class="mnbi-btn-primary" style="padding:8px 14px" onclick="MNBankImport._applyBulkCategory()">${_t('bi_aplicar', 'Aplicar')}</button>
+      </div>` : '';
+
+    const rows = expenseRows.map(r => {
+      const idx = ST.rows.indexOf(r);
+      const cat = _effectiveCategoryFor(r);
+      const checked = !!ST._selectedForBulk[idx];
+      return `
+        <tr>
+          <td style="width:34px"><input type="checkbox" ${checked ? 'checked' : ''} onchange="MNBankImport._toggleRowSelection(${idx})"></td>
+          <td class="mnbi-desc" title="${r.description}">${r.description}<div style="font-size:.7rem;color:var(--text3)">${_fmtEur(r.amount)}</div></td>
+          <td>
+            <select class="mnbi-group-cat-select ${cat ? 'mapped' : ''}" onchange="MNBankImport._setIndividualRowCategory(${idx}, this.value)">
+              ${_catOptionsHtml(cat)}
+            </select>
+          </td>
+        </tr>`;
+    }).join('');
+
+    return `
+      ${bulkBar}
+      <div class="mnbi-table-wrap mnbi-table-wrap--scroll" id="mnbiIndivTableWrap">
+        <table class="mnbi-table">
+          <thead><tr>
+            <th style="width:34px"><input type="checkbox" ${allSelected ? 'checked' : ''} onchange="MNBankImport._toggleSelectAllIndividual(this.checked)"></th>
+            <th>${_t('bi_concepto', 'Concepto')}</th>
+            <th>${_t('bi_categoria', 'Categoría')}</th>
+          </tr></thead>
+          <tbody>${rows || `<tr><td colspan="3" class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</td></tr>`}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function _setCategorizeView(view) {
+    ST.categorizeView = view;
+    ST._selectedForBulk = {};
+    _renderStep4();
+  }
+
+  function _toggleRowSelection(idx) {
+    if (ST._selectedForBulk[idx]) delete ST._selectedForBulk[idx];
+    else ST._selectedForBulk[idx] = true;
+    _renderStep4();
+  }
+
+  function _toggleSelectAllIndividual(checked) {
+    const expenseRows = (ST._cleanRows || ST.rows).filter(r => r.isExpense);
+    ST._selectedForBulk = {};
+    if (checked) expenseRows.forEach(r => { ST._selectedForBulk[ST.rows.indexOf(r)] = true; });
+    _renderStep4();
+  }
+
+  // Prompts for a new category name and, if provided, adds it to the
+  // user's REAL category list (_S().categorias.gasto) — the same
+  // mechanism the group view already uses — so "crear categoría" always
+  // stays compatible with the app's actual category model.
+  function _promptNewCategory() {
+    const name = prompt(_t('bi_nombre_nueva_categoria', 'Nombre de la nueva categoría:'));
+    if (!name || !name.trim()) return null;
+    const trimmed = name.trim();
+    if (!_S().categorias.gasto.includes(trimmed)) {
+      _S().categorias.gasto.push(trimmed);
+      ST.newCategoriesCreated.push(trimmed);
+    }
+    return trimmed;
+  }
+
+  function _setIndividualRowCategory(idx, value) {
+    if (value === '__new__') {
+      const created = _promptNewCategory();
+      if (!created) { _renderStep4(); return; }
+      value = created;
+    }
+    const r = ST.rows[idx];
+    if (r) r._categoryOverride = value;
+    _renderStep4();
+  }
+
+  function _applyBulkCategory() {
+    let value = document.getElementById('mnbiBulkCatSelect')?.value;
+    if (!value) return;
+    if (value === '__new__') {
+      const created = _promptNewCategory();
+      if (!created) return;
+      value = created;
+    }
+    Object.keys(ST._selectedForBulk || {}).forEach(idxStr => {
+      const r = ST.rows[Number(idxStr)];
+      if (r) r._categoryOverride = value;
+    });
+    ST._selectedForBulk = {};
+    _renderStep4();
   }
 
   function _groupRowsHtml(groups) {
@@ -1432,7 +1621,7 @@
       <div class="mnbi-group-row" data-key="${g.key}">
         <div class="mnbi-group-info">
           <div class="mnbi-group-name" title="${prettyMerchant(g.key)}">${_catEmoji(g.category)} ${prettyMerchant(g.key)}</div>
-          <div class="mnbi-group-meta">${g.count} ${g.count === 1 ? _t('bi_movimiento', 'movimiento') : _t('bi_movimientos', 'movimientos')} · ${_fmtEur(g.total)}${g.isMapped ? ` · <span style="color:var(--accent)">✓ ${_t('bi_recordado', 'recordado')}</span>` : ''}</div>
+          <div class="mnbi-group-meta">${g.count} ${g.count === 1 ? _t('bi_movimiento', 'movimiento') : _t('bi_movimientos', 'movimientos')} · ${_fmtEur(g.total)}${g.isMapped ? ` · <span style="color:var(--accent)">✓ ${_t('bi_recordado', 'recordado')}</span>` : (g.isAuto ? ` · <span style="color:var(--gold)">🤖 ${_t('bi_automatico', 'automático')}</span>` : '')}</div>
         </div>
         <select class="mnbi-group-cat-select ${g.category ? 'mapped' : ''}" onchange="MNBankImport._setGroupCategory('${g.key}', this.value)">
           <option value="">${_t('bi_elegir', 'Elegir...')}</option>
@@ -1469,7 +1658,7 @@
       value = trimmed;
     }
     const g = ST.groups.find(x => x.key === key);
-    if (g) g.category = value;
+    if (g) { g.category = value; g.isAuto = false; }
     _filterGroups(document.getElementById('mnbiGroupSearch')?.value || '');
   }
 
@@ -1598,7 +1787,7 @@
     rows.forEach(r => {
       const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
       if (r.isExpense) {
-        const categoria = groupCatByKey[r.merchantKey] || 'Otro';
+        const categoria = r._categoryOverride || groupCatByKey[r.merchantKey] || 'Otro';
         S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, origen: 'bank-import' });
         importedExpense++;
       } else {
@@ -1688,11 +1877,17 @@
     _backToChoice: _backToChoice,
     _filterGroups: _filterGroups,
     _setGroupCategory: _setGroupCategory,
+    _setCategorizeView: _setCategorizeView,
+    _toggleRowSelection: _toggleRowSelection,
+    _toggleSelectAllIndividual: _toggleSelectAllIndividual,
+    _setIndividualRowCategory: _setIndividualRowCategory,
+    _applyBulkCategory: _applyBulkCategory,
     _setRemember: _setRemember,
     _runImport: _runImport,
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
     detectBankFormat, detectBankWithConfidence, detectColumns, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
+    autoDetectCategory: _autoDetectCategory,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
