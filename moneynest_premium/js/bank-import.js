@@ -35,6 +35,7 @@
       accountMode: 'new',       // 'new' | 'existing'
       accountId: '',
       newAccountName: '',
+      newAccountTipo: 'banco',  // mismo esquema que el modal real de Cuentas (banco/efectivo/cripto/inversion/ahorro/otro)
       groups: [],               // [{key, sample, count, total, category, isNew}]
       categorizeChoice: null,   // 'now' | 'skip'
       rememberMappings: true,
@@ -454,7 +455,15 @@
   // ════════════════════════════════════════════════════════════════
   // ── HELPERS INTO THE REAL APP ──────────────────────────────────
   // ════════════════════════════════════════════════════════════════
-  function _S() { return window.S; }
+  // IMPORTANT: app.js declares `let S = ...` at script scope (not `window.S`),
+  // so in a normal session `window.S` is undefined — it's only ever set by
+  // data-manager.js during backup-restore. Using window.S here meant
+  // _cuentas() always silently returned [] (via its try/catch) and
+  // _runImport()'s "S.cuentas.push(...)" threw against undefined, so
+  // imported transactions could never actually be associated with a real
+  // account. Classic <script> tags share the same top-level scope, so the
+  // bare `S` identifier correctly resolves to app.js's live state object.
+  function _S() { return (typeof S !== 'undefined' && S) ? S : window.S; }
   function _gastoCats() {
     try { return (_S().categorias && _S().categorias.gasto) || ['Otros']; } catch { return ['Otros']; }
   }
@@ -1088,6 +1097,31 @@
   // ════════════════════════════════════════════════════════════════
   // ── STEP 2 — BANK + ACCOUNT ────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
+  function _accountSelectionValid() {
+    if (ST.accountMode === 'new') return !!(ST.newAccountName || '').trim();
+    if (ST.accountMode === 'existing') return !!ST.accountId && _cuentas().some(c => c.id === ST.accountId);
+    return false;
+  }
+
+  // Kept in sync on every keystroke/change so the Continue button can be
+  // enabled/disabled live WITHOUT a full re-render (which would drop input
+  // focus/cursor position while the user is still typing the account name).
+  function _syncStep2Validity() {
+    const btn = document.getElementById('mnbiStep2ContinueBtn');
+    if (btn) btn.disabled = !_accountSelectionValid();
+  }
+  function _onNewAccountNameInput(value) {
+    ST.newAccountName = value;
+    _syncStep2Validity();
+  }
+  function _onNewAccountTipoChange(value) {
+    ST.newAccountTipo = value;
+  }
+  function _onExistingAccountChange(value) {
+    ST.accountId = value;
+    _syncStep2Validity();
+  }
+
   function _renderStep2() {
     const hasChosenBank = ST.format !== 'generic';
     const bank = BANKS[ST.format] || BANKS.generic;
@@ -1150,11 +1184,35 @@
       </div>
 
       ${ST.accountMode === 'new' ? `
-        <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_nombre_cuenta', 'Nombre de la cuenta')}</label>
-        <input type="text" class="mnbi-input" id="mnbiNewAccountName" value="${ST.newAccountName}" placeholder="${_t('bi_nombre_cuenta_placeholder', 'p.ej. BBVA Cuenta Nómina')}">
+        <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_nombre_cuenta', 'Nombre de la cuenta')} *</label>
+        <input type="text" class="mnbi-input" id="mnbiNewAccountName" value="${ST.newAccountName}"
+          placeholder="${_t('bi_nombre_cuenta_placeholder', 'p.ej. BBVA Cuenta Nómina')}"
+          oninput="MNBankImport._onNewAccountNameInput(this.value)">
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1">
+            <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_tipo_cuenta', 'Tipo de cuenta')}</label>
+            <select class="mnbi-select" id="mnbiNewAccountTipo" onchange="MNBankImport._onNewAccountTipoChange(this.value)">
+              <option value="banco" ${ST.newAccountTipo === 'banco' ? 'selected' : ''}>🏦 ${_t('bi_tipo_banco', 'Banco')}</option>
+              <option value="ahorro" ${ST.newAccountTipo === 'ahorro' ? 'selected' : ''}>💰 ${_t('bi_tipo_ahorro', 'Ahorro')}</option>
+              <option value="efectivo" ${ST.newAccountTipo === 'efectivo' ? 'selected' : ''}>💵 ${_t('bi_tipo_efectivo', 'Efectivo')}</option>
+              <option value="cripto" ${ST.newAccountTipo === 'cripto' ? 'selected' : ''}>₿ ${_t('bi_tipo_cripto', 'Cripto')}</option>
+              <option value="inversion" ${ST.newAccountTipo === 'inversion' ? 'selected' : ''}>📈 ${_t('bi_tipo_inversion', 'Inversión')}</option>
+              <option value="otro" ${ST.newAccountTipo === 'otro' ? 'selected' : ''}>📁 ${_t('bi_tipo_otro', 'Otro')}</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_moneda', 'Moneda')}</label>
+            <input type="text" class="mnbi-input" value="EUR (€)" disabled style="opacity:.6;cursor:not-allowed">
+          </div>
+        </div>
+        <div class="mnbi-sub" style="margin-top:6px;font-size:.72rem">
+          ${_t('bi_moneda_nota', 'MoneyNest gestiona todas las cuentas en euros.')}
+          ${hasChosenBank ? ` · ${_t('bi_banco_asociado', 'Banco')}: <strong style="color:var(--text)">${bank.label}</strong>` : ''}
+        </div>
       ` : `
-        <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_selecciona_cuenta', 'Selecciona la cuenta')}</label>
-        <select class="mnbi-select" id="mnbiExistingAccount">
+        <label style="font-size:.78rem;color:var(--text2);font-weight:600">${_t('bi_selecciona_cuenta', 'Selecciona la cuenta')} *</label>
+        <select class="mnbi-select" id="mnbiExistingAccount" onchange="MNBankImport._onExistingAccountChange(this.value)">
           ${cuentas.map(c => `<option value="${c.id}" ${ST.accountId === c.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}
         </select>
       `}
@@ -1165,7 +1223,7 @@
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         ${_t('bi_atras', 'Atrás')}
       </button>
-      <button class="mnbi-btn-primary" onclick="MNBankImport._toStep3()">
+      <button class="mnbi-btn-primary" id="mnbiStep2ContinueBtn" ${_accountSelectionValid() ? '' : 'disabled'} onclick="MNBankImport._toStep3()">
         ${_t('bi_continuar', 'Continuar')}
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>`;
@@ -1486,6 +1544,20 @@
   }
 
   async function _runImport() {
+    // Final hard gate: never write transactions without a valid account,
+    // regardless of how this got triggered (button, or programmatically).
+    const S0 = _S();
+    if (ST.accountMode === 'new' && !(ST.newAccountName || '').trim()) {
+      if (window.toast) toast(_t('bi_err_sin_nombre_cuenta', 'Ponle un nombre a la cuenta antes de continuar'), 'error');
+      ST.step = 2; _renderStep2();
+      return;
+    }
+    if (ST.accountMode === 'existing' && !(ST.accountId && S0.cuentas.some(c => c.id === ST.accountId))) {
+      if (window.toast) toast(_t('bi_err_cuenta_invalida', 'Selecciona una cuenta válida antes de continuar'), 'error');
+      ST.step = 2; _renderStep2();
+      return;
+    }
+
     ST.step = 'progress';
     let i = 0;
     _renderProgress(0);
@@ -1505,7 +1577,8 @@
     let cuentaId = ST.accountId;
     if (ST.accountMode === 'new') {
       const name = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName || (BANKS[ST.format]||BANKS.generic).label;
-      const newAccount = { id: _uid(), nombre: name.trim() || 'Cuenta importada', tipo: 'banco', saldo: 0, valorTotal: 0, color: '#00D4AA', notas: '' };
+      const tipo = ST.newAccountTipo || 'banco';
+      const newAccount = { id: _uid(), nombre: name.trim() || 'Cuenta importada', tipo, saldo: 0, valorTotal: 0, color: '#00D4AA', notas: '' };
       S.cuentas.push(newAccount);
       cuentaId = newAccount.id;
     }
@@ -1588,8 +1661,14 @@
       ST.step = 2; _renderStep2();
     },
     _toStep3: () => {
-      if (ST.accountMode === 'new') ST.newAccountName = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName;
+      if (ST.accountMode === 'new') {
+        ST.newAccountName = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName;
+        ST.newAccountTipo = document.getElementById('mnbiNewAccountTipo')?.value || ST.newAccountTipo;
+      }
       if (ST.accountMode === 'existing') ST.accountId = document.getElementById('mnbiExistingAccount')?.value || ST.accountId;
+      // Defense in depth: the Continue button is already disabled when this
+      // isn't satisfied, but never allow advancing without a valid account.
+      if (!_accountSelectionValid()) { _syncStep2Validity(); return; }
       ST.step = 3; _renderStep3();
     },
     _toStep4: () => { ST.step = 4; _renderStep4(); },
@@ -1599,6 +1678,9 @@
     _pickBank: _pickBank,
     _forceManualBank: _forceManualBank,
     _setAccountMode: _setAccountMode,
+    _onNewAccountNameInput: _onNewAccountNameInput,
+    _onNewAccountTipoChange: _onNewAccountTipoChange,
+    _onExistingAccountChange: _onExistingAccountChange,
     _setMappingMode: _setMappingMode,
     _setMappingField: _setMappingField,
     _confirmColumnMapping: _confirmColumnMapping,
