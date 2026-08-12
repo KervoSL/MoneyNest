@@ -656,6 +656,13 @@
     const s = document.createElement('style');
     s.id = 'mn-bi-style';
     s.textContent = `
+      /* Scoped to THIS wizard's overlay only (by id) — the shared
+         .modal-overlay class (z-index:200) used by other modals across
+         the app is untouched. Found by testing specifically with an
+         iPhone Safari user agent: the "Add to Home Screen" iOS banner
+         (js/install-prompt.js, z-index:9500) sat above the wizard and
+         intercepted every tap, since 200 << 9500. */
+      #mnBankImportOverlay { z-index: 9600; }
       #mnBankImportOverlay .modal { max-width: 620px; width: 94vw; max-height: 88vh; max-height: 88dvh; padding:0; overflow:hidden; }
       .mnbi-wrap { display:flex; flex-direction:column; max-height:88vh; max-height:88dvh; }
       .mnbi-head { padding:22px 26px 0; flex-shrink:0; }
@@ -794,6 +801,17 @@
       .mnbi-review-list { display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; margin-bottom:14px; padding-right:2px; }
       .mnbi-review-card { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2); }
       .mnbi-review-card.error { border-color:rgba(244,63,94,.5); background:rgba(244,63,94,.06); }
+      .mnbi-txrow-card { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2); }
+      .mnbi-indiv-card { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2); }
+      .mnbi-indiv-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+      .mnbi-indiv-top input[type=checkbox] { width:18px; height:18px; flex-shrink:0; margin-top:2px; cursor:pointer; accent-color:var(--accent); }
+      .mnbi-select-all-row { display:flex; align-items:center; gap:8px; padding:4px 2px 10px; font-size:.76rem; color:var(--text2); font-weight:600; }
+      .mnbi-select-all-row input { width:16px; height:16px; cursor:pointer; accent-color:var(--accent); }
+      .mnbi-select-all-row label { cursor:pointer; }
+      .mnbi-mapping-preview-card { border:1px solid var(--border); border-radius:10px; padding:9px 12px; background:var(--bg2); }
+      .mnbi-mapping-preview-field { display:flex; justify-content:space-between; gap:10px; font-size:.76rem; padding:3px 0; }
+      .mnbi-mapping-preview-field span:first-child { color:var(--text3); flex-shrink:0; }
+      .mnbi-mapping-preview-field span:last-child { color:var(--text); font-weight:600; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .mnbi-review-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px; }
       .mnbi-review-date { font-size:.7rem; color:var(--text3); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
       .mnbi-review-desc { font-size:.84rem; font-weight:700; color:var(--text); margin-bottom:2px; word-break:break-word; }
@@ -1211,18 +1229,20 @@
       { field: 'description', label: 'Concepto' },
       ...(ST._mappingMode === 'split' ? [{ field: 'debit', label: 'Debe' }, { field: 'credit', label: 'Haber' }] : [{ field: 'amount', label: 'Importe' }]),
     ];
+    // Compact label:value cards instead of a horizontal table — a 3-4
+    // column table never fits reliably inside this modal's width, mobile
+    // or desktop.
     const previewHtml = previewRows.length ? `
-      <div class="mnbi-table-wrap" style="margin-top:18px">
-        <table class="mnbi-table">
-          <thead><tr>${previewCols.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
-          <tbody>
-            ${previewRows.map(r => `<tr>${previewCols.map(c => {
+      <div class="mnbi-sub" style="margin-top:18px;margin-bottom:8px;font-weight:700;color:var(--text)">${_t('bi_preview_archivo', 'Así se ven tus datos')}</div>
+      <div class="mnbi-review-list" style="max-height:220px">
+        ${previewRows.map(r => `
+          <div class="mnbi-mapping-preview-card">
+            ${previewCols.map(c => {
               const key = m[c.field] && m[c.field].key;
               const val = key ? (r[key] ?? '') : '—';
-              return `<td class="mnbi-desc">${val || '—'}</td>`;
-            }).join('')}</tr>`).join('')}
-          </tbody>
-        </table>
+              return `<div class="mnbi-mapping-preview-field"><span>${c.label}</span><span>${val || '—'}</span></div>`;
+            }).join('')}
+          </div>`).join('')}
       </div>` : '';
 
     const body = `
@@ -1487,20 +1507,23 @@
     // Show every movement (not just a handful) in a scrollable list so the
     // user can find and correct any misclassified transaction, not just
     // the first few — the whole point of allowing manual correction.
+    // Uses stacked cards (not a multi-column table) so nothing gets
+    // clipped: this modal never exceeds ~620px wide even on desktop, and
+    // a fixed 3-column table doesn't fit that reliably at any width.
     const previewRows = clean.map(r => {
       const idx = ST.rows.indexOf(r);
       return `
-      <tr>
-        <td>${_fmtDate(r.date)}</td>
-        <td class="mnbi-desc" title="${r.description}">${r.description}${r._manuallyEdited ? ` <span title="${_t('bi_corregido_manual', 'Corregido manualmente')}" style="color:var(--accent)">✎</span>` : ''}</td>
-        <td style="text-align:right">
-          <button type="button" class="mnbi-amount-toggle" style="color:${r.isExpense ? 'var(--red)' : 'var(--green)'}"
-            title="${_t('bi_toca_para_corregir', 'Toca para cambiar entre ingreso y gasto')}"
-            onclick="MNBankImport._toggleRowType(${idx})">
-            ${r.isExpense ? '−' : '+'}${r.amount.toFixed(2)}€
-          </button>
-        </td>
-      </tr>`;
+      <div class="mnbi-txrow-card">
+        <div style="min-width:0">
+          <div class="mnbi-review-date">${_fmtDate(r.date)}</div>
+          <div class="mnbi-review-desc">${r.description}${r._manuallyEdited ? ` <span title="${_t('bi_corregido_manual', 'Corregido manualmente')}" style="color:var(--accent)">✎</span>` : ''}</div>
+        </div>
+        <button type="button" class="mnbi-amount-toggle" style="color:${r.isExpense ? 'var(--red)' : 'var(--green)'};flex-shrink:0"
+          title="${_t('bi_toca_para_corregir', 'Toca para cambiar entre ingreso y gasto')}"
+          onclick="MNBankImport._toggleRowType(${idx})">
+          ${r.isExpense ? '−' : '+'}${r.amount.toFixed(2)}€
+        </button>
+      </div>`;
     }).join('');
 
     const body = `
@@ -1518,12 +1541,7 @@
 
       <div class="mnbi-sub" style="margin-bottom:8px">💡 ${_t('bi_s3_hint_corregir', '¿Algo mal clasificado? Toca el importe del movimiento para cambiar entre ingreso y gasto.')}</div>
 
-      <div class="mnbi-table-wrap mnbi-table-wrap--scroll" id="mnbiTxTableWrap">
-        <table class="mnbi-table">
-          <thead><tr><th>${_t('bi_fecha', 'Fecha')}</th><th>${_t('bi_concepto', 'Concepto')}</th><th style="text-align:right">${_t('bi_importe', 'Importe')}</th></tr></thead>
-          <tbody>${previewRows}</tbody>
-        </table>
-      </div>
+      <div class="mnbi-review-list" id="mnbiTxTableWrap">${previewRows}</div>
     `;
 
     const footer = `
@@ -1700,29 +1718,27 @@
       const cat = _effectiveCategoryFor(r);
       const checked = !!ST._selectedForBulk[idx];
       return `
-        <tr>
-          <td style="width:34px"><input type="checkbox" ${checked ? 'checked' : ''} onchange="MNBankImport._toggleRowSelection(${idx})"></td>
-          <td class="mnbi-desc" title="${r.description}">${r.description}<div style="font-size:.7rem;color:var(--text3)">${_fmtEur(r.amount)}</div></td>
-          <td>
-            <select class="mnbi-group-cat-select ${cat ? 'mapped' : ''}" onchange="MNBankImport._setIndividualRowCategory(${idx}, this.value)">
-              ${_catOptionsHtml(cat)}
-            </select>
-          </td>
-        </tr>`;
+        <div class="mnbi-indiv-card">
+          <div class="mnbi-indiv-top">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="MNBankImport._toggleRowSelection(${idx})">
+            <div style="min-width:0;flex:1">
+              <div class="mnbi-review-desc" title="${r.description}">${r.description}</div>
+              <div style="font-size:.7rem;color:var(--text3)">${_fmtEur(r.amount)}</div>
+            </div>
+          </div>
+          <select class="mnbi-group-cat-select ${cat ? 'mapped' : ''}" onchange="MNBankImport._setIndividualRowCategory(${idx}, this.value)">
+            ${_catOptionsHtml(cat)}
+          </select>
+        </div>`;
     }).join('');
 
     return `
       ${bulkBar}
-      <div class="mnbi-table-wrap mnbi-table-wrap--scroll" id="mnbiIndivTableWrap">
-        <table class="mnbi-table">
-          <thead><tr>
-            <th style="width:34px"><input type="checkbox" ${allSelected ? 'checked' : ''} onchange="MNBankImport._toggleSelectAllIndividual(this.checked)"></th>
-            <th>${_t('bi_concepto', 'Concepto')}</th>
-            <th>${_t('bi_categoria', 'Categoría')}</th>
-          </tr></thead>
-          <tbody>${rows || `<tr><td colspan="3" class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</td></tr>`}</tbody>
-        </table>
-      </div>`;
+      <div class="mnbi-select-all-row">
+        <input type="checkbox" id="mnbiIndivSelectAll" ${allSelected ? 'checked' : ''} onchange="MNBankImport._toggleSelectAllIndividual(this.checked)">
+        <label for="mnbiIndivSelectAll">${_t('bi_seleccionar_todos', 'Seleccionar todos')}</label>
+      </div>
+      <div class="mnbi-review-list" id="mnbiIndivTableWrap">${rows || `<div class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</div>`}</div>`;
   }
 
   function _setCategorizeView(view) {
