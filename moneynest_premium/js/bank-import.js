@@ -32,6 +32,7 @@
       columnMapping: null,      // resultado de detectColumns() para formato 'generic'
       columnMappingAmbiguous: false,
       _mappingMode: null,       // 'amount' | 'split' — se calcula al entrar en la pantalla de mapping
+      _returnStepAfterMapping: 2, // a que paso volver tras confirmar el mapping (2 = flujo normal, 5 = atajo desde el preview final)
       accountMode: 'new',       // 'new' | 'existing'
       accountId: '',
       newAccountName: '',
@@ -580,6 +581,9 @@
   function _gastoCats() {
     try { return (_S().categorias && _S().categorias.gasto) || ['Otros']; } catch { return ['Otros']; }
   }
+  function _ingresoCats() {
+    try { return (_S().categorias && _S().categorias.ingreso) || ['Otro']; } catch { return ['Otro']; }
+  }
   function _cuentas() { try { return _S().cuentas || []; } catch { return []; } }
   function _catEmoji(c) { return (window.catEmoji ? window.catEmoji(c) : '📌'); }
   function _uid() { return window.uid ? window.uid() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)); }
@@ -727,6 +731,23 @@
       .mnbi-summary-row:last-child { border-bottom:none; }
       .mnbi-summary-row span:first-child { color:var(--text2); }
       .mnbi-summary-row span:last-child { color:var(--text); font-weight:700; }
+      .mnbi-ready-errors-row { display:flex; gap:10px; margin-bottom:14px; }
+      .mnbi-status-pill { flex:1; padding:10px 12px; border-radius:12px; font-size:.78rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+      .mnbi-status-pill.ready { background:var(--accent-dim); border:1px solid rgba(0,212,170,.35); color:var(--accent); }
+      .mnbi-status-pill.errors { background:rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.35); color:var(--red); }
+      .mnbi-quick-links { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+      .mnbi-quick-link { background:var(--bg2); border:1px solid var(--border); color:var(--text2); font-size:.72rem; font-weight:700; padding:6px 10px; border-radius:99px; cursor:pointer; font-family:inherit; }
+      .mnbi-quick-link:hover { border-color:var(--accent); color:var(--accent); }
+      .mnbi-review-list { display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; margin-bottom:14px; padding-right:2px; }
+      .mnbi-review-card { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2); }
+      .mnbi-review-card.error { border-color:rgba(244,63,94,.5); background:rgba(244,63,94,.06); }
+      .mnbi-review-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px; }
+      .mnbi-review-date { font-size:.7rem; color:var(--text3); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+      .mnbi-review-desc { font-size:.84rem; font-weight:700; color:var(--text); margin-bottom:2px; word-break:break-word; }
+      .mnbi-review-merchant { font-size:.72rem; color:var(--text3); margin-bottom:8px; }
+      .mnbi-review-row2 { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+      .mnbi-review-row2 select { flex:1; min-width:110px; }
+      .mnbi-review-error-badge { font-size:.68rem; color:var(--red); font-weight:700; margin-top:6px; }
 
       /* Footer nav */
       .mnbi-footer { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:18px 26px calc(18px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--border); flex-shrink:0; }
@@ -1207,8 +1228,17 @@
       catch { return null; }
     }).filter(Boolean);
     ST.columnMappingAmbiguous = false;
-    ST.step = 2;
-    _renderStep2();
+    const target = ST._returnStepAfterMapping || 2;
+    ST._returnStepAfterMapping = 2; // reset for next time
+    if (target === 5) {
+      // ST._cleanRows normally only gets (re)computed by Step 3; since we're
+      // skipping straight back to Step 5, refresh it first so it doesn't
+      // keep pointing at row objects discarded by the re-mapping above.
+      _renderStep3();
+      ST.step = 5; _renderStep5();
+    } else {
+      ST.step = 2; _renderStep2();
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1584,8 +1614,8 @@
     return (g && g.category) || '';
   }
 
-  function _catOptionsHtml(selected) {
-    const cats = _gastoCats();
+  function _catOptionsHtml(selected, cats) {
+    cats = cats || _gastoCats();
     return `<option value="">${_t('bi_elegir', 'Elegir...')}</option>` +
       cats.map(c => `<option value="${c}" ${selected === c ? 'selected' : ''}>${_catEmoji(c)} ${c}</option>`).join('') +
       `<option value="__new__">➕ ${_t('bi_nueva_categoria', 'Nueva categoría...')}</option>`;
@@ -1656,12 +1686,13 @@
   // user's REAL category list (_S().categorias.gasto) — the same
   // mechanism the group view already uses — so "crear categoría" always
   // stays compatible with the app's actual category model.
-  function _promptNewCategory() {
+  function _promptNewCategory(kind) {
+    kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
     const name = prompt(_t('bi_nombre_nueva_categoria', 'Nombre de la nueva categoría:'));
     if (!name || !name.trim()) return null;
     const trimmed = name.trim();
-    if (!_S().categorias.gasto.includes(trimmed)) {
-      _S().categorias.gasto.push(trimmed);
+    if (!_S().categorias[kind].includes(trimmed)) {
+      _S().categorias[kind].push(trimmed);
       ST.newCategoriesCreated.push(trimmed);
     }
     return trimmed;
@@ -1747,24 +1778,77 @@
   // ════════════════════════════════════════════════════════════════
   // ── STEP 5 — SUMMARY ───────────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
+  // A row is considered an error if it has no usable amount or date —
+  // these would never have made it into a real transaction anyway, so
+  // they're excluded from what actually gets written and reported
+  // separately as "con errores" instead of silently disappearing.
+  function _isRowError(r) {
+    if (!r) return true;
+    if (!(r.amount > 0)) return true;
+    if (!(r.date instanceof Date) || isNaN(r.date)) return true;
+    return false;
+  }
+
   function _renderStep5() {
     ST.step = 5;
     const clean = ST._cleanRows || ST.rows;
-    const incomeCount = clean.filter(r => !r.isExpense).length;
-    const expenseCount = clean.filter(r => r.isExpense).length;
+    const errorRows = clean.filter(_isRowError);
+    const readyRows = clean.filter(r => !_isRowError(r));
+    const incomeCount = readyRows.filter(r => !r.isExpense).length;
+    const expenseCount = readyRows.filter(r => r.isExpense).length;
     const merchantsCategorized = ST.categorizeChoice ? ST.groups.filter(g => g.category).length : 0;
     const bank = BANKS[ST.format] || BANKS.generic;
     const accountLabel = ST.accountMode === 'new'
       ? (document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName || bank.label)
       : (_cuentas().find(c => c.id === ST.accountId)?.nombre || '—');
+    const canImport = readyRows.length > 0;
+
+    const statusRow = `
+      <div class="mnbi-ready-errors-row">
+        <div class="mnbi-status-pill ready">✅ ${readyRows.length} ${_t('bi_listos_importar', 'movimientos listos para importar')}</div>
+        ${errorRows.length ? `<div class="mnbi-status-pill errors">⚠️ ${errorRows.length} ${_t('bi_con_errores', 'con errores')}</div>` : ''}
+      </div>`;
+
+    const quickLinks = `
+      <div class="mnbi-quick-links">
+        ${ST.format === 'generic' ? `<button type="button" class="mnbi-quick-link" onclick="MNBankImport._editColumnsFromReview()">🔧 ${_t('bi_corregir_columnas', 'Corregir columnas')}</button>` : ''}
+        <button type="button" class="mnbi-quick-link" onclick="MNBankImport._editAccountFromReview()">🏦 ${_t('bi_cambiar_cuenta', 'Cambiar cuenta')}</button>
+      </div>`;
+
+    const reviewCards = clean.map(r => {
+      const idx = ST.rows.indexOf(r);
+      const err = _isRowError(r);
+      const cat = _effectiveCategoryFor(r);
+      const catList = r.isExpense ? _gastoCats() : _ingresoCats();
+      return `
+      <div class="mnbi-review-card ${err ? 'error' : ''}">
+        <div class="mnbi-review-top">
+          <div style="min-width:0">
+            <div class="mnbi-review-date">${_fmtDate(r.date)}</div>
+            <div class="mnbi-review-desc">${r.description}</div>
+            <div class="mnbi-review-merchant">🏪 ${prettyMerchant(r.merchantKey)}</div>
+          </div>
+          <button type="button" class="mnbi-amount-toggle" style="color:${r.isExpense ? 'var(--red)' : 'var(--green)'};flex-shrink:0"
+            title="${_t('bi_toca_para_corregir', 'Toca para cambiar entre ingreso y gasto')}"
+            onclick="MNBankImport._toggleRowTypeStep5(${idx})">
+            ${r.isExpense ? '−' : '+'}${r.amount.toFixed(2)}€
+          </button>
+        </div>
+        <div class="mnbi-review-row2">
+          <select class="mnbi-group-cat-select ${cat ? 'mapped' : ''}" onchange="MNBankImport._setRowCategoryStep5(${idx}, this.value)">
+            ${_catOptionsHtml(cat, catList)}
+          </select>
+        </div>
+        ${err ? `<div class="mnbi-review-error-badge">⚠️ ${_t('bi_error_fila', 'Importe o fecha no válidos — no se importará')}</div>` : ''}
+      </div>`;
+    }).join('');
 
     const body = `
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 5 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
-      <div class="mnbi-h1">${_t('bi_s5_titulo', 'Todo listo para importar')}</div>
-      <div class="mnbi-sub">${_t('bi_s5_sub', 'Revisa el resumen antes de confirmar.')}</div>
+      <div class="mnbi-h1">${_t('bi_s5_titulo', 'Revisa antes de importar')}</div>
+      <div class="mnbi-sub">${_t('bi_s5_sub', 'Comprueba fecha, comercio, importe, tipo y categoría de cada movimiento.')}</div>
 
       <div class="mnbi-summary-list">
-        <div class="mnbi-summary-row"><span>${_t('bi_transacciones', 'Transacciones')}</span><span>${clean.length}</span></div>
         <div class="mnbi-summary-row"><span>${_t('bi_ingresos', 'Ingresos')}</span><span style="color:var(--green)">${incomeCount}</span></div>
         <div class="mnbi-summary-row"><span>${_t('bi_gastos', 'Gastos')}</span><span style="color:var(--red)">${expenseCount}</span></div>
         <div class="mnbi-summary-row"><span>${_t('bi_comercios_categorizados', 'Comercios categorizados')}</span><span>${merchantsCategorized}${ST.categorizeChoice ? '/' + ST.groups.length : ''}</span></div>
@@ -1772,6 +1856,12 @@
         <div class="mnbi-summary-row"><span>${_t('bi_cuenta', 'Cuenta')}</span><span>${accountLabel}</span></div>
         <div class="mnbi-summary-row"><span>${_t('bi_banco', 'Banco')}</span><span>${bank.emoji} ${bank.label}</span></div>
       </div>
+
+      ${statusRow}
+      ${quickLinks}
+
+      <div class="mnbi-sub" style="font-weight:700;color:var(--text);margin-bottom:8px">${_t('bi_revisar_movimientos', 'Revisa cada movimiento')}</div>
+      <div class="mnbi-review-list" id="mnbiReviewList">${reviewCards}</div>
     `;
 
     const footer = `
@@ -1779,10 +1869,46 @@
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         ${_t('bi_atras', 'Atrás')}
       </button>
-      <button class="mnbi-btn-primary" onclick="MNBankImport._runImport()">
+      <button class="mnbi-btn-primary" ${canImport ? '' : 'disabled'} title="${canImport ? '' : _t('bi_nada_que_importar', 'No hay movimientos válidos para importar')}" onclick="MNBankImport._runImport()">
         🚀 ${_t('bi_importar_ahora', 'Importar ahora')}
       </button>`;
+
+    const prevScroll = document.getElementById('mnbiReviewList')?.scrollTop || 0;
     _shell(body, footer);
+    const wrap = document.getElementById('mnbiReviewList');
+    if (wrap) wrap.scrollTop = prevScroll;
+  }
+
+  function _toggleRowTypeStep5(idx) {
+    const r = ST.rows[idx];
+    if (!r) return;
+    r.isExpense = !r.isExpense;
+    r._manuallyEdited = true;
+    r._categoryOverride = ''; // gasto/ingreso use different category lists — don't carry a stale one over
+    _renderStep5();
+  }
+
+  function _setRowCategoryStep5(idx, value) {
+    const r = ST.rows[idx];
+    if (!r) return;
+    if (value === '__new__') {
+      const created = _promptNewCategory(r.isExpense ? 'gasto' : 'ingreso');
+      if (!created) { _renderStep5(); return; }
+      value = created;
+    }
+    r._categoryOverride = value;
+    _renderStep5();
+  }
+
+  function _editColumnsFromReview() {
+    ST._returnStepAfterMapping = 5;
+    ST.step = 'mapping';
+    _renderColumnMapping();
+  }
+
+  function _editAccountFromReview() {
+    ST.step = 2;
+    _renderStep2();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1826,6 +1952,12 @@
       ST.step = 2; _renderStep2();
       return;
     }
+    const readyCount = (ST._cleanRows || ST.rows).filter(r => !_isRowError(r)).length;
+    if (!readyCount) {
+      if (window.toast) toast(_t('bi_nada_que_importar', 'No hay movimientos válidos para importar'), 'error');
+      ST.step = 5; _renderStep5();
+      return;
+    }
 
     ST.step = 'progress';
     let i = 0;
@@ -1863,7 +1995,7 @@
     if (ST.categorizeChoice) ST.groups.forEach(g => { groupCatByKey[g.key] = g.category; });
 
     let importedIncome = 0, importedExpense = 0;
-    const rows = ST._cleanRows || ST.rows;
+    const rows = (ST._cleanRows || ST.rows).filter(r => !_isRowError(r));
     rows.forEach(r => {
       const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
       if (r.isExpense) {
@@ -1871,7 +2003,8 @@
         S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, origen: 'bank-import' });
         importedExpense++;
       } else {
-        S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria: 'Otro', cuentaId, status: 'cobrado', origen: 'bank-import' });
+        const categoria = r._categoryOverride || 'Otro';
+        S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, status: 'cobrado', origen: 'bank-import' });
         importedIncome++;
       }
     });
@@ -1962,12 +2095,17 @@
     _toggleSelectAllIndividual: _toggleSelectAllIndividual,
     _setIndividualRowCategory: _setIndividualRowCategory,
     _applyBulkCategory: _applyBulkCategory,
+    _toggleRowTypeStep5: _toggleRowTypeStep5,
+    _setRowCategoryStep5: _setRowCategoryStep5,
+    _editColumnsFromReview: _editColumnsFromReview,
+    _editAccountFromReview: _editAccountFromReview,
     _setRemember: _setRemember,
     _runImport: _runImport,
     _viewTransactions: _viewTransactions,
     // exposed for tests / backward compat
     detectBankFormat, detectBankWithConfidence, detectColumns, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
     autoDetectCategory: _autoDetectCategory,
+    isRowError: _isRowError,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
