@@ -639,8 +639,10 @@
     return { clean, duplicates };
   }
   function _fmtDate(d) {
-    try { return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }); }
-    catch { return ''; }
+    try {
+      if (!(d instanceof Date) || isNaN(d)) return _t('bi_fecha_no_valida', 'Fecha no válida');
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch { return _t('bi_fecha_no_valida', 'Fecha no válida'); }
   }
   function _fmtEur(n) {
     try { return (window.eur ? window.eur(n) : `${n.toFixed(2)}€`); } catch { return `${(n||0).toFixed(2)}€`; }
@@ -844,6 +846,19 @@
         flex:1; padding:13px 20px; border-radius:12px; border:1.5px solid var(--border2);
         background:var(--bg2); color:var(--text); font-size:.86rem; font-weight:700; cursor:pointer; font-family:inherit;
       }
+      .mnbi-success-info { text-align:left; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+      .mnbi-success-info-row { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:1px solid var(--border); font-size:.82rem; }
+      .mnbi-success-info-row:last-child { border-bottom:none; }
+      .mnbi-success-info-row span:first-child { color:var(--text2); }
+      .mnbi-success-info-row span:last-child { color:var(--text); font-weight:700; text-align:right; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .mnbi-skip-notice { text-align:left; font-size:.78rem; padding:10px 12px; border-radius:12px; margin-bottom:10px; }
+      .mnbi-skip-notice.dup { background:rgba(240,180,40,.1); border:1px solid rgba(240,180,40,.3); color:var(--gold); }
+      .mnbi-skip-notice.err { background:rgba(244,63,94,.1); border:1px solid rgba(244,63,94,.3); color:var(--red); }
+      .mnbi-skip-details { margin-top:8px; max-height:160px; overflow-y:auto; }
+      .mnbi-skip-item { display:flex; justify-content:space-between; gap:8px; padding:6px 0; font-size:.72rem; color:var(--text2); border-top:1px solid rgba(255,255,255,.08); }
+      .mnbi-skip-item span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .mnbi-skip-item span:last-child { flex-shrink:0; opacity:.8; }
+      .mnbi-skip-toggle { background:none; border:none; color:inherit; font-size:.72rem; font-weight:700; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit; }
 
       /* Empty state */
       .mnbi-empty { text-align:center; padding:30px 10px; color:var(--text3); font-size:.85rem; }
@@ -2020,88 +2035,152 @@
     await advance(); // merchants
     await advance(); // prep
 
-    // ── ACTUAL WRITE INTO REAL APP STATE ──
-    const S = _S();
-    let cuentaId = ST.accountId;
-    if (ST.accountMode === 'new') {
-      const name = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName || (BANKS[ST.format]||BANKS.generic).label;
-      const tipo = ST.newAccountTipo || 'banco';
-      const newAccount = { id: _uid(), nombre: name.trim() || 'Cuenta importada', tipo, saldo: 0, valorTotal: 0, color: '#00D4AA', notas: '' };
-      S.cuentas.push(newAccount);
-      cuentaId = newAccount.id;
-    }
+    // Rows with an invalid amount/date — captured here (before the final
+    // write) so the result screen can report them in human terms.
+    const errorRows = (ST.rows || []).filter(_isRowError);
 
-    // Save merchant→category mappings if requested
-    if (ST.categorizeChoice && ST.rememberMappings) {
-      const map = _loadMap();
-      ST.groups.forEach(g => { if (g.category) map[g.key] = g.category; });
-      _saveMap(map);
-    }
-
-    const groupCatByKey = {};
-    if (ST.categorizeChoice) ST.groups.forEach(g => { groupCatByKey[g.key] = g.category; });
-
-    // Recompute duplicates fresh, scoped to the FINAL target account — not
-    // reused from Step 3's cached ST._cleanRows, which could be stale if
-    // the account was changed afterwards (e.g. via the "Cambiar cuenta"
-    // shortcut on the final review step). This is what makes re-running an
-    // import of the same file into the same account idempotent regardless
-    // of how the wizard was navigated.
-    const readyRows = (ST.rows || []).filter(r => !_isRowError(r));
-    const { clean: dedupedRows, duplicates: skippedDuplicates } = _computeDuplicates(readyRows, cuentaId);
-
-    let importedIncome = 0, importedExpense = 0;
-    const rows = dedupedRows;
-    rows.forEach(r => {
-      const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
-      const fingerprint = _fingerprintFor(r);
-      if (r.isExpense) {
-        const categoria = r._categoryOverride || groupCatByKey[r.merchantKey] || 'Otro';
-        S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import' });
-        importedExpense++;
+    try {
+      // ── ACTUAL WRITE INTO REAL APP STATE ──
+      const S = _S();
+      let cuentaId = ST.accountId;
+      let accountName = '';
+      if (ST.accountMode === 'new') {
+        const name = document.getElementById('mnbiNewAccountName')?.value || ST.newAccountName || (BANKS[ST.format]||BANKS.generic).label;
+        const tipo = ST.newAccountTipo || 'banco';
+        accountName = name.trim() || 'Cuenta importada';
+        const newAccount = { id: _uid(), nombre: accountName, tipo, saldo: 0, valorTotal: 0, color: '#00D4AA', notas: '' };
+        S.cuentas.push(newAccount);
+        cuentaId = newAccount.id;
       } else {
-        const categoria = r._categoryOverride || 'Otro';
-        S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import' });
-        importedIncome++;
+        accountName = (S.cuentas || []).find(c => c.id === cuentaId)?.nombre || _t('bi_cuenta_desconocida', 'Cuenta');
       }
-    });
 
-    if (typeof save === 'function') save();
-    if (window.MNGamification) { try { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); } catch (_) {} }
+      // Save merchant→category mappings if requested
+      if (ST.categorizeChoice && ST.rememberMappings) {
+        const map = _loadMap();
+        ST.groups.forEach(g => { if (g.category) map[g.key] = g.category; });
+        _saveMap(map);
+      }
 
-    if (skippedDuplicates.length && window.toast) {
-      toast(`${skippedDuplicates.length} ${_t('bi_duplicados_omitidos_toast', 'movimientos ya existían en esta cuenta y no se han vuelto a importar')}`, 'info');
+      const groupCatByKey = {};
+      if (ST.categorizeChoice) ST.groups.forEach(g => { groupCatByKey[g.key] = g.category; });
+
+      // Recompute duplicates fresh, scoped to the FINAL target account — not
+      // reused from Step 3's cached ST._cleanRows, which could be stale if
+      // the account was changed afterwards (e.g. via the "Cambiar cuenta"
+      // shortcut on the final review step). This is what makes re-running an
+      // import of the same file into the same account idempotent regardless
+      // of how the wizard was navigated.
+      const readyRows = (ST.rows || []).filter(r => !_isRowError(r));
+      const { clean: dedupedRows, duplicates: skippedDuplicates } = _computeDuplicates(readyRows, cuentaId);
+
+      let importedIncome = 0, importedExpense = 0;
+      let incomeTotal = 0, expenseTotal = 0;
+      const rows = dedupedRows;
+      rows.forEach(r => {
+        const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
+        const fingerprint = _fingerprintFor(r);
+        if (r.isExpense) {
+          const categoria = r._categoryOverride || groupCatByKey[r.merchantKey] || 'Otro';
+          S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import' });
+          importedExpense++; expenseTotal += r.amount;
+        } else {
+          const categoria = r._categoryOverride || 'Otro';
+          S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import' });
+          importedIncome++; incomeTotal += r.amount;
+        }
+      });
+
+      if (typeof save === 'function') save();
+      if (window.MNGamification) { try { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); } catch (_) {} }
+
+      await advance(); // import (final)
+      await new Promise(res => setTimeout(res, 300));
+
+      ST._resultStats = {
+        total: rows.length,
+        income: importedIncome,
+        expense: importedExpense,
+        incomeTotal, expenseTotal,
+        merchants: ST.categorizeChoice ? ST.groups.filter(g => g.category).length : 0,
+        duplicates: skippedDuplicates.length,
+        duplicatesList: skippedDuplicates,
+        errors: errorRows.length,
+        errorsList: errorRows,
+        accountName,
+        fileName: ST.fileName || '',
+      };
+      ST.step = 'success';
+      _renderSuccess();
+      if (typeof render === 'function') render();
+    } catch (_err) {
+      // Whatever went wrong, the person still gets a clear, human message
+      // and a way out — never a stuck spinner or a raw error on screen.
+      ST.step = 5;
+      _renderStep5();
+      if (window.toast) toast(_t('bi_err_importacion', 'No se ha podido completar la importación. Inténtalo de nuevo.'), 'error');
     }
+  }
 
-    await advance(); // import (final)
-    await new Promise(res => setTimeout(res, 300));
-
-    ST._resultStats = {
-      total: rows.length,
-      income: importedIncome,
-      expense: importedExpense,
-      merchants: ST.categorizeChoice ? ST.groups.filter(g => g.category).length : 0,
-    };
-    ST.step = 'success';
-    _renderSuccess();
-    if (typeof render === 'function') render();
+  // Renders a short, human-language reason list for skipped rows — never
+  // the raw row object, never a stack trace or technical code.
+  function _skipDetailsHtml(list, reasonLabel, domId) {
+    if (!list || !list.length) return '';
+    const items = list.slice(0, 25).map(r => {
+      const desc = (r && r.description ? String(r.description) : _t('bi_movimiento_generico', 'Movimiento')).trim();
+      const amt = (r && typeof r.amount === 'number' && !isNaN(r.amount)) ? _fmtEur(r.amount) : '';
+      return `<div class="mnbi-skip-item"><span>${_fmtDate(r && r.date)} · ${desc}</span><span>${amt}</span></div>`;
+    }).join('');
+    const more = list.length > 25 ? `<div class="mnbi-skip-item"><span>+ ${list.length - 25} ${_t('bi_mas', 'más')}…</span><span></span></div>` : '';
+    return `
+      <button type="button" class="mnbi-skip-toggle" onclick="document.getElementById('${domId}').style.display = document.getElementById('${domId}').style.display === 'block' ? 'none' : 'block'">
+        ${_t('bi_ver_detalle', 'Ver detalle')}
+      </button>
+      <div class="mnbi-skip-details" id="${domId}" style="display:none">${items}${more}</div>`;
   }
 
   function _renderSuccess() {
-    const stats = ST._resultStats || { total: 0, income: 0, expense: 0, merchants: 0 };
+    const stats = ST._resultStats || { total: 0, income: 0, expense: 0, incomeTotal: 0, expenseTotal: 0, merchants: 0, duplicates: 0, errors: 0, accountName: '', fileName: '' };
+    const accountName = stats.accountName || _t('bi_cuenta_desconocida', 'Cuenta');
+    const fileName = stats.fileName || _t('bi_archivo_desconocido', 'archivo');
+
+    const duplicatesNotice = stats.duplicates > 0 ? `
+      <div class="mnbi-skip-notice dup">
+        ⚠️ ${stats.duplicates} ${stats.duplicates === 1 ? _t('bi_omitido_duplicado_1', 'movimiento omitido por estar duplicado') : _t('bi_omitido_duplicado_n', 'movimientos omitidos por estar duplicados')}
+        ${_skipDetailsHtml(stats.duplicatesList, '', 'mnbiDupDetails')}
+      </div>` : '';
+
+    const errorsNotice = stats.errors > 0 ? `
+      <div class="mnbi-skip-notice err">
+        ⚠️ ${stats.errors} ${stats.errors === 1 ? _t('bi_con_error_1', 'movimiento con errores no se ha importado') : _t('bi_con_error_n', 'movimientos con errores no se han importado')}
+        ${_skipDetailsHtml(stats.errorsList, '', 'mnbiErrDetails')}
+      </div>` : '';
+
     const body = `
       <div class="mnbi-success-wrap">
         <div class="mnbi-success-icon">✓</div>
         <div class="mnbi-success-title">${_t('bi_success_titulo', 'Importación completada')}</div>
         <div class="mnbi-success-sub">${stats.total} ${_t('bi_success_sub', 'transacciones importadas correctamente')}</div>
+
         <div class="mnbi-success-stats">
           <div class="mnbi-success-stat"><div class="mnbi-success-stat-val" style="color:var(--green)">${stats.income}</div><div class="mnbi-success-stat-lbl">${_t('bi_ingresos', 'Ingresos')}</div></div>
           <div class="mnbi-success-stat"><div class="mnbi-success-stat-val" style="color:var(--red)">${stats.expense}</div><div class="mnbi-success-stat-lbl">${_t('bi_gastos', 'Gastos')}</div></div>
           <div class="mnbi-success-stat"><div class="mnbi-success-stat-val">${stats.merchants}</div><div class="mnbi-success-stat-lbl">${_t('bi_comercios', 'Comercios')}</div></div>
         </div>
+
+        <div class="mnbi-success-info">
+          <div class="mnbi-success-info-row"><span>${_t('bi_total_ingresos', 'Total ingresos')}</span><span style="color:var(--green)">${_fmtEur(stats.incomeTotal || 0)}</span></div>
+          <div class="mnbi-success-info-row"><span>${_t('bi_total_gastos', 'Total gastos')}</span><span style="color:var(--red)">${_fmtEur(stats.expenseTotal || 0)}</span></div>
+          <div class="mnbi-success-info-row"><span>${_t('bi_cuenta_utilizada', 'Cuenta utilizada')}</span><span title="${accountName}">${accountName}</span></div>
+          <div class="mnbi-success-info-row"><span>${_t('bi_archivo_procesado', 'Archivo procesado')}</span><span title="${fileName}">${fileName}</span></div>
+        </div>
+
+        ${duplicatesNotice}
+        ${errorsNotice}
+
         <div class="mnbi-success-actions">
           <button class="mnbi-btn-secondary-full" onclick="MNBankImport._viewTransactions()">${_t('bi_ver_movimientos', 'Ver movimientos')}</button>
-          <button class="mnbi-btn-primary" onclick="MNBankImport.close()">${_t('bi_volver_dashboard', 'Volver al dashboard')}</button>
+          <button class="mnbi-btn-primary" onclick="MNBankImport.close()">${_t('bi_cerrar_importador', 'Cerrar importador')}</button>
         </div>
       </div>`;
     _shell(body, '', { showSteps: false });
