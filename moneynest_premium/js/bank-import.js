@@ -587,6 +587,57 @@
   function _cuentas() { try { return _S().cuentas || []; } catch { return []; } }
   function _catEmoji(c) { return (window.catEmoji ? window.catEmoji(c) : '📌'); }
   function _uid() { return window.uid ? window.uid() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)); }
+
+  // ════════════════════════════════════════════════════════════════
+  // ── DUPLICATE PREVENTION (fingerprint-based, per-account) ──────
+  // ════════════════════════════════════════════════════════════════
+  // A stable fingerprint built from data that survives re-parsing the same
+  // file (date + amount + type + normalized merchant) — deliberately NOT
+  // the raw description, which can vary slightly between re-reads/re-
+  // mappings (whitespace, casing) and would make an exact-string duplicate
+  // check unreliable.
+  function _fingerprintFor(row) {
+    const iso = (row.date instanceof Date && !isNaN(row.date)) ? row.date.toISOString().slice(0, 10) : '';
+    const amt = (Number(row.amount) || 0).toFixed(2);
+    const type = row.isExpense ? 'E' : 'I';
+    const merchant = (row.merchantKey || merchantKeyFor(row.description || '') || '').toUpperCase();
+    return `${iso}|${amt}|${type}|${merchant}`;
+  }
+
+  // Same fingerprint shape, but derived from an already-saved gasto/ingreso
+  // record — used as a fallback for records imported before this field
+  // existed, so duplicate detection still works against older data.
+  function _fingerprintForRecord(rec, isExpense) {
+    const amt = (Number(rec.importe) || 0).toFixed(2);
+    const type = isExpense ? 'E' : 'I';
+    const merchant = (rec.merchant || merchantKeyFor(rec.concepto || '') || '').toUpperCase();
+    return `${rec.fecha}|${amt}|${type}|${merchant}`;
+  }
+
+  // Splits `rows` into { clean, duplicates } by checking each row's
+  // fingerprint against the transactions ALREADY PRESENT IN THE TARGET
+  // ACCOUNT ONLY (cuentaId) — never across other accounts, so a
+  // coincidentally-identical transaction in a different account is never
+  // mistaken for a duplicate.
+  function _computeDuplicates(rows, cuentaId) {
+    const existingFingerprints = new Set();
+    if (cuentaId) {
+      const S = _S();
+      (S.gastos || []).filter(e => e.cuentaId === cuentaId).forEach(e => {
+        existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, true));
+      });
+      (S.ingresos || []).filter(e => e.cuentaId === cuentaId).forEach(e => {
+        existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, false));
+      });
+    }
+    const duplicates = [];
+    const clean = rows.filter(r => {
+      if (!existingFingerprints.size) return true;
+      if (existingFingerprints.has(_fingerprintFor(r))) { duplicates.push(r); return false; }
+      return true;
+    });
+    return { clean, duplicates };
+  }
   function _fmtDate(d) {
     try { return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }); }
     catch { return ''; }
@@ -1405,16 +1456,12 @@
   // ── STEP 3 — PREVIEW ───────────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
   function _renderStep3() {
-    // Duplicate detection against existing data (only makes sense if importing into existing account)
-    const existing = ST.accountMode === 'existing' ? [...(_S().gastos||[]), ...(_S().ingresos||[])] : [];
-    ST.duplicates = [];
-    const clean = ST.rows.filter(r => {
-      if (!existing.length) return true;
-      const iso = r.date.toISOString().slice(0, 10);
-      const dup = existing.find(e => e.fecha === iso && Math.abs((Number(e.importe)||0) - r.amount) < 0.01 && (e.concepto||'').toLowerCase() === r.description.toLowerCase());
-      if (dup) { ST.duplicates.push(r); return false; }
-      return true;
-    });
+    // Duplicate detection against existing data in the TARGET account only
+    // (a brand-new account is trivially empty, so this only matters when
+    // importing into an existing one).
+    const targetCuentaId = ST.accountMode === 'existing' ? ST.accountId : null;
+    const { clean, duplicates } = _computeDuplicates(ST.rows, targetCuentaId);
+    ST.duplicates = duplicates;
     ST._cleanRows = clean;
 
     const incomeRows = clean.filter(r => !r.isExpense);
@@ -1994,23 +2041,37 @@
     const groupCatByKey = {};
     if (ST.categorizeChoice) ST.groups.forEach(g => { groupCatByKey[g.key] = g.category; });
 
+    // Recompute duplicates fresh, scoped to the FINAL target account — not
+    // reused from Step 3's cached ST._cleanRows, which could be stale if
+    // the account was changed afterwards (e.g. via the "Cambiar cuenta"
+    // shortcut on the final review step). This is what makes re-running an
+    // import of the same file into the same account idempotent regardless
+    // of how the wizard was navigated.
+    const readyRows = (ST.rows || []).filter(r => !_isRowError(r));
+    const { clean: dedupedRows, duplicates: skippedDuplicates } = _computeDuplicates(readyRows, cuentaId);
+
     let importedIncome = 0, importedExpense = 0;
-    const rows = (ST._cleanRows || ST.rows).filter(r => !_isRowError(r));
+    const rows = dedupedRows;
     rows.forEach(r => {
       const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
+      const fingerprint = _fingerprintFor(r);
       if (r.isExpense) {
         const categoria = r._categoryOverride || groupCatByKey[r.merchantKey] || 'Otro';
-        S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, origen: 'bank-import' });
+        S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import' });
         importedExpense++;
       } else {
         const categoria = r._categoryOverride || 'Otro';
-        S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, status: 'cobrado', origen: 'bank-import' });
+        S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import' });
         importedIncome++;
       }
     });
 
     if (typeof save === 'function') save();
     if (window.MNGamification) { try { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); } catch (_) {} }
+
+    if (skippedDuplicates.length && window.toast) {
+      toast(`${skippedDuplicates.length} ${_t('bi_duplicados_omitidos_toast', 'movimientos ya existían en esta cuenta y no se han vuelto a importar')}`, 'info');
+    }
 
     await advance(); // import (final)
     await new Promise(res => setTimeout(res, 300));
@@ -2106,6 +2167,8 @@
     detectBankFormat, detectBankWithConfidence, detectColumns, parseCSV, parseXLSX, normalizeRow, merchantKeyFor,
     autoDetectCategory: _autoDetectCategory,
     isRowError: _isRowError,
+    fingerprintFor: _fingerprintFor,
+    computeDuplicates: _computeDuplicates,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
   };
 })();
