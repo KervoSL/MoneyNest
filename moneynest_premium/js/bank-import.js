@@ -557,12 +557,18 @@
       .mnbi-kpi-val { font-size:1.05rem; font-weight:800; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
       .mnbi-table-wrap { border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:18px; }
+      .mnbi-table-wrap--scroll { max-height:320px; overflow-y:auto; }
       .mnbi-table { width:100%; border-collapse:collapse; font-size:.8rem; }
-      .mnbi-table thead th { padding:9px 12px; font-size:.66rem; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; text-align:left; background:var(--bg2); font-weight:700; }
+      .mnbi-table thead th { padding:9px 12px; font-size:.66rem; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; text-align:left; background:var(--bg2); font-weight:700; position:sticky; top:0; z-index:1; }
       .mnbi-table tbody td { padding:9px 12px; border-top:1px solid var(--border); color:var(--text2); }
       .mnbi-table tbody tr:hover { background:var(--bg2); }
       .mnbi-table .mnbi-desc { max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-weight:600; }
       .mnbi-more-row { text-align:center; padding:10px; font-size:.74rem; color:var(--text3); background:var(--bg2); }
+      .mnbi-amount-toggle {
+        background:none; border:1px solid transparent; font-weight:700; font-size:.8rem; font-family:inherit;
+        padding:4px 8px; border-radius:8px; cursor:pointer; transition:all .15s;
+      }
+      .mnbi-amount-toggle:hover { border-color:currentColor; background:var(--bg3, rgba(255,255,255,.05)); }
 
       /* Categorize choice */
       .mnbi-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px; }
@@ -1211,12 +1217,24 @@
     const totalIncome = incomeRows.reduce((a, r) => a + r.amount, 0);
     const totalExpense = expenseRows.reduce((a, r) => a + r.amount, 0);
 
-    const previewRows = clean.slice(0, 6).map(r => `
+    // Show every movement (not just a handful) in a scrollable list so the
+    // user can find and correct any misclassified transaction, not just
+    // the first few — the whole point of allowing manual correction.
+    const previewRows = clean.map(r => {
+      const idx = ST.rows.indexOf(r);
+      return `
       <tr>
         <td>${_fmtDate(r.date)}</td>
-        <td class="mnbi-desc" title="${r.description}">${r.description}</td>
-        <td style="font-weight:700;color:${r.isExpense ? 'var(--red)' : 'var(--green)'}">${r.isExpense ? '−' : '+'}${r.amount.toFixed(2)}€</td>
-      </tr>`).join('');
+        <td class="mnbi-desc" title="${r.description}">${r.description}${r._manuallyEdited ? ` <span title="${_t('bi_corregido_manual', 'Corregido manualmente')}" style="color:var(--accent)">✎</span>` : ''}</td>
+        <td style="text-align:right">
+          <button type="button" class="mnbi-amount-toggle" style="color:${r.isExpense ? 'var(--red)' : 'var(--green)'}"
+            title="${_t('bi_toca_para_corregir', 'Toca para cambiar entre ingreso y gasto')}"
+            onclick="MNBankImport._toggleRowType(${idx})">
+            ${r.isExpense ? '−' : '+'}${r.amount.toFixed(2)}€
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
 
     const body = `
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 3 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
@@ -1231,12 +1249,13 @@
 
       ${ST.duplicates.length ? `<div style="font-size:.76rem;color:var(--gold);margin-bottom:12px">⚠️ ${ST.duplicates.length} ${_t('bi_duplicados_omitidos', 'movimientos duplicados serán omitidos automáticamente')}</div>` : ''}
 
-      <div class="mnbi-table-wrap">
+      <div class="mnbi-sub" style="margin-bottom:8px">💡 ${_t('bi_s3_hint_corregir', '¿Algo mal clasificado? Toca el importe del movimiento para cambiar entre ingreso y gasto.')}</div>
+
+      <div class="mnbi-table-wrap mnbi-table-wrap--scroll" id="mnbiTxTableWrap">
         <table class="mnbi-table">
-          <thead><tr><th>${_t('bi_fecha', 'Fecha')}</th><th>${_t('bi_concepto', 'Concepto')}</th><th>${_t('bi_importe', 'Importe')}</th></tr></thead>
+          <thead><tr><th>${_t('bi_fecha', 'Fecha')}</th><th>${_t('bi_concepto', 'Concepto')}</th><th style="text-align:right">${_t('bi_importe', 'Importe')}</th></tr></thead>
           <tbody>${previewRows}</tbody>
         </table>
-        ${clean.length > 6 ? `<div class="mnbi-more-row">+ ${clean.length - 6} ${_t('bi_mas', 'más')}…</div>` : ''}
       </div>
     `;
 
@@ -1249,7 +1268,22 @@
         ${_t('bi_continuar', 'Continuar')}
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>`;
+
+    const prevScroll = document.getElementById('mnbiTxTableWrap')?.scrollTop || 0;
     _shell(body, footer);
+    const wrap = document.getElementById('mnbiTxTableWrap');
+    if (wrap) wrap.scrollTop = prevScroll;
+  }
+
+  // Flips a single transaction between expense and income. `rowIndex`
+  // refers to ST.rows (the full normalized set, pre-duplicate-filtering),
+  // so the correction survives re-renders and feeds into every later step.
+  function _toggleRowType(rowIndex) {
+    const r = ST.rows[rowIndex];
+    if (!r) return;
+    r.isExpense = !r.isExpense;
+    r._manuallyEdited = true;
+    _renderStep3();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1560,6 +1594,7 @@
     },
     _toStep4: () => { ST.step = 4; _renderStep4(); },
     _toStep5: () => { ST.step = 5; _renderStep5(); },
+    _toggleRowType: _toggleRowType,
     _clearFile: _clearFile,
     _pickBank: _pickBank,
     _forceManualBank: _forceManualBank,
