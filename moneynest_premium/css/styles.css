@@ -468,6 +468,8 @@ img{max-width:100%;display:block}
 .col-span-3{grid-column:span 3}
 .chart-container{position:relative;height:200px}
 .chart-container.tall{height:260px}
+.donut-chart-wrap{position:relative;width:130px;height:130px;flex:0 0 130px}
+.dash-donut-card{min-width:0}
 
 /* ─── TABLES ─────────────────────────────────────────────────── */
 .table-wrap{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}

@@ -4400,13 +4400,13 @@ function renderDashboard() {
 
   <!-- ── DONUT + SMART INSIGHTS ─────────────────────────────────── -->
   <div class="grid-2" style="margin-bottom:14px">
-    <div class="card">
+    <div class="card dash-donut-card">
       <div class="card-header">
         <div><div class="card-title">🍩 ${t('gastos_categoria')}</div><div class="card-subtitle">${monthLabel(m)}</div></div>
       </div>
-      <div style="display:flex;gap:16px;align-items:center">
-        <div style="flex:0 0 130px"><canvas id="chartDonut" height="130"></canvas></div>
-        <div class="legend" id="donutLegend" style="flex:1;margin-top:0"></div>
+      <div style="display:flex;gap:16px;align-items:center;min-width:0">
+        <div class="donut-chart-wrap"><canvas id="chartDonut"></canvas></div>
+        <div class="legend" id="donutLegend" style="flex:1;margin-top:0;min-width:0"></div>
       </div>
     </div>
     <div class="card">
