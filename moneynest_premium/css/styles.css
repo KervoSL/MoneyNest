@@ -936,9 +936,9 @@ textarea{resize:vertical;min-height:70px}
   border:1px solid var(--border);background:var(--bg2);
   margin-bottom:10px;
 }
-.budget-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.budget-cat{font-size:.88rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
-.budget-nums{font-size:.8rem;color:var(--text2)}
+.budget-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px 12px}
+.budget-cat{font-size:.88rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.budget-nums{font-size:.8rem;color:var(--text2);white-space:nowrap}
 .budget-nums strong{color:var(--text);font-weight:700}
 
 /* ─── ACCOUNT CARDS ──────────────────────────────────────────── */
