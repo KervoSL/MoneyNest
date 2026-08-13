@@ -4687,7 +4687,7 @@ function renderIngresos() {
 
   const pendingRows = pendingIngs.map(i=>`
     <tr style="background:rgba(245,158,11,0.05)">
-      <td class="td-main">
+      <td class="td-main td-desc-tx">
         ${i.concepto||'—'}
         ${i.notas ? `<span class="nota-badge" data-nota-id="${i.id}" onclick="event.stopPropagation();window._showNotaTooltip(this)" title="Ver nota" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:800;cursor:pointer;margin-left:5px;flex-shrink:0;vertical-align:middle">!</span>` : ''}
       </td>
@@ -4706,7 +4706,7 @@ function renderIngresos() {
   const rows = receivedIngs.map(i=>`
     <tr class="${_ingSelected.has(i.id)?'row-selected':''}">
       <td style="width:28px"><input type="checkbox" ${_ingSelected.has(i.id)?'checked':''} onchange="_ingToggleSelect('${i.id}')" style="cursor:pointer"></td>
-      <td class="td-main">${i.concepto||'—'}${i.notas ? `<span class="nota-badge" data-nota-id="${i.id}" onclick="event.stopPropagation();window._showNotaTooltip(this)" title="Ver nota" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:800;cursor:pointer;margin-left:5px;flex-shrink:0;vertical-align:middle">!</span>` : ''}</td>
+      <td class="td-main td-desc-tx">${i.concepto||'—'}${i.notas ? `<span class="nota-badge" data-nota-id="${i.id}" onclick="event.stopPropagation();window._showNotaTooltip(this)" title="Ver nota" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:800;cursor:pointer;margin-left:5px;flex-shrink:0;vertical-align:middle">!</span>` : ''}</td>
       <td class="td-amount td-pos">+${eur(i.importe)}</td>
       <td><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(i.categoria)}</span><span class="tag">${i.categoria||'—'}</span></span></td>
       <td>${fmtDate(i.fecha)}</td>
@@ -4927,7 +4927,7 @@ function renderGastos() {
   const rows = todos.map(g=>`
     <tr class="${_gasSelected.has(g.id)?'row-selected':''}">
       <td style="width:28px"><input type="checkbox" ${_gasSelected.has(g.id)?'checked':''} onchange="_gasToggleSelect('${g.id}')" style="cursor:pointer"></td>
-      <td class="td-main">${g.concepto||'—'}</td>
+      <td class="td-main td-desc-tx">${g.concepto||'—'}</td>
       <td class="td-amount td-neg">−${eur(g.importe)}</td>
       <td><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(g.categoria)}</span><span class="tag">${g.categoria||'—'}</span></span></td>
       <td>${fmtDate(g.fecha)}</td>

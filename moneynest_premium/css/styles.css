@@ -484,6 +484,8 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 tbody tr:hover{cursor:default}
 .td-main{color:var(--text)!important;font-weight:600}
+.td-desc-tx{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:480px){ .td-desc-tx{max-width:110px} }
 .td-amount{font-weight:700;font-variant-numeric:tabular-nums}
 .td-pos{color:var(--green)!important}
 .td-neg{color:var(--red)!important}
