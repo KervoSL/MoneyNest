@@ -1154,6 +1154,7 @@ textarea{resize:vertical;min-height:70px}
   .col-span-2{grid-column:span 1}
   .form-row-2{grid-template-columns:1fr}
   .form-row-3{grid-template-columns:1fr}
+  .modal-close{width:44px;height:44px;font-size:1.1rem}
   .content{padding:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   .topbar{
     padding:0 16px;
@@ -1260,7 +1261,7 @@ textarea{resize:vertical;min-height:70px}
   table{font-size:0.85rem}
   td,th{padding:8px 6px}
   /* Ajustes específicos de componentes */
-  .modal-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .modal-header{align-items:flex-start;gap:10px}
   .modal-actions{flex-direction:column;gap:10px}
   .modal-actions .btn{width:100%}
   
