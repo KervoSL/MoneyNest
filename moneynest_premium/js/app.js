@@ -9675,12 +9675,12 @@ function _renderDayOfWeekHeatmap() {
     const isWeekend = i === 0 || i === 6
     const color = val === maxVal ? 'var(--red)' : isWeekend ? 'var(--gold)' : 'var(--accent)'
     return `
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0">
         <div style="font-size:.68rem;font-weight:700;color:var(--text2)">${labels[i]}</div>
         <div style="width:100%;background:var(--border);border-radius:4px;height:60px;position:relative;overflow:hidden">
           <div style="position:absolute;bottom:0;left:0;right:0;background:${color};border-radius:4px;height:${pct2}%;opacity:0.8;transition:height .6s ease"></div>
         </div>
-        <div style="font-size:.65rem;color:${val>0?'var(--text)':'var(--text3)'};font-weight:${val===maxVal?'800':'600'}">${val>0?eur(val).replace(' €',''):'—'}</div>
+        <div style="font-size:.65rem;color:${val>0?'var(--text)':'var(--text3)'};font-weight:${val===maxVal?'800':'600'};max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${val>0?eur(val).replace(' €',''):'—'}</div>
       </div>`
   }).join('')
 
@@ -9689,7 +9689,7 @@ function _renderDayOfWeekHeatmap() {
 
   return `
     <div style="padding:4px 0 8px">
-      <div style="display:flex;gap:6px;align-items:flex-end;padding:0 4px">${bars}</div>
+      <div style="display:flex;gap:6px;align-items:flex-end;padding:0 4px;min-width:0">${bars}</div>
       <div style="margin-top:10px;font-size:.72rem;color:var(--text2);text-align:center">
         Gasto total 3 meses: <strong style="color:var(--text)">${eur(total3m)}</strong>
       </div>
@@ -9987,27 +9987,27 @@ function renderAnalisis() {
 
   <!-- ── GRÁFICOS — CASHFLOW + PATRIMONIO ─────────────────────── -->
   <div class="grid-2 mn-section">
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">📊 ${t('analisis_cashflow_titulo','Cashflow mensual')}</div><div class="card-subtitle">${t('ultimos_12_meses','Últimos 12 meses')}</div></div>
       </div>
-      <div class="chart-container" style="height:170px"><canvas id="chartCashflowBars"></canvas></div>
+      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartCashflowBars"></canvas></div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">📈 ${t('evolucion_patrimonio','Patrimonio neto')}</div><div class="card-subtitle">${t('ultimos_12_meses','Últimos 12 meses')}</div></div>
       </div>
-      <div class="chart-container" style="height:170px"><canvas id="chartAnalisisPatrimonio"></canvas></div>
+      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartAnalisisPatrimonio"></canvas></div>
     </div>
   </div>
 
   <!-- ── GRÁFICO INGvsGAS + HEATMAP ───────────────────────────── -->
   <div class="grid-2 mn-section">
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">🍩 ${t('analisis_ing_vs_gas','Ingresos vs Gastos')}</div><div class="card-subtitle">${t('tendencia_mensual','Tendencia 12 meses')}</div></div>
-      <div class="chart-container" style="height:170px"><canvas id="chartAnalisisTendencia"></canvas></div>
+      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartAnalisisTendencia"></canvas></div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">🗓 ${t('analisis_heatmap_titulo','Gastos por día')}</div><div class="card-subtitle">${t('analisis_heatmap_sub','Últimos 3 meses')}</div></div>
       </div>
