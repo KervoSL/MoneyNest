@@ -815,7 +815,7 @@ tbody tr:hover{cursor:default}
   flex-shrink:0;
 }
 .modal-close:hover{background:var(--red-dim);color:var(--red)}
-.modal-body{padding:20px 24px}
+.modal-body{padding:20px 24px 80px}
 .modal-footer{
   padding:16px 24px calc(16px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--border);
   display:flex;justify-content:flex-end;gap:10px;
