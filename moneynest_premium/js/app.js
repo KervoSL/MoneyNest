@@ -4383,13 +4383,13 @@ function renderDashboard() {
 
   <!-- ── CHARTS + RECENT ───────────────────────────────────────── -->
   <div class="grid-2" style="margin-bottom:14px">
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">📈 ${t('evolucion_patrimonio')}</div><div class="card-subtitle">${t('ultimos_6_meses')}</div></div>
       </div>
       <div class="chart-container"><canvas id="chartPatrimonio"></canvas></div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">🕐 ${t('actividad_reciente')}</div><div class="card-subtitle">${t('ultimas_transacciones')}</div></div>
         <button class="btn btn-ghost btn-sm" onclick="goTo('ingresos')" style="font-size:.75rem">${t('ver_todo')}</button>
@@ -4409,7 +4409,7 @@ function renderDashboard() {
         <div class="legend" id="donutLegend" style="flex:1;margin-top:0;min-width:0"></div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">💡 Insights</div><div class="card-subtitle">${t('generados_tus_datos')}</div></div>
       </div>

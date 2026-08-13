@@ -1172,16 +1172,24 @@ textarea{resize:vertical;min-height:70px}
   .page-title-bar{
     font-size:1rem;
     font-weight:700;
+    min-width:44px;
   }
   .dinero-display{
     padding:4px 10px;
     font-size:0.8rem;
+    min-width:0;
   }
   .dinero-display .dinero-label{
     display:none;
   }
   .dinero-value{
     font-size:0.85rem;
+    max-width:96px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    vertical-align:bottom;
   }
   .btn-export{
     font-size:0.7rem;
@@ -1241,6 +1249,11 @@ textarea{resize:vertical;min-height:70px}
   .page-h1{font-size:1.15rem}
   .topbar{padding:0 12px}
   .content{padding:10px;padding-bottom:90px}
+  /* Topbar: el presupuesto de espacio es muy ajustado por debajo de
+     480px — asegurar que el saldo (que puede tener 6+ cifras) nunca
+     aplaste el titulo de pagina hasta hacerlo ilegible. */
+  .dinero-value{max-width:64px}
+  .dinero-display{padding:4px 8px}
   /* Tablas responsivas */
   table{font-size:0.85rem}
   td,th{padding:8px 6px}
