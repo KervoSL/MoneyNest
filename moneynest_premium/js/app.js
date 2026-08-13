@@ -4767,14 +4767,14 @@ function renderIngresos() {
   </div>
 
   <div class="grid-2" style="margin-bottom:16px">
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">📊 ${t('por_categoria_mes')}</div></div>
-      <div style="display:flex;gap:16px;align-items:center">
-        <div style="flex:0 0 120px"><canvas id="chartIngCat" height="120"></canvas></div>
-        <div class="legend" id="ingLegend" style="flex:1;margin-top:0"></div>
+      <div style="display:flex;gap:16px;align-items:center;min-width:0">
+        <div class="donut-chart-wrap-sm"><canvas id="chartIngCat"></canvas></div>
+        <div class="legend" id="ingLegend" style="flex:1;margin-top:0;min-width:0"></div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">📈 ${t('evolucion_6m')}</div></div>
       <div class="chart-container"><canvas id="chartIngEvo"></canvas></div>
     </div>
@@ -4976,14 +4976,14 @@ function renderGastos() {
   </div>
 
   <div class="grid-2" style="margin-bottom:16px">
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">🍩 ${t('por_categoria')}</div><div class="card-subtitle">${_gPeriodLabel()}</div></div>
-      <div style="display:flex;gap:16px;align-items:center">
-        <div style="flex:0 0 120px"><canvas id="chartGasCat" height="120"></canvas></div>
-        <div class="legend" id="gasLegend" style="flex:1;margin-top:0"></div>
+      <div style="display:flex;gap:16px;align-items:center;min-width:0">
+        <div class="donut-chart-wrap-sm"><canvas id="chartGasCat"></canvas></div>
+        <div class="legend" id="gasLegend" style="flex:1;margin-top:0;min-width:0"></div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">📈 ${t('evolucion_6m')}</div></div>
       <div class="chart-container"><canvas id="chartGasEvo"></canvas></div>
     </div>
@@ -6642,7 +6642,18 @@ function _chartScales(yCallback) {
 function destroyChart(id) {
   if (charts[id]) { try { charts[id].destroy() } catch(e){} delete charts[id] }
 }
-function destroyAllCharts() { Object.keys(charts).forEach(k=>destroyChart(k)) }
+function destroyAllCharts() {
+  Object.keys(charts).forEach(k=>destroyChart(k))
+  // The custom-debt-strategy modal chart lives outside the shared `charts`
+  // registry (its overlay is appended to document.body, not #content), so
+  // navigating away without explicitly closing that modal would otherwise
+  // leave this Chart.js instance alive with a canvas about to become
+  // detached/orphaned.
+  if (window._customDebtChartInstance) {
+    try { window._customDebtChartInstance.destroy() } catch(e){}
+    window._customDebtChartInstance = null
+  }
+}
 function gridColor()  { return S && S.theme==='light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.035)' }
 function labelColor() { return S && S.theme==='light' ? '#94A3B8' : '#4B5563' }
 function tooltipBg()  { return S.theme==='light' ? 'rgba(255,255,255,0.98)' : 'rgba(15,20,35,0.95)' }
@@ -15074,6 +15085,14 @@ window.closeCustomDebtModal = function() {
     overlay.classList.remove('open')
     setTimeout(() => overlay.remove(), 200)
     window._popScrollLock && window._popScrollLock()
+  }
+  // The chart's canvas lives inside this overlay — without destroying the
+  // Chart.js instance here too, removing the overlay leaves a detached
+  // canvas + a live Chart.js instance (event listeners, ResizeObserver)
+  // dangling in memory until the modal happens to be reopened.
+  if (window._customDebtChartInstance) {
+    try { window._customDebtChartInstance.destroy() } catch(_) {}
+    window._customDebtChartInstance = null
   }
 }
 
