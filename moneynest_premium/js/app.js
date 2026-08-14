@@ -6494,14 +6494,18 @@ function guardarCuenta() {
   const valorTotal = vtEl && vtEl.value !== "" ? parseFloat(vtEl.value)||0 : saldo
   const nEl = document.getElementById("cuentaNotas")
   const data = {nombre, tipo:document.getElementById("cuentaTipo").value, saldo, valorTotal, color:document.getElementById("cuentaColor").value||"#00D4AA", notas: nEl ? nEl.value.trim() : ""}
+  let newId = id
   if (id) {
     const idx = S.cuentas.findIndex(c=>c.id===id)
     if (idx>=0) S.cuentas[idx] = {...S.cuentas[idx],...data}
   } else {
-    S.cuentas.push({id:uid(),...data})
+    newId = uid()
+    S.cuentas.push({id:newId,...data})
   }
   if (window.MNGamification) { MNGamification.checkAchievement('cuenta_added'); MNGamification.checkAchievement('data_check'); }
-  save(); closeModal("cuentaModal"); _unlock(); render(); toast(t('toast_cuenta_guardada'))
+  save()
+  if (!id) _resolveInlineCreate('cuenta', newId)
+  closeModal("cuentaModal"); _unlock(); render(); toast(t('toast_cuenta_guardada'))
 }
 function borrarCuenta(id) {
   if (S.cuentas.length <= 1) { toast(t('toast_cuenta_min'),'error'); return }
@@ -7455,7 +7459,10 @@ function openModal(id) {
 }
 function closeModal(id) {
   const el = document.getElementById(id)
-  if (el) { const wasOpen = el.classList.contains('open'); el.classList.remove('open'); if (wasOpen) _popScrollLock() }
+  if (el) { const wasOpen = el.classList.contains('open'); el.classList.remove('open'); el.classList.remove('mn-modal-inline-top'); if (wasOpen) _popScrollLock() }
+  if (id === 'cuentaModal')    _revertInlineCreateIfPending('cuenta')
+  if (id === 'clienteModal')   _revertInlineCreateIfPending('cliente')
+  if (id === 'proveedorModal') _revertInlineCreateIfPending('proveedor')
 }
 function closeAllModals() {
   document.querySelectorAll('.modal-overlay.open').forEach(el=>{ el.classList.remove('open') })
@@ -7515,8 +7522,80 @@ function poblarCuentaSelect(selectId, selectedId='') {
   const sel = document.getElementById(selectId)
   if (!sel) return
   sel.innerHTML = '<option value="">Sin cuenta</option>' +
-    S.cuentas.map(c=>`<option value="${c.id}" ${c.id===selectedId?'selected':''}>${c.nombre}</option>`).join('')
+    S.cuentas.map(c=>`<option value="${c.id}" ${c.id===selectedId?'selected':''}>${c.nombre}</option>`).join('') +
+    `<option value="__create_new__">+ ${t('modal_cuenta_titulo','Nueva cuenta')}</option>`
+  if (!sel.dataset.mnInlineCreateBound) {
+    sel.dataset.mnInlineCreateBound = '1'
+    sel.addEventListener('change', () => _handleInlineCreateSelect(sel, 'cuenta'))
+  }
 }
+
+// ─── CREACION INLINE DE DEPENDENCIAS (sin abandonar el formulario) ──
+// Si el usuario elige '+ Nueva cuenta' (o '+ Nuevo cliente'/'+ Nuevo
+// proveedor') en un select dentro de un formulario, se abre el modal
+// correspondiente POR ENCIMA (el formulario original nunca se cierra,
+// solo queda tapado) y, al guardar, se repuebla este mismo select con
+// la entidad recien creada ya seleccionada — sin recargar nada y sin
+// perder ningun otro dato ya introducido en el formulario original.
+const _MN_INLINE_CREATE = {
+  cuenta:     { sentinel: '__create_new__', modal: 'cuentaModal',     reset: 'resetCuentaForm',     repoblar: 'poblarCuentaSelect' },
+  cliente:    { sentinel: '__create_new_cliente__',  modal: 'clienteModal',  reset: 'resetClienteForm',  repoblar: '_repoblarDevengoContacto' },
+  proveedor:  { sentinel: '__create_new_proveedor__',modal: 'proveedorModal',reset: 'resetProveedorForm',repoblar: '_repoblarDevengoContacto' },
+}
+let _mnInlineCreateTarget = null // { selectId, kind, previousValue }
+
+function _handleInlineCreateSelect(sel, kind) {
+  const cfg = _MN_INLINE_CREATE[kind]
+  if (!cfg) return
+  if (sel.value !== cfg.sentinel) { sel.dataset.mnPrevValue = sel.value; return }
+  _mnInlineCreateTarget = { selectId: sel.id, kind, previousValue: sel.dataset.mnPrevValue || '' }
+  if (typeof window[cfg.reset] === 'function') window[cfg.reset]()
+  openModal(cfg.modal)
+  document.getElementById(cfg.modal)?.classList.add('mn-modal-inline-top')
+}
+
+// Llamado desde guardarCuenta()/guardarCliente()/guardarProveedor() tras
+// un guardado exitoso — si esa creacion vino de un select "+ Nueva X"
+// dentro de otro formulario, selecciona la entidad recien creada ahi y
+// limpia el estado pendiente. No hace nada (no-op) en el flujo normal
+// de crear una cuenta/cliente/proveedor desde su propia pagina.
+function _resolveInlineCreate(kind, newId) {
+  if (!_mnInlineCreateTarget || _mnInlineCreateTarget.kind !== kind) return
+  const { selectId } = _mnInlineCreateTarget
+  const cfg = _MN_INLINE_CREATE[kind]
+  _mnInlineCreateTarget = null
+  const sel = document.getElementById(selectId)
+  if (!sel || typeof window[cfg.repoblar] !== 'function') return
+  window[cfg.repoblar](selectId, newId)
+  sel.dataset.mnPrevValue = newId
+}
+
+// Si el usuario ABRE el modal de creacion pero lo CANCELA (boton
+// cerrar/click fuera) sin guardar, el select vuelve a su valor previo
+// en vez de quedarse "atascado" en la opcion especial.
+function _revertInlineCreateIfPending(kind) {
+  if (!_mnInlineCreateTarget || _mnInlineCreateTarget.kind !== kind) return
+  const { selectId, previousValue } = _mnInlineCreateTarget
+  _mnInlineCreateTarget = null
+  const sel = document.getElementById(selectId)
+  if (sel) sel.value = previousValue
+}
+
+// Reconstruye el select combinado clientes+proveedores de Devengo,
+// preservando las 2 opciones de creacion inline, y selecciona la
+// entidad indicada (usado tras crear un cliente o proveedor nuevo
+// desde ese mismo select).
+function _repoblarDevengoContacto(selectId, selectedId) {
+  const sel = document.getElementById(selectId)
+  if (!sel) return
+  const clis = (S.clientes||[]).map(c => `<option value="${c.id}">👥 ${c.nombre}</option>`).join('')
+  const pros = (S.proveedores||[]).map(p => `<option value="${p.id}">🏭 ${p.nombre}</option>`).join('')
+  sel.innerHTML = '<option value="">Sin asociar</option>' + clis + pros +
+    '<option value="__create_new_cliente__">+ Nuevo cliente</option>' +
+    '<option value="__create_new_proveedor__">+ Nuevo proveedor</option>'
+  sel.value = selectedId
+}
+
 
 // ─── INGRESO CRUD ───────────────────────────────────────────────
 function resetIngresoForm() {
@@ -8865,13 +8944,17 @@ function guardarCliente() {
     avatar:   document.getElementById('clienteAvatar').value || null,
     tipo:     document.getElementById('clienteTipo')?.value || 'empresa'
   }
+  let newId = id
   if (id) {
     const idx = S.clientes.findIndex(x=>x.id===id)
     if (idx>=0) S.clientes[idx] = {...S.clientes[idx], ...data}
   } else {
-    S.clientes.push({id: uid(), ...data})
+    newId = uid()
+    S.clientes.push({id: newId, ...data})
   }
-  save(); closeModal('clienteModal'); render(); toast(t('toast_cliente_guardado','Cliente guardado ✓'))
+  save()
+  if (!id) _resolveInlineCreate('cliente', newId)
+  closeModal('clienteModal'); render(); toast(t('toast_cliente_guardado','Cliente guardado ✓'))
 }
 
 function borrarCliente(id) {
@@ -12638,13 +12721,17 @@ function guardarProveedor() {
     color: document.getElementById("proveedorColor").value||"#6366F1",
     avatar: document.getElementById("proveedorAvatar").value||null
   }
+  var newId = id
   if (id) {
     var idx = S.proveedores.findIndex(function(x){ return x.id===id })
     if (idx>=0) S.proveedores[idx] = Object.assign({}, S.proveedores[idx], data)
   } else {
-    S.proveedores.push(Object.assign({id:uid()}, data))
+    newId = uid()
+    S.proveedores.push(Object.assign({id:newId}, data))
   }
-  save(); closeModal("proveedorModal"); render(); toast(t('toast_proveedor_guardado','Proveedor guardado ✓'))
+  save()
+  if (!id) _resolveInlineCreate('proveedor', newId)
+  closeModal("proveedorModal"); render(); toast(t('toast_proveedor_guardado','Proveedor guardado ✓'))
 }
 
 function borrarProveedor(id) {
@@ -13027,9 +13114,25 @@ function abrirDevengoModal() {
   if (sel) {
     var clis = (S.clientes||[]).map(function(c){ return "<option value=\""+c.id+"\">👥 "+c.nombre+"</option>" }).join("")
     var pros = (S.proveedores||[]).map(function(p){ return "<option value=\""+p.id+"\">🏭 "+p.nombre+"</option>" }).join("")
-    sel.innerHTML = "<option value=\"\">Sin asociar</option>" + clis + pros
+    sel.innerHTML = "<option value=\"\">Sin asociar</option>" + clis + pros +
+      "<option value=\"__create_new_cliente__\">+ Nuevo cliente</option>" +
+      "<option value=\"__create_new_proveedor__\">+ Nuevo proveedor</option>"
+    if (!sel.dataset.mnInlineCreateBound) {
+      sel.dataset.mnInlineCreateBound = '1'
+      sel.addEventListener('change', function() { _handleDevengoContactoSelect(sel) })
+    }
   }
   openModal("devengoModal")
+}
+
+// devengoContacto combina clientes+proveedores en un unico select, asi
+// que puede disparar la creacion inline de CUALQUIERA de los 2 tipos
+// desde el mismo control (a diferencia de los selects de cuenta, que
+// solo manejan un tipo).
+function _handleDevengoContactoSelect(sel) {
+  if (sel.value === '__create_new_cliente__') { _handleInlineCreateSelect(sel, 'cliente'); return }
+  if (sel.value === '__create_new_proveedor__') { _handleInlineCreateSelect(sel, 'proveedor'); return }
+  sel.dataset.mnPrevValue = sel.value
 }
 
 function editarDevengo(id) {

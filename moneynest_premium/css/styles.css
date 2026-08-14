@@ -792,6 +792,7 @@ tbody tr:hover{cursor:default}
   padding:20px;
 }
 .modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+.modal-overlay.mn-modal-inline-top{z-index:9700}
 .modal{
   background:var(--card);border:1px solid var(--border2);
   border-radius:20px;width:100%;max-width:480px;
