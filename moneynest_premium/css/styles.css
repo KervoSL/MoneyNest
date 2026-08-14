@@ -190,6 +190,7 @@ img{max-width:100%;display:block}
   cursor:pointer;
   transition:all .15s ease;
   position:relative;
+  touch-action:manipulation;
 }
 .nav-item:hover{background:var(--border);color:var(--text)}
 .nav-item.active{
@@ -398,6 +399,7 @@ img{max-width:100%;display:block}
   padding:10px;cursor:pointer;border-radius:var(--radius-sm);
   background:var(--border);border:1px solid var(--border2);
   flex-shrink:0;
+  touch-action:manipulation;
 }
 .hamburger span{width:18px;height:2px;background:var(--text2);border-radius:99px;display:block}
 
@@ -1080,6 +1082,10 @@ textarea{resize:vertical;min-height:70px}
   -webkit-backdrop-filter:blur(2px);
   pointer-events:none;
   touch-action:none;
+  /* Own compositing layer so the blur doesn't get rasterized once and
+     "stuck" behind the animating sidebar on iOS Safari. */
+  -webkit-transform:translateZ(0);
+  transform:translateZ(0);
 }
 .sidebar-overlay.open{
   display:block;
@@ -1106,13 +1112,24 @@ textarea{resize:vertical;min-height:70px}
        is never visually cut off or touch-blocked by the bottom tab bar. */
     z-index:220;
     transform:translateX(-100%);
+    -webkit-transform:translateX(-100%);
     box-shadow:0 0 0 rgba(0,0,0,0);
     padding-top:env(safe-area-inset-top,0px);
     visibility:hidden;
     transition:transform .3s ease, visibility 0s linear .3s;
+    /* Own GPU compositing layer: on iOS Safari, a position:fixed element
+       animated with transform can otherwise be composited together with
+       the blurred overlay beneath it and appear to "freeze" mid-transition
+       (a stale rasterized frame instead of live content). Promoting the
+       sidebar to its own layer avoids that. Purely a rendering hint —
+       no visual/layout change. */
+    will-change:transform;
+    -webkit-backface-visibility:hidden;
+    backface-visibility:hidden;
   }
   .sidebar.open{
     transform:translateX(0);
+    -webkit-transform:translateX(0);
     box-shadow:8px 0 32px rgba(0,0,0,0.6);
     visibility:visible;
     transition:transform .3s ease, visibility 0s linear 0s;
