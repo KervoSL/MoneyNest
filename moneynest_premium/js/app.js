@@ -7528,6 +7528,29 @@ function poblarCuentaSelect(selectId, selectedId='') {
     sel.dataset.mnInlineCreateBound = '1'
     sel.addEventListener('change', () => _handleInlineCreateSelect(sel, 'cuenta'))
   }
+  _renderDependencyHint(sel, S.cuentas.length === 0, {
+    message: t('hint_sin_cuentas','No tienes cuentas todavía.'),
+    btnLabel: t('btn_crear_cuenta_hint','Crear cuenta'),
+    onClick: () => _handleInlineCreateSelect(sel, 'cuenta', true),
+  })
+}
+
+// Aviso accionable, visible de inmediato (sin necesitar abrir el
+// select), para cuando la dependencia requerida todavia no existe.
+// Se inserta/actualiza justo despues del select correspondiente y
+// desaparece automaticamente en cuanto la dependencia SI existe.
+function _renderDependencyHint(sel, show, { message, btnLabel, onClick }) {
+  const hintId = sel.id + '-dep-hint'
+  let hint = document.getElementById(hintId)
+  if (!show) { if (hint) hint.remove(); return }
+  if (!hint) {
+    hint = document.createElement('div')
+    hint.id = hintId
+    hint.className = 'form-dependency-hint'
+    sel.insertAdjacentElement('afterend', hint)
+  }
+  hint.innerHTML = `<span>${message}</span><button type="button">${btnLabel}</button>`
+  hint.querySelector('button').onclick = (e) => { e.preventDefault(); onClick() }
 }
 
 // ─── CREACION INLINE DE DEPENDENCIAS (sin abandonar el formulario) ──
@@ -7544,11 +7567,11 @@ const _MN_INLINE_CREATE = {
 }
 let _mnInlineCreateTarget = null // { selectId, kind, previousValue }
 
-function _handleInlineCreateSelect(sel, kind) {
+function _handleInlineCreateSelect(sel, kind, forceOpen) {
   const cfg = _MN_INLINE_CREATE[kind]
   if (!cfg) return
-  if (sel.value !== cfg.sentinel) { sel.dataset.mnPrevValue = sel.value; return }
-  _mnInlineCreateTarget = { selectId: sel.id, kind, previousValue: sel.dataset.mnPrevValue || '' }
+  if (!forceOpen && sel.value !== cfg.sentinel) { sel.dataset.mnPrevValue = sel.value; return }
+  _mnInlineCreateTarget = { selectId: sel.id, kind, previousValue: sel.dataset.mnPrevValue || sel.value || '' }
   if (typeof window[cfg.reset] === 'function') window[cfg.reset]()
   openModal(cfg.modal)
   document.getElementById(cfg.modal)?.classList.add('mn-modal-inline-top')
@@ -7594,6 +7617,7 @@ function _repoblarDevengoContacto(selectId, selectedId) {
     '<option value="__create_new_cliente__">+ Nuevo cliente</option>' +
     '<option value="__create_new_proveedor__">+ Nuevo proveedor</option>'
   sel.value = selectedId
+  document.getElementById(selectId + '-dep-hint')?.remove()
 }
 
 
@@ -13120,6 +13144,25 @@ function abrirDevengoModal() {
     if (!sel.dataset.mnInlineCreateBound) {
       sel.dataset.mnInlineCreateBound = '1'
       sel.addEventListener('change', function() { _handleDevengoContactoSelect(sel) })
+    }
+    var noContactos = (S.clientes||[]).length === 0 && (S.proveedores||[]).length === 0
+    var hintId = sel.id + '-dep-hint'
+    var hint = document.getElementById(hintId)
+    if (!noContactos) { if (hint) hint.remove() }
+    else {
+      if (!hint) {
+        hint = document.createElement('div')
+        hint.id = hintId
+        hint.className = 'form-dependency-hint'
+        sel.insertAdjacentElement('afterend', hint)
+      }
+      hint.innerHTML = '<span>' + t('hint_sin_clientes_proveedores','Todavía no tienes clientes ni proveedores.') + '</span>' +
+        '<span style="display:flex;gap:6px;flex-shrink:0">' +
+        '<button type="button" id="' + hintId + '-cli">' + t('btn_crear_cliente_hint','Crear cliente') + '</button>' +
+        '<button type="button" id="' + hintId + '-pro">' + t('btn_crear_proveedor_hint','Crear proveedor') + '</button>' +
+        '</span>'
+      document.getElementById(hintId + '-cli').onclick = function(e) { e.preventDefault(); _handleInlineCreateSelect(sel, 'cliente', true) }
+      document.getElementById(hintId + '-pro').onclick = function(e) { e.preventDefault(); _handleInlineCreateSelect(sel, 'proveedor', true) }
     }
   }
   openModal("devengoModal")
