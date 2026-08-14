@@ -4205,6 +4205,20 @@ function recordPatrimonio() {
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────
+// El usuario "ha completado una importacion bancaria" si existe al menos
+// un gasto o ingreso real con origen:'bank-import' — el mismo campo que ya
+// escribe _runImport() en bank-import.js. Esto es persistente por
+// construccion: S.gastos/S.ingresos se guardan via save() igual que
+// cualquier otro dato del usuario (localStorage/Supabase segun el backend
+// activo), sobreviven a recargar la pagina y a cerrar sesion y volver a
+// entrar, sin necesitar ningun mecanismo de persistencia nuevo. Cancelar
+// el wizard o que la importacion falle nunca crea estos registros, asi
+// que el CTA se mantiene visible correctamente en esos casos.
+function _hasCompletedBankImport() {
+  return (S.gastos||[]).some(g => g.origen === 'bank-import') ||
+         (S.ingresos||[]).some(i => i.origen === 'bank-import')
+}
+
 function renderDashboard() {
   const m  = currentMonth()
   const mp = prevMonth(m)
@@ -4324,7 +4338,8 @@ function renderDashboard() {
     </div>
   </div>
 
-  <!-- ── IMPORTAR DATOS BANCARIOS (acceso destacado, mismo flujo real) ── -->
+  <!-- ── IMPORTAR DATOS BANCARIOS (CTA de primera importacion, mismo flujo real) ── -->
+  ${_hasCompletedBankImport() ? '' : `
   <div onclick="window.MNBankImport&&MNBankImport.open()" style="display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:14px;background:linear-gradient(135deg, var(--accent-dim), rgba(0,212,170,.03));border:1px solid rgba(0,212,170,.3);border-radius:var(--radius);cursor:pointer">
     <div style="width:44px;height:44px;border-radius:12px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">🏦</div>
     <div style="flex:1;min-width:0">
@@ -4332,7 +4347,7 @@ function renderDashboard() {
       <div style="font-size:.78rem;color:var(--text2)">${t('importar_datos_bancarios_sub','Sube un extracto CSV o Excel (XLSX) de tu banco y crea tus movimientos automáticamente')}</div>
     </div>
     <button class="btn btn-primary btn-sm" style="flex-shrink:0;pointer-events:none">${t('importar_ahora_cta','Importar')} →</button>
-  </div>
+  </div>`}
 
   <!-- ── MONTH SUMMARY BANNER (new month only) ────────────────── -->
   ${renderMonthSummaryBanner(monthlySummary)}

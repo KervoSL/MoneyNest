@@ -2107,6 +2107,21 @@
         }
       });
 
+      // Same balance-update rule the manual "add income/expense" forms use
+      // (guardarGasto/guardarIngreso): expenses subtract, income adds. This
+      // is what makes an imported transaction affect Net Worth exactly like
+      // a manually created one — without it, the movements show up in the
+      // lists but the account's saldo (and therefore Dinero Disponible /
+      // Patrimonio Neto, which sum cuenta.saldo) never reflects them. The
+      // existing balance is preserved: we add/subtract the net delta on top
+      // of whatever the account already had, never reset it.
+      if (typeof getCuenta === 'function') {
+        const cuentaImport = getCuenta(cuentaId);
+        if (cuentaImport) {
+          cuentaImport.saldo = (Number(cuentaImport.saldo) || 0) + incomeTotal - expenseTotal;
+        }
+      }
+
       if (typeof save === 'function') save();
       if (window.MNGamification) { try { MNGamification.checkAchievement('gasto_added'); MNGamification.checkAchievement('data_check'); } catch (_) {} }
 
