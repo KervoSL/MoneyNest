@@ -911,7 +911,7 @@ function injectTopbarButtons() {
   group.className = 'tb-action-group';
   group.id = 'dm-topbar-group';
   group.innerHTML = `
-    <button class="tb-btn tb-btn--bank-import" id="dm-bank-import-topbtn" onclick="window.MNBankImport&&MNBankImport.open()" title="Importar extracto bancario" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">
+    <button class="tb-btn tb-btn--bank-import" id="dm-bank-import-topbtn" onclick="window.MNBankImport&&MNBankImport.open()" title="Importar datos bancarios" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">
       🏦
       <span class="tb-btn-label">Importar banco</span>
     </button>

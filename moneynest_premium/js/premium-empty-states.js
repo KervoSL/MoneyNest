@@ -131,7 +131,7 @@
     return _build({
       svg: SVG.gastos,
       title: _t('empty_gastos_title', 'Sin gastos registrados'),
-      sub: _t('empty_gastos_sub', 'Anota cada compra para ver exactamente a dónde va tu dinero. Puedes importar un extracto CSV de tu banco.'),
+      sub: _t('empty_gastos_sub', 'Anota cada compra para ver exactamente a dónde va tu dinero. Puedes importar tus datos bancarios directamente desde tu banco.'),
       cta: { label: '+ ' + _t('btn_nuevo_gasto', 'Nuevo gasto'), onclick: `openModal('gastoModal');resetGastoForm()` },
     });
   }

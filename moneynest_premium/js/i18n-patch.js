@@ -481,6 +481,7 @@
       total_lbl: 'Total', este_mes: 'este mes', este_anio: 'este año', periodo_lbl: 'período',
       vs_mes_ant: 'vs. mes ant.', primer_mes: 'Primer mes', mes_anterior: 'Mes anterior',
       importar_csv: 'Importar CSV', importar_csv_title: 'Importar extracto bancario CSV',
+      btn_importar_datos_bancarios: 'Importar datos bancarios',
       // Inversiones
       inv_capital_invertido: 'Capital invertido', inv_abiertas: 'abiertas', inv_liquidadas: 'liquidadas',
       inv_ganancia_latente: 'Ganancia latente', inv_solo_predecibles: 'Solo activos predecibles',
@@ -1063,6 +1064,7 @@
       vs_mes_ant: 'vs. prev. month', primer_mes: 'First month', mes_anterior: 'Previous month',
       // Importar CSV
       importar_csv: 'Import CSV', importar_csv_title: 'Import bank statement CSV',
+      btn_importar_datos_bancarios: 'Import bank data',
       // Inversiones
       inv_capital_invertido: 'Invested capital', inv_abiertas: 'open', inv_liquidadas: 'closed',
       inv_ganancia_latente: 'Unrealised gain', inv_solo_predecibles: 'Predictable assets only',

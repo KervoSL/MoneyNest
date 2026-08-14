@@ -4312,6 +4312,11 @@ function renderDashboard() {
     </div>
   </div>
 
+  <!-- ── IMPORTAR DATOS BANCARIOS (acceso visible, mismo flujo real) ── -->
+  <div style="margin-bottom:14px">
+    <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
+  </div>
+
   <!-- ── MONTH SUMMARY BANNER (new month only) ────────────────── -->
   ${renderMonthSummaryBanner(monthlySummary)}
 
@@ -4943,6 +4948,7 @@ function renderGastos() {
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> ${t('page_gastos')}</div><div class="page-sub">${_gPeriodLabel()} · ${t('control_salidas')}</div></div>
     <div class="section-actions">
+      <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('gastoModal');resetGastoForm()">${t('btn_nuevo_gasto')}</button>
     </div>
   </div>
