@@ -4312,9 +4312,14 @@ function renderDashboard() {
     </div>
   </div>
 
-  <!-- ── IMPORTAR DATOS BANCARIOS (acceso visible, mismo flujo real) ── -->
-  <div style="margin-bottom:14px">
-    <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
+  <!-- ── IMPORTAR DATOS BANCARIOS (acceso destacado, mismo flujo real) ── -->
+  <div onclick="window.MNBankImport&&MNBankImport.open()" style="display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:14px;background:linear-gradient(135deg, var(--accent-dim), rgba(0,212,170,.03));border:1px solid rgba(0,212,170,.3);border-radius:var(--radius);cursor:pointer">
+    <div style="width:44px;height:44px;border-radius:12px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">🏦</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.95rem;font-weight:800;color:var(--text)">${t('btn_importar_datos_bancarios','Importar datos bancarios')}</div>
+      <div style="font-size:.78rem;color:var(--text2)">${t('importar_datos_bancarios_sub','Sube un extracto CSV o Excel (XLSX) de tu banco y crea tus movimientos automáticamente')}</div>
+    </div>
+    <button class="btn btn-primary btn-sm" style="flex-shrink:0;pointer-events:none">${t('importar_ahora_cta','Importar')} →</button>
   </div>
 
   <!-- ── MONTH SUMMARY BANNER (new month only) ────────────────── -->
@@ -4739,6 +4744,7 @@ function renderIngresos() {
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ${t('page_ingresos')}</div><div class="page-sub">${ingPeriodLabel} · ${S.ingresos.filter(i=>i.status!=='pending').length} cobrados · ${pendingIngs.length} pendientes</div></div>
     <div class="section-actions">
+      <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('ingresoModal');resetIngresoForm()">${t('btn_nuevo_ingreso','+ Nuevo ingreso')}</button>
     </div>
   </div>
@@ -6261,7 +6267,7 @@ function renderCuentas() {
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg> ${t('page_cuentas','Cuentas')}</div><div class="page-sub">${t('cuentas_page_sub','Dinero disponible y valor total por cuenta')}</div></div>
     <div class="section-actions">
-      <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 Importar extracto</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
       <button class="btn btn-ghost btn-sm" onclick="openModal('transModal');poblarTransModal()">⇄ Transferir</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('cuentaModal');resetCuentaForm()">+ Nueva cuenta</button>
     </div>
