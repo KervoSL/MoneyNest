@@ -350,6 +350,12 @@ const TRANSLATIONS = {
     ob_opt_demo_lbl: 'Explorar con datos de ejemplo', ob_opt_demo_sub: 'Ve la app completa antes de añadir tus propios datos',
     ob_opt_direct_lbl: 'Empezar directamente', ob_opt_direct_sub: 'Exploro solo, ya sé lo que necesito',
     ob_s3_cta: '¡Empezar! 🚀',
+    ob_continuar: 'Continuar',
+    ob_bank_h1: '¿Quieres importar', ob_bank_h2: 'tus datos bancarios?',
+    ob_bank_lead: 'Importa tus movimientos para empezar a utilizar MoneyNest con tus datos reales.',
+    ob_bank_opt_sub: 'Sube un extracto CSV o Excel (XLSX) de tu banco',
+    ob_bank_done: 'Datos importados correctamente',
+    ob_bank_skip: 'Hacerlo más tarde',
     ob_left2_title: 'Diseñada para ti,', ob_left2_sub: 'desde el primer día.',
     ob_left2_desc: 'Escoge el idioma y el tema que mejor se adapta a tu forma de trabajar.',
     ob_left2_idioma_lbl: '🌍 Idioma activo', ob_left2_tema_lbl: '🎨 Tema',
@@ -837,6 +843,12 @@ const TRANSLATIONS = {
     ob_opt_demo_lbl: 'Explore with sample data', ob_opt_demo_sub: 'See the full app before adding your own data',
     ob_opt_direct_lbl: 'Start directly', ob_opt_direct_sub: 'I\'ll explore on my own, I know what I need',
     ob_s3_cta: 'Let\'s go! 🚀',
+    ob_continuar: 'Continue',
+    ob_bank_h1: 'Want to import', ob_bank_h2: 'your bank data?',
+    ob_bank_lead: 'Import your transactions to start using MoneyNest with your real data.',
+    ob_bank_opt_sub: 'Upload a CSV or Excel (XLSX) statement from your bank',
+    ob_bank_done: 'Data imported successfully',
+    ob_bank_skip: 'Do it later',
     ob_left2_title: 'Designed for you,', ob_left2_sub: 'from day one.',
     ob_left2_desc: 'Choose the language and theme that best suits your way of working.',
     ob_left2_idioma_lbl: '🌍 Active language', ob_left2_tema_lbl: '🎨 Theme',
@@ -10757,7 +10769,7 @@ function abrirCierreMes() {
 // ─── ONBOARDING — PREMIUM FINTECH FLOW v2 ────────────────────
 //  5 steps: Lang → Name → Appearance → Account → Start
 // ════════════════════════════════════════════════════════════════
-const OB_TOTAL = 5
+const OB_TOTAL = 6
 let obStep = 1
 let obData = { nombre: '', email: '', password: '', mode: 'personal', lang: 'es', theme: 'dark', plan: 'trial', startTutorial: false, loadDemo: false }
 
@@ -11076,6 +11088,7 @@ function _obRightHTML(step) {
     </div>`
 
   // ── STEP 5: Start mode ───────────────────────────────────────
+  if (step === 5) {
   const nombre = obData.nombre || 'Usuario'
   return `
     <div class="ob-step-pill"><div class="ob-step-pill-dot"></div>${t('ob_paso','Paso')} 5 ${t('ob_de','de')} ${OB_TOTAL}</div>
@@ -11102,8 +11115,30 @@ function _obRightHTML(step) {
     </div>
     <div class="ob-actions-row">
       ${backBtn}
+      <button class="ob-next-btn" onclick="obNext()">
+        ${t('ob_continuar','Continuar')} <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:inline;vertical-align:middle"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>`
+  }
+
+  // ── STEP 6: Importar datos bancarios (mismo importador real) ──
+  return `
+    <div class="ob-step-pill"><div class="ob-step-pill-dot"></div>${t('ob_paso','Paso')} 6 ${t('ob_de','de')} ${OB_TOTAL}</div>
+    <div class="ob-headline">${t('ob_bank_h1','¿Quieres importar')}<br><span class="ob-headline-accent">${t('ob_bank_h2','tus datos bancarios?')}</span></div>
+    <p class="ob-lead">${t('ob_bank_lead','Importa tus movimientos para empezar a utilizar MoneyNest con tus datos reales.')}</p>
+    <div class="ob-options" id="obBankImportOptions" style="margin-top:8px">
+      <div class="ob-opt" onclick="obGoBankImport()" style="cursor:pointer">
+        <div class="ob-opt-emoji">🏦</div>
+        <div class="ob-opt-info"><div class="ob-opt-label">${t('btn_importar_datos_bancarios','Importar datos bancarios')}</div><div class="ob-opt-sub">${t('ob_bank_opt_sub','Sube un extracto CSV o Excel (XLSX) de tu banco')}</div></div>
+      </div>
+    </div>
+    <div id="obBankImportedNotice" style="display:none;margin-top:14px;padding:12px 16px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);border-radius:12px;color:var(--accent);font-size:.85rem;font-weight:700">
+      ✅ ${t('ob_bank_done','Datos importados correctamente')}
+    </div>
+    <div class="ob-actions-row" style="margin-top:20px">
+      ${backBtn}
       <button class="ob-next-btn ob-next-btn--finish" onclick="obNext()">
-        🚀 ${t('ob_s3_cta')}
+        🚀 ${t('ob_bank_skip','Hacerlo más tarde')}
       </button>
     </div>`
 }
@@ -11135,6 +11170,35 @@ function obSelectOpt(mode) {
   const idx = map[mode]
   const els = document.querySelectorAll('#obOptions .ob-opt')
   if (els[idx]) els[idx].classList.add('selected')
+}
+
+// Abre el importador bancario REAL ya existente en la app — el mismo
+// que se usa desde Dashboard/Ingresos/Gastos/Cuentas — sin crear ningun
+// flujo alternativo. El overlay del onboarding nunca se cierra (solo
+// queda tapado por el del importador, que tiene un z-index superior),
+// asi que al cerrar el importador el onboarding reaparece exactamente
+// en el mismo paso, de forma natural. Se observa (sin tocar nada de
+// bank-import.js) si el cierre vino acompañado de una importacion real,
+// solo para mostrar una confirmacion visual dentro de este paso.
+function obGoBankImport() {
+  if (!window.MNBankImport) return
+  const countImports = () => (S.gastos||[]).filter(g=>g.origen==='bank-import').length + (S.ingresos||[]).filter(g=>g.origen==='bank-import').length
+  const before = countImports()
+  MNBankImport.open()
+  setTimeout(() => {
+    const overlay = document.getElementById('mnBankImportOverlay')
+    if (!overlay) return
+    const observer = new MutationObserver(() => {
+      if (!overlay.classList.contains('open')) {
+        observer.disconnect()
+        if (countImports() > before) {
+          const notice = document.getElementById('obBankImportedNotice')
+          if (notice) notice.style.display = 'block'
+        }
+      }
+    })
+    observer.observe(overlay, { attributes: true, attributeFilter: ['class'] })
+  }, 50)
 }
 
 function obRender(direction) {
