@@ -168,6 +168,7 @@ function bloquearApp(user) {
         <button id="mn-lock-unlock-btn" style="width:100%;padding:16px;border-radius:14px;border:none;background:#00D4AA;color:#042b20;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,212,170,.25)">
           🔒 Desbloquear para siempre — 6,99€ único
         </button>
+        <div id="mn-lock-error" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#FCA5A5;font-size:.8rem;font-weight:600;line-height:1.5;text-align:center"></div>
         <div style="text-align:center;margin-top:16px;font-size:.78rem;color:rgba(255,255,255,0.4)">
           ¿Ya tienes licencia? <a id="mn-lock-restore-link" href="#" style="color:#00D4AA;font-weight:700;text-decoration:none">Restaurar acceso</a>
         </div>
@@ -175,25 +176,159 @@ function bloquearApp(user) {
     </div>`
 
   const unlockBtn = document.getElementById('mn-lock-unlock-btn')
+  const lockErrorEl = document.getElementById('mn-lock-error')
+  const _showLockError = (msg) => {
+    if (!lockErrorEl) return
+    lockErrorEl.textContent = msg
+    lockErrorEl.style.display = 'block'
+  }
+  const _hideLockError = () => { if (lockErrorEl) lockErrorEl.style.display = 'none' }
+
   if (unlockBtn) unlockBtn.addEventListener('click', () => {
+    _hideLockError()
     const priceId = window.MNStripeConfig?.prices?.local
-    if (window.MNPayment && priceId) {
-      MNPayment.open(priceId, user?.email || '')
-      const onPaid = () => {
-        document.removeEventListener('mn:paymentSuccess', onPaid)
-        location.reload()
-      }
-      document.addEventListener('mn:paymentSuccess', onPaid)
+    if (!window.MNPayment || !priceId) {
+      console.error('[bloquearApp] No se pudo iniciar el checkout: MNPayment o priceId no disponibles', { hasMNPayment: !!window.MNPayment, priceId })
+      _showLockError('No se pudo iniciar el pago. Recarga la página e inténtalo de nuevo.')
+      return
     }
+    // Brief loading state so the tap always gets visible feedback, even
+    // though MNPayment.open() itself shows its own modal with its own
+    // error handling once it's open (never a silently "dead" button).
+    const originalLabel = unlockBtn.innerHTML
+    unlockBtn.disabled = true
+    unlockBtn.style.opacity = '.7'
+    unlockBtn.innerHTML = '⏳ Abriendo pago…'
+    try {
+      MNPayment.open(priceId, user?.email || '')
+    } catch (err) {
+      console.error('[bloquearApp] Error al abrir el checkout:', err)
+      _showLockError('No se pudo iniciar el pago. Inténtalo de nuevo.')
+    }
+    setTimeout(() => {
+      unlockBtn.disabled = false
+      unlockBtn.style.opacity = '1'
+      unlockBtn.innerHTML = originalLabel
+    }, 600)
+    const onPaid = () => {
+      document.removeEventListener('mn:paymentSuccess', onPaid)
+      location.reload()
+    }
+    document.addEventListener('mn:paymentSuccess', onPaid)
   })
+
+  // ── "Restaurar acceso" — modal propio de MoneyNest (sin prompt/alert nativos) ──
   const restoreLink = document.getElementById('mn-lock-restore-link')
   if (restoreLink) restoreLink.addEventListener('click', (e) => {
     e.preventDefault()
-    const email = prompt('Introduce el email con el que compraste MoneyNest:')
-    if (!email) return
-    toast && toast('Buscando tu licencia...', 'info')
-    // Restore is handled by re-checking Supabase-linked plan on next payment portal / support contact
-    alert('Si ya compraste MoneyNest, contacta con soporte para restaurar tu acceso con tu email de compra.')
+    _openRestoreAccessModal(user)
+  })
+}
+
+function _openRestoreAccessModal(user) {
+  document.getElementById('mn-restore-overlay')?.remove()
+
+  const overlay = document.createElement('div')
+  overlay.id = 'mn-restore-overlay'
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;
+    padding:20px;padding-bottom:max(20px, env(safe-area-inset-bottom, 0px));
+    background:rgba(6,11,20,0.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    animation:mnFadeIn .18s ease;font-family:'Inter',sans-serif;
+  `
+  overlay.innerHTML = `
+    <div id="mn-restore-modal" style="position:relative;width:min(400px,100%);background:#0D1424;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:26px 24px;box-shadow:0 32px 80px rgba(0,0,0,.6)">
+      <button id="mn-restore-close" aria-label="Cerrar" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      <div style="font-size:1.15rem;font-weight:900;color:#fff;margin-bottom:8px">Restaurar acceso</div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,0.55);line-height:1.5;margin-bottom:18px">Introduce el email con el que compraste MoneyNest.</div>
+      <label style="display:block;font-size:.72rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Email</label>
+      <input id="mn-restore-email" type="email" inputmode="email" autocomplete="email" placeholder="tu@email.com" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#fff;font-size:.9rem;font-family:inherit;box-sizing:border-box;margin-bottom:6px">
+      <div id="mn-restore-msg" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;font-size:.8rem;font-weight:600;line-height:1.5"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button id="mn-restore-cancel" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.7);font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+        <button id="mn-restore-submit" disabled style="flex:1.4;padding:12px;border-radius:12px;border:none;background:#00D4AA;color:#042b20;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;opacity:.5">Restaurar acceso</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+
+  const emailInput  = overlay.querySelector('#mn-restore-email')
+  const submitBtn   = overlay.querySelector('#mn-restore-submit')
+  const cancelBtn   = overlay.querySelector('#mn-restore-cancel')
+  const closeBtn    = overlay.querySelector('#mn-restore-close')
+  const msgEl       = overlay.querySelector('#mn-restore-msg')
+  const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  let submitting    = false
+
+  const _closeRestoreModal = () => { if (!submitting) overlay.remove() }
+  const _setMsg = (text, kind) => {
+    if (!text) { msgEl.style.display = 'none'; return }
+    msgEl.style.display = 'block'
+    msgEl.textContent = text
+    if (kind === 'error') { msgEl.style.background = 'rgba(244,63,94,0.1)'; msgEl.style.color = '#FCA5A5'; msgEl.style.border = '1px solid rgba(244,63,94,0.3)' }
+    else if (kind === 'success') { msgEl.style.background = 'rgba(0,212,170,0.1)'; msgEl.style.color = '#5EEAD4'; msgEl.style.border = '1px solid rgba(0,212,170,0.3)' }
+    else { msgEl.style.background = 'rgba(255,255,255,0.05)'; msgEl.style.color = 'rgba(255,255,255,0.6)'; msgEl.style.border = '1px solid rgba(255,255,255,0.08)' }
+  }
+  const _updateSubmitState = () => {
+    const valid = EMAIL_RE.test((emailInput.value || '').trim())
+    submitBtn.disabled = !valid || submitting
+    submitBtn.style.opacity = (!valid || submitting) ? '.5' : '1'
+  }
+
+  emailInput.addEventListener('input', _updateSubmitState)
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) _closeRestoreModal() })
+  closeBtn.addEventListener('click', _closeRestoreModal)
+  cancelBtn.addEventListener('click', _closeRestoreModal)
+  if (user?.email) { emailInput.value = user.email; _updateSubmitState() }
+  setTimeout(() => emailInput.focus(), 60)
+
+  submitBtn.addEventListener('click', async () => {
+    const email = (emailInput.value || '').trim()
+    if (!EMAIL_RE.test(email) || submitting) return
+    submitting = true
+    emailInput.disabled = true
+    cancelBtn.disabled = true
+    submitBtn.disabled = true
+    submitBtn.style.opacity = '.6'
+    const originalBtnLabel = submitBtn.textContent
+    submitBtn.textContent = 'Verificando…'
+    _setMsg('Buscando tu licencia…', 'pending')
+
+    try {
+      const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/check-license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'lookup_failed')
+
+      if (data.found) {
+        // Reutiliza la misma logica que ya activa el Plan Local tras una
+        // compra (buyLocal), sin inventar un flujo de licencias nuevo.
+        if (data.plan === 'pro') {
+          patchUser({ plan: 'local', trialEndsAt: null, cloudEnabled: false, upgradedAt: Date.now(), email })
+        } else {
+          buyLocal(email)
+        }
+        _setMsg('✅ Licencia encontrada. Restaurando acceso…', 'success')
+        setTimeout(() => location.reload(), 900)
+      } else {
+        _setMsg('No hemos encontrado una licencia asociada a este email.', 'error')
+        submitting = false
+        emailInput.disabled = false
+        cancelBtn.disabled = false
+        submitBtn.textContent = originalBtnLabel
+        _updateSubmitState()
+      }
+    } catch (err) {
+      console.error('[restoreAccess] Error verificando la licencia:', err)
+      _setMsg('No se pudo comprobar tu licencia. Comprueba tu conexión e inténtalo de nuevo.', 'error')
+      submitting = false
+      emailInput.disabled = false
+      cancelBtn.disabled = false
+      submitBtn.textContent = originalBtnLabel
+      _updateSubmitState()
+    }
   })
 }
 
