@@ -1,5 +1,6 @@
 window.MNPayment = (() => {
   const ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-payment-intent';
+  const VALIDATE_PROMO_ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/validate-promo-code';
 
   function _spt(key, fallback) {
     if (typeof window.t === 'function') { const v = window.t(key); return (v && v !== key) ? v : fallback; }
@@ -10,6 +11,7 @@ window.MNPayment = (() => {
   let _elements = null;
   let _overlay  = null;
   let _promoCode = null;
+  let _activePaymentIntentId = null;
 
   function _getStripe() {
     if (!_stripe) _stripe = Stripe(MNStripeConfig.publishableKey);
@@ -42,6 +44,7 @@ window.MNPayment = (() => {
           <div class="mnpo-right" id="mnPoBody">
             <div class="mnpo-right-title" id="mnPoRightTitle">${_spt('payment_title','Pago seguro')}</div>
             <div class="mnpo-right-sub">${_spt('payment_ssl','Tu información está cifrada con SSL')}</div>
+            <div class="mnpo-price-summary" id="mnPoPriceSummary" style="display:none"></div>
 
             <!-- Discount code -->
             <div class="mnpo-promo-wrap">
@@ -111,24 +114,142 @@ window.MNPayment = (() => {
     if (promoInput) promoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _applyPromoCode(); } });
   }
 
-  function _applyPromoCode() {
-    const input  = document.getElementById('mnPoPromoInput');
-    const msgEl  = document.getElementById('mnPoPromoMsg');
+  async function _applyPromoCode() {
+    const input    = document.getElementById('mnPoPromoInput');
+    const msgEl    = document.getElementById('mnPoPromoMsg');
     const applyBtn = document.getElementById('mnPoPromoApplyBtn');
     if (!input || !msgEl) return;
-    const code = (input.value || '').trim().toUpperCase();
+    const code = (input.value || '').trim();
     if (!code) {
       msgEl.style.display = 'block';
       msgEl.className = 'mnpo-promo-msg error';
       msgEl.textContent = _spt('payment_promo_empty', 'Introduce un código');
       return;
     }
-    _promoCode = code;
+
     input.disabled = true;
-    if (applyBtn) { applyBtn.disabled = true; applyBtn.textContent = '✓'; }
+    if (applyBtn) { applyBtn.disabled = true; applyBtn.textContent = '…'; }
     msgEl.style.display = 'block';
     msgEl.className = 'mnpo-promo-msg pending';
-    msgEl.textContent = _spt('payment_promo_saved', 'Código guardado — se validará y aplicará al confirmar el pago');
+    msgEl.textContent = _spt('payment_promo_checking', 'Comprobando código…');
+
+    try {
+      const res = await fetch(VALIDATE_PROMO_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, priceId: _activePriceId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.valid) {
+        _showPromoResult(false, data.reason);
+        input.disabled = false;
+        if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = _spt('payment_promo_apply', 'Aplicar'); }
+        return;
+      }
+
+      // Código real y válido según Stripe — ahora se re-crea el
+      // PaymentIntent/Subscription con el descuento realmente aplicado
+      // (el backend vuelve a validar el código antes de aplicarlo).
+      _promoCode = data.code;
+      input.disabled = true;
+      if (applyBtn) { applyBtn.style.display = 'none'; }
+      _setLoading(true);
+      await _createAndMountPayment(_activePriceId, _activeEmail, _promoCode);
+
+    } catch (err) {
+      _showPromoResult(false, 'invalid');
+      input.disabled = false;
+      if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = _spt('payment_promo_apply', 'Aplicar'); }
+    }
+  }
+
+  function _removePromoCode() {
+    _promoCode = null;
+    _resetPromoUI();
+    _setLoading(true);
+    _createAndMountPayment(_activePriceId, _activeEmail, null);
+  }
+
+  function _resetPromoUI() {
+    const input    = document.getElementById('mnPoPromoInput');
+    const applyBtn = document.getElementById('mnPoPromoApplyBtn');
+    const msgEl    = document.getElementById('mnPoPromoMsg');
+    const removeRow = document.getElementById('mnPoPromoApplied');
+    if (input)  { input.disabled = false; input.value = ''; }
+    if (applyBtn) { applyBtn.disabled = false; applyBtn.style.display = ''; applyBtn.textContent = _spt('payment_promo_apply', 'Aplicar'); }
+    if (msgEl)  { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+    if (removeRow) removeRow.remove();
+    _setPriceSummary(null);
+  }
+
+  // Muestra el resultado de validar el codigo: exito (con el resumen de
+  // precios ya calculado por Stripe) o un motivo de rechazo especifico
+  // en lenguaje humano — nunca un codigo/mensaje tecnico de Stripe.
+  function _showPromoResult(valid, reason, pricing) {
+    const msgEl = document.getElementById('mnPoPromoMsg');
+    const promoBox = document.getElementById('mnPoPromoBox');
+    if (!msgEl) return;
+    msgEl.style.display = 'block';
+
+    if (valid) {
+      msgEl.className = 'mnpo-promo-msg ok';
+      const pct = pricing?.discountAmount && pricing.originalAmount
+        ? Math.round((pricing.discountAmount / pricing.originalAmount) * 100)
+        : null;
+      msgEl.textContent = pct
+        ? `✅ ${_spt('payment_promo_applied','Código aplicado')}: -${pct}%`
+        : `✅ ${_spt('payment_promo_applied','Código aplicado')}`;
+
+      // Fila con el codigo aplicado + boton para quitarlo
+      if (promoBox && !document.getElementById('mnPoPromoApplied')) {
+        const row = document.createElement('div');
+        row.id = 'mnPoPromoApplied';
+        row.className = 'mnpo-promo-applied-row';
+        row.innerHTML = `
+          <span>🏷️ ${_promoCode}</span>
+          <button type="button" id="mnPoPromoRemoveBtn">${_spt('payment_promo_remove','Quitar')}</button>`;
+        promoBox.appendChild(row);
+        document.getElementById('mnPoPromoRemoveBtn').addEventListener('click', _removePromoCode);
+      }
+      return;
+    }
+
+    const reasonMsgs = {
+      invalid:        _spt('payment_promo_invalid',       'Código no válido'),
+      expired:        _spt('payment_promo_expired',       'Este código ha caducado'),
+      not_applicable: _spt('payment_promo_not_applicable','Este código no es aplicable a este plan'),
+      exhausted:      _spt('payment_promo_exhausted',     'Este código ya no está disponible'),
+    };
+    msgEl.className = 'mnpo-promo-msg error';
+    msgEl.textContent = '⚠ ' + (reasonMsgs[reason] || reasonMsgs.invalid);
+  }
+
+  // Muestra precio original tachado + precio final en el resumen del
+  // plan (panel izquierdo) cuando hay un descuento real aplicado.
+  function _applyPricingToSummary(priceId, pricing) {
+    if (!pricing || !pricing.discountAmount) { _setPriceSummary(null); return; }
+    _setPriceSummary(pricing);
+  }
+
+  function _fmtCents(cents, currency) {
+    const value = (Number(cents) || 0) / 100;
+    const symbol = (currency || 'eur').toLowerCase() === 'eur' ? '€' : (currency || '').toUpperCase();
+    return value.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + symbol;
+  }
+
+  function _setPriceSummary(pricing) {
+    const el = document.getElementById('mnPoPriceSummary');
+    if (!el) return;
+    if (!pricing || !pricing.discountAmount) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    el.style.display = 'flex';
+    el.innerHTML = `
+      <span class="mnpo-price-original">${_fmtCents(pricing.originalAmount, pricing.currency)}</span>
+      <span class="mnpo-price-final">${_fmtCents(pricing.finalAmount, pricing.currency)}</span>`;
   }
 
   function _setPlanSummary(priceId) {
@@ -421,6 +542,7 @@ window.MNPayment = (() => {
     document.getElementById('mnPoSuccess').style.display = 'none';
     document.getElementById('mnPoElement').innerHTML     = '';
     _hideError();
+    _resetPromoUI();
     _setLoading(true);
     _setPlanSummary(priceId);
 
@@ -428,16 +550,37 @@ window.MNPayment = (() => {
     _overlay.classList.add('mnpo--open');
     if (typeof window._pushScrollLock === 'function') window._pushScrollLock(); else document.body.style.overflow = 'hidden';
 
+    await _createAndMountPayment(priceId, email, null);
+  }
+
+  // Crea (o re-crea, si ya se habia creado antes) el PaymentIntent/
+  // Subscription real en Stripe y monta el formulario de tarjeta.
+  // `promoCode` ya debe venir VALIDADO (via /validate-promo-code) —
+  // este endpoint TAMBIEN lo revalida server-side antes de aplicar
+  // ningun descuento real al importe cobrado.
+  async function _createAndMountPayment(priceId, email, promoCode) {
     try {
       const res = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, email, promoCode: _promoCode || undefined }),
+        body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'server_error');
+      if (!res.ok) {
+        if (data.error === 'invalid_promo_code') {
+          // El backend rechazo el codigo en la revalidacion final —
+          // no se crea ningun cargo con descuento fantasma.
+          _showPromoResult(false, data.reason);
+          _setLoading(false);
+          return;
+        }
+        throw new Error(data.error ?? 'server_error');
+      }
 
       _activeFlowType = data.type ?? 'payment';
+      if (data.paymentIntentId) _activePaymentIntentId = data.paymentIntentId;
+      if (data.pricing) _applyPricingToSummary(priceId, data.pricing);
+
       const stripe   = _getStripe();
       const appearance = {
         theme: 'night',
@@ -499,6 +642,14 @@ window.MNPayment = (() => {
         },
       };
 
+      // Si ya habia un formulario montado (re-creacion tras aplicar un
+      // codigo promocional), lo desmontamos antes de montar el nuevo.
+      if (_elements) {
+        try { _elements.getElement('payment')?.unmount(); } catch (_) { /* ignore */ }
+        _elements = null;
+        document.getElementById('mnPoElement').innerHTML = '';
+      }
+
       _elements = stripe.elements({
         clientSecret: data.clientSecret,
         appearance,
@@ -508,6 +659,8 @@ window.MNPayment = (() => {
       paymentElement.mount('#mnPoElement');
       paymentElement.on('ready', () => _setLoading(false));
 
+      if (promoCode) _showPromoResult(true, null, data.pricing);
+
     } catch (err) {
       // Fallback: if the embedded payment-intent endpoint is unavailable,
       // try the redirect-based Stripe Checkout flow instead.
@@ -516,7 +669,7 @@ window.MNPayment = (() => {
         const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, email, promoCode: _promoCode || undefined }),
+          body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
         });
         const checkoutData = await checkoutRes.json();
         if (checkoutRes.ok && checkoutData.url) {
