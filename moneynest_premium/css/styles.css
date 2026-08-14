@@ -800,6 +800,9 @@ tbody tr:hover{cursor:default}
   animation:slideUp .25s ease;
 }
 .modal.wide{max-width:640px}
+.modal.modal-2col-wide{max-width:720px}
+.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start}
+.modal-2col-left,.modal-2col-right{display:flex;flex-direction:column;gap:14px}
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-header{
   padding:20px 24px 16px;
@@ -1170,6 +1173,8 @@ textarea{resize:vertical;min-height:70px}
   .grid-3{grid-template-columns:1fr}
   .col-span-2{grid-column:span 1}
   .form-row-2{grid-template-columns:1fr}
+  .modal-2col{grid-template-columns:1fr;gap:0}
+  .modal.modal-2col-wide{max-width:480px}
   .form-row-3{grid-template-columns:1fr}
   .modal-close{width:44px;height:44px;font-size:1.1rem}
   .content{padding:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}

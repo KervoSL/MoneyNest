@@ -15144,6 +15144,7 @@ window.openCustomDebtModal = function() {
     </div>
   `
   document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCustomDebtModal() })
   if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 
@@ -15532,6 +15533,7 @@ window.openApplyStrategyModal = function(customId) {
       </div>
     </div>`
   document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); window._popScrollLock && window._popScrollLock() } })
   if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 
@@ -15617,6 +15619,7 @@ window.openMultiPagoModal = function() {
       </div>
     </div>`
   document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); window._popScrollLock && window._popScrollLock() } })
   if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 }
