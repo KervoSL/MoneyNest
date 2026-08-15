@@ -4392,7 +4392,10 @@ function renderDashboard() {
       </div>
       <div style="font-size:.9rem;font-weight:700;color:${m._color};flex-shrink:0;margin-left:12px">${m._sign}${eur(m.importe)}</div>
     </div>`).join('') :
-    '<div style="padding:24px;text-align:center;color:var(--text2);font-size:.85rem">' + t('sin_movimientos_aun') + '</div>'
+    '<div style="padding:20px 12px;text-align:center">' +
+      '<div style="font-size:.85rem;color:var(--text2);margin-bottom:12px">' + t('sin_movimientos_aun') + '</div>' +
+      '<button type="button" class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.3);color:var(--accent)">🏦 ' + t('btn_importar_datos_bancarios','Importar datos bancarios') + '</button>' +
+    '</div>'
 
   // Compact assets preview for dashboard sidebar
   const activeAssets = (S.assets||[]).filter(a=>a.status==='active')
@@ -11944,10 +11947,23 @@ function runCinematicIntro(onComplete) {
 
 // ─── DEMO DATA ────────────────────────────────────────────────
 const DEMO_FLAG = 'mn7_demo_mode'
+const REAL_DATA_BACKUP_KEY = 'mn7_real_data_backup'
 function isDemoMode() { try { return localStorage.getItem(DEMO_FLAG) === 'true' } catch(e){ return false } }
 
 function loadDemoData(scenario, nombreOverride) {
   try {
+    // Backup del estado REAL del usuario (cuentas, ingresos, gastos,
+    // etc. ya introducidos) ANTES de sobrescribirlo con los datos de
+    // demo. Sin esto, si un usuario con datos propios activaba el
+    // demo desde Ajustes para probarlo, esos datos se perdian de
+    // forma permanente e irreversible al volver al modo real
+    // (clearDemoData() reseteaba todo a un estado vacio). Solo se
+    // hace backup si el usuario NO estaba ya en modo demo, para no
+    // sobrescribir un backup real valido con datos de demo si por
+    // cualquier motivo loadDemoData() se llamara dos veces seguidas.
+    if (!isDemoMode()) {
+      try { localStorage.setItem(REAL_DATA_BACKUP_KEY, JSON.stringify(S)) } catch(e){}
+    }
     localStorage.setItem(DEMO_FLAG, 'true')
     if (window.MNGamification) MNGamification.checkAchievement('demo_mode')
     // Guardar el nombre real del usuario antes de entrar al modo demo
@@ -11962,6 +11978,14 @@ function loadDemoData(scenario, nombreOverride) {
   const uid2 = (prefix, n) => `${prefix}${n}`
 
   // Perfil único maximizado: Demo User — profesional con todo tipo de activos
+  // ── CATEGORIAS ────────────────────────────────────────────────
+  // 'Viajes' se usa extensamente en los gastos y presupuestos demo de
+  // abajo, pero no forma parte de la lista de categorias por defecto
+  // — se añade aqui, solo para la sesion de demo (S.categorias vuelve
+  // a los valores por defecto al salir del demo o para un usuario
+  // nuevo), para que la categoria sea coherente en selects/iconos.
+  if (!S.categorias.gasto.includes('Viajes')) S.categorias.gasto.push('Viajes')
+
   // ── CUENTAS ──────────────────────────────────────────────────────
   S.cuentas = [
     { id:'dc1', nombre:'BBVA Cuenta Nómina',  tipo:'banco',    saldo:5840,  valorTotal:5840,  color:'#00D4AA' },
@@ -11984,7 +12008,7 @@ function loadDemoData(scenario, nombreOverride) {
     if (i === 0)  ingresos.push({ id:`di${idx}e`, concepto:'Alquiler habitación (Airbnb)', importe:520, categoria:'Alquiler', fecha:d(mi,'06'), cuentaId:'dc1', status:'pendiente' })
     if (i === 1)  ingresos.push({ id:`di${idx}f`, concepto:'Bono Q4 desempeño', importe:3200, categoria:'Bono', fecha:d(mi,'15'), cuentaId:'dc1', status:'cobrado' })
     if (i === 3)  ingresos.push({ id:`di${idx}g`, concepto:'Venta curso online Udemy', importe:680, categoria:'Freelance', fecha:d(mi,'22'), cuentaId:'dc3', status:'cobrado' })
-    if (i === 5)  ingresos.push({ id:`di${idx}h`, concepto:'Reembolso Hacienda IRPF', importe:1240, categoria:'Otros', fecha:d(mi,'18'), cuentaId:'dc1', status:'cobrado' })
+    if (i === 5)  ingresos.push({ id:`di${idx}h`, concepto:'Reembolso Hacienda IRPF', importe:1240, categoria:'Otro', fecha:d(mi,'18'), cuentaId:'dc1', status:'cobrado' })
     if (i === 7)  ingresos.push({ id:`di${idx}i`, concepto:'Venta moto segunda mano', importe:3800, categoria:'Venta', fecha:d(mi,'08'), cuentaId:'dc1', status:'cobrado' })
     if (i === 9)  ingresos.push({ id:`di${idx}j`, concepto:'Comisiones afiliados web', importe:290, categoria:'Freelance', fecha:d(mi,'25'), cuentaId:'dc3', status:'cobrado' })
     if (i === 11) ingresos.push({ id:`di${idx}k`, concepto:'Bonus incorporación empresa', importe:5000, categoria:'Bono', fecha:d(mi,'01'), cuentaId:'dc1', status:'cobrado' })
@@ -12155,6 +12179,32 @@ function loadDemoData(scenario, nombreOverride) {
 function clearDemoData() {
   try { localStorage.removeItem(DEMO_FLAG) } catch(e){}
   const theme  = S.theme
+
+  // Si el usuario ya tenia datos reales propios antes de activar el
+  // demo, restaurarlos intactos en vez de perderlos. Solo si NUNCA
+  // hubo datos reales (backup inexistente) se cae al comportamiento
+  // anterior: estado vacio + nombre recuperado por separado.
+  let backupState = null
+  try {
+    const backup = localStorage.getItem(REAL_DATA_BACKUP_KEY)
+    if (backup) backupState = JSON.parse(backup)
+    localStorage.removeItem(REAL_DATA_BACKUP_KEY)
+  } catch(e){}
+
+  if (backupState) {
+    S = backupState
+    S.theme = theme
+    save()
+    ;['demo-mode-chip','demoFab','demoFabReal','demoPanelModal'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.remove()
+    })
+    render()
+    setTimeout(_renderDemoFab, 300)
+    toast(t('toast_modo_real','✅ Modo real activado — app lista para tus datos'))
+    return
+  }
+
   // Recuperar el nombre real guardado antes de entrar al modo demo
   let realName = 'Usuario'
   try {
@@ -13283,7 +13333,11 @@ function verDetalleCuenta(cuentaId) {
       <td class="td-amount" style="color:${m._color}">${m._sign}${eur(m.importe)}</td>
       <td><span class="tag">${m.categoria||'—'}</span></td>
     </tr>`
-  }).join('') || '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sin movimientos</div></div></td></tr>'
+  }).join('') || `<tr><td colspan="5"><div class="empty">
+    <div class="empty-icon">📋</div>
+    <div class="empty-title">${t('sin_movimientos_aun','Todavía no tienes movimientos.')}</div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="margin-top:10px;background:var(--accent-dim);border-color:rgba(0,212,170,.3);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
+  </div></td></tr>`
 
   const totalEnt = ings.reduce((a,i)=>a+(Number(i.importe)||0),0)
   const totalSal = gas.reduce((a,g)=>a+(Number(g.importe)||0),0) + invs.filter(i=>!i.cerrada).reduce((a,i)=>a+(Number(i.importe)||0),0)
