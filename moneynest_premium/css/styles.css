@@ -1463,17 +1463,6 @@ textarea{resize:vertical;min-height:70px}
   transition:opacity 240ms cubic-bezier(0.4,0,1,1);
 }
 
-/* Blurred app shell visible THROUGH the mini intro overlay —
-   achieved by the #app-shell getting blur during intro */
-#app-shell.mn-intro-blur{
-  filter:blur(4px) brightness(0.85);
-  /* do not animate blur in — it appears instantly, fades out with transition */
-  transition:filter 280ms ease 0ms;
-}
-#app-shell.mn-intro-blur.mn-intro-unblur{
-  filter:blur(0px) brightness(1);
-}
-
 /* Center stage */
 #mnMiniStage{
   position:relative;

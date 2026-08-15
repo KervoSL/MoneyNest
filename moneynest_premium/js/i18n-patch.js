@@ -480,7 +480,6 @@
       // Gastos / KPIs globales
       total_lbl: 'Total', este_mes: 'este mes', este_anio: 'este año', periodo_lbl: 'período',
       vs_mes_ant: 'vs. mes ant.', primer_mes: 'Primer mes', mes_anterior: 'Mes anterior',
-      importar_csv: 'Importar CSV', importar_csv_title: 'Importar extracto bancario CSV',
       btn_importar_datos_bancarios: 'Importar datos bancarios',
       importar_datos_bancarios_sub: 'Sube un extracto CSV o Excel (XLSX) de tu banco y crea tus movimientos automáticamente',
       importar_ahora_cta: 'Importar',
@@ -1064,8 +1063,7 @@
       // Gastos / KPIs globales
       total_lbl: 'Total', este_mes: 'this month', este_anio: 'this year', periodo_lbl: 'period',
       vs_mes_ant: 'vs. prev. month', primer_mes: 'First month', mes_anterior: 'Previous month',
-      // Importar CSV
-      importar_csv: 'Import CSV', importar_csv_title: 'Import bank statement CSV',
+      // Importar datos bancarios
       btn_importar_datos_bancarios: 'Import bank data',
       importar_datos_bancarios_sub: 'Upload a CSV or Excel (XLSX) statement from your bank and create your transactions automatically',
       importar_ahora_cta: 'Import',
