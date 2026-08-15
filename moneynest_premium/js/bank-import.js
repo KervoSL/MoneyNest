@@ -439,26 +439,100 @@
   // only ever applied if that exact category also exists in the user's
   // live category list (_gastoCats()), so a customized/renamed category
   // set is respected instead of silently reintroducing removed ones.
+  // ════════════════════════════════════════════════════════════════
+  // ── TEXT NORMALIZATION (foundation for all matching below) ─────
+  // ════════════════════════════════════════════════════════════════
+  // Strips accents/diacritics (café -> CAFE), apostrophes (McDonald's ->
+  // MCDONALDS), and collapses all punctuation/separators (commas, hyphens,
+  // slashes, parentheses, dots...) to single spaces — so location suffixes,
+  // store numbers and branch identifiers stay as separate, droppable
+  // tokens instead of corrupting the merchant name itself. Runs once per
+  // description (not per pattern), keeping the whole pipeline cheap even
+  // for thousands of imported rows.
+  function _normalizeText(s) {
+    if (!s) return '';
+    return s
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+      .toUpperCase()
+      .replace(/['’´`]/g, '')                            // McDonald's -> MCDONALDS
+      .replace(/[.,\/#!$%\^\*;:{}=\-_`~()"]/g, ' ')       // punctuation -> space (keep & for H&M)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   const AUTO_CATEGORY_RULES = [
-    { category: 'Alimentación', patterns: ['MERCADONA', 'CARREFOUR', 'LIDL', 'DIA SUPERMERCADO', 'ALCAMPO', 'EROSKI', 'CONSUM', 'ALDI', 'HIPERCOR', 'SUPERMERCADO', 'FRUTERIA', 'CHARCUTERIA'] },
-    { category: 'Restaurantes', patterns: ['MCDONALD', 'BURGER KING', 'KFC', 'TELEPIZZA', 'DOMINOS', 'GLOVO', 'UBER EATS', 'UBEREATS', 'JUST EAT', 'JUSTEAT', 'STARBUCKS', 'RESTAURANTE', 'CAFETERIA', 'CERVECERIA'] },
-    { category: 'Transporte', patterns: ['CABIFY', 'RENFE', 'METRO DE', 'REPSOL', 'CEPSA', 'GASOLINERA', 'PARKING', 'BLABLACAR', 'IBERIA', 'VUELING', 'RYANAIR', 'AUTOPISTA', 'PEAJE'] },
-    { category: 'Suscripciones', patterns: ['NETFLIX', 'SPOTIFY', 'HBO', 'DISNEY PLUS', 'DISNEY+', 'YOUTUBE PREMIUM', 'ICLOUD', 'APPLE.COM/BILL', 'PLAYSTATION PLUS', 'XBOX GAME PASS', 'AMAZON PRIME'] },
-    { category: 'Tecnología', patterns: ['APPLE STORE', 'MEDIAMARKT', 'PCCOMPONENTES', 'FNAC', 'WORTEN', 'MICROSOFT STORE'] },
-    { category: 'Salud', patterns: ['FARMACIA', 'CLINICA', 'HOSPITAL', 'DENTISTA', 'FISIOTERAPIA', 'OPTICA'] },
-    { category: 'Seguros', patterns: ['MAPFRE', 'MUTUA MADRILE', 'AXA SEGUROS', 'ALLIANZ', 'LINEA DIRECTA', 'DIRECT SEGUROS'] },
-    { category: 'Vivienda', patterns: ['IBERDROLA', 'ENDESA', 'NATURGY', 'ELECTRICIDAD', 'CANAL DE ISABEL', 'AGUAS DE', 'COMUNIDAD DE PROPIETARIOS'] },
-    { category: 'Ropa', patterns: ['ZARA', 'H&M', 'MANGO', 'PULL AND BEAR', 'PULL&BEAR', 'BERSHKA', 'STRADIVARIUS', 'NIKE', 'ADIDAS', 'DECATHLON', 'PRIMARK'] },
-    { category: 'Educación', patterns: ['UNIVERSIDAD', 'ACADEMIA', 'COURSERA', 'UDEMY', 'LIBRERIA'] },
+    { category: 'Alimentación', patterns: [
+        'MERCADONA','CARREFOUR','LIDL','DIA SUPERMERCADO','SUPERMERCADOS DIA','ALCAMPO','EROSKI','CONSUM','ALDI','HIPERCOR','SUPERCOR',
+        'BONPREU','CAPRABO','CONDIS','SPAR','COVIRAN','MASYMAS','FROIZ','GADIS','SUPERSOL','AHORRAMAS','ECI SUPERMERCADO',
+        'SUPERMERCADO','SUPERMERCAT','ALIMENTACION','ALIMENTACIO','FRUTERIA','FRUITERIA','VERDULERIA',
+        'CHARCUTERIA','XARCUTERIA','CARNICERIA','CARNISSERIA','PANADERIA','FLECA','FORN DE PA','PESCADERIA','PEIXATERIA',
+      ] },
+    { category: 'Restaurantes', patterns: [
+        'MCDONALD','MC DONALD','BURGER KING','KFC','TELEPIZZA','DOMINOS','GLOVO','UBER EATS','UBEREATS','JUST EAT','JUSTEAT','STARBUCKS',
+        'RESTAURANTE','RESTAURANT','CAFETERIA','CERVECERIA','CERVESERIA','PIZZERIA','HAMBURGUESERIA','BAR ','TAPAS','MENU DEL DIA','MENU DIARI',
+      ] },
+    { category: 'Tabaco', patterns: [
+        'ESTANCO','ESTANC ','ESTANC24','TABACS','TABAC ','TABACOS','TABACALERA','EXPENDEDURIA',
+      ] },
+    { category: 'Transporte', patterns: [
+        'CABIFY','RENFE','METRO DE','BLABLACAR','IBERIA','VUELING','RYANAIR','AUTOPISTA','PEAJE','TAXI','FREE NOW','FREENOW','TMB',
+        'REPSOL','CEPSA','GASOLINERA','GASOLINERES','ESTACION DE SERVICIO','SHELL','GALP','BP ','AUTOBUS','AUTOBUS URBANO','PARKING','APARCAMIENTO','APARCAMENT',
+      ] },
+    { category: 'Suscripciones', patterns: [
+        'NETFLIX','SPOTIFY','HBO','DISNEY PLUS','DISNEY+','YOUTUBE PREMIUM','ICLOUD','APPLE.COM/BILL','PLAYSTATION PLUS','XBOX GAME PASS','AMAZON PRIME',
+      ] },
+    { category: 'Tecnología', patterns: [
+        'APPLE STORE','MEDIAMARKT','PCCOMPONENTES','FNAC','WORTEN','MICROSOFT STORE',
+      ] },
+    { category: 'Salud', patterns: [
+        'FARMACIA','FARMACIA ','CLINICA','HOSPITAL','DENTISTA','FISIOTERAPIA','FISIOTERAPEUTA','OPTICA','OPTICA ',
+      ] },
+    { category: 'Seguros', patterns: [
+        'MAPFRE','MUTUA MADRILE','AXA SEGUROS','ALLIANZ','LINEA DIRECTA','DIRECT SEGUROS',
+      ] },
+    { category: 'Vivienda', patterns: [
+        'IBERDROLA','ENDESA','NATURGY','ELECTRICIDAD','ELECTRICITAT','CANAL DE ISABEL','AGUAS DE','AIGUES DE','COMUNIDAD DE PROPIETARIOS','COMUNITAT DE PROPIETARIS',
+      ] },
+    { category: 'Ropa', patterns: [
+        'ZARA ','H&M','MANGO','PULL AND BEAR','PULL&BEAR','BERSHKA','STRADIVARIUS','NIKE','ADIDAS','DECATHLON','PRIMARK',
+      ] },
+    { category: 'Educación', patterns: [
+        'UNIVERSIDAD','UNIVERSITAT','ACADEMIA','COURSERA','UDEMY','LIBRERIA','LLIBRERIA',
+      ] },
   ];
 
-  function _autoDetectCategory(description) {
-    const d = (description || '').toUpperCase();
-    for (const rule of AUTO_CATEGORY_RULES) {
-      if (rule.patterns.some(p => d.includes(p))) return rule.category;
-    }
-    return null;
+  function _escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
+
+  // Compiles a raw dictionary pattern into a fast matcher function.
+  // Patterns ending in a trailing space in the SOURCE array (e.g. 'BAR ',
+  // 'BP ') mean "must end here as a whole word" — compiled to a
+  // word-boundary regex so short, collision-prone tokens like "BAR"
+  // never accidentally match inside "BARCELONA" (a real false positive
+  // this exact convention is designed to prevent — plain substring
+  // matching alone would silently lose the trailing-space intent once
+  // the pattern itself gets trimmed during normalization). Patterns
+  // without a trailing space keep the more permissive substring
+  // behavior, which is needed e.g. for 'MCDONALD' to also match the
+  // "MCDONALDS" variant left after apostrophe normalization.
+  function _compilePattern(raw) {
+    const needsRightBoundary = /\s$/.test(raw);
+    const normalized = _normalizeText(raw);
+    const re = needsRightBoundary ? new RegExp('\\b' + _escapeRegex(normalized) + '\\b') : null;
+    return {
+      normalized,
+      test: (d) => needsRightBoundary ? re.test(d) : d.includes(normalized),
+    };
+  }
+
+  // Every pattern is compiled once here (not per-transaction) so the
+  // hot path for hundreds/thousands of imported rows only normalizes the
+  // transaction description itself, never re-normalizes the dictionary.
+  const _AUTO_CATEGORY_RULES_NORM = AUTO_CATEGORY_RULES.map(rule => ({
+    category: rule.category,
+    patterns: rule.patterns.map(_compilePattern),
+  }));
 
   // ════════════════════════════════════════════════════════════════
   // ── SMART MERCHANT GROUPING ────────────────────────────────────
@@ -480,6 +554,8 @@
     { canonical: 'EROSKI', patterns: ['EROSKI'] },
     { canonical: 'CONSUM', patterns: ['CONSUM'] },
     { canonical: 'ALDI', patterns: ['ALDI'] },
+    { canonical: 'BONPREU', patterns: ['BONPREU', 'SUPERMERCAT BONPREU'] },
+    { canonical: 'CAPRABO', patterns: ['CAPRABO'] },
     { canonical: 'EL CORTE INGLES', patterns: ['EL CORTE INGLES', 'CORTE INGLES'] },
     // Ride-hailing / transport (UBER EATS checked before bare UBER)
     { canonical: 'UBER EATS', patterns: ['UBER EATS', 'UBEREATS'] },
@@ -489,8 +565,10 @@
     // Food delivery / restaurants
     { canonical: 'GLOVO', patterns: ['GLOVO'] },
     { canonical: 'JUST EAT', patterns: ['JUST EAT', 'JUSTEAT'] },
-    { canonical: 'MCDONALDS', patterns: ['MCDONALD'] },
+    { canonical: 'MCDONALDS', patterns: ['MCDONALD', 'MC DONALD'] },
     { canonical: 'STARBUCKS', patterns: ['STARBUCKS'] },
+    // Tobacco
+    { canonical: 'ESTANCO', patterns: ['ESTANCO', 'ESTANC', 'EXPENDEDURIA'] },
     // Streaming / subscriptions / tech
     { canonical: 'NETFLIX', patterns: ['NETFLIX'] },
     { canonical: 'SPOTIFY', patterns: ['SPOTIFY'] },
@@ -498,7 +576,7 @@
     { canonical: 'AMAZON', patterns: ['AMAZON'] },
     { canonical: 'APPLE', patterns: ['APPLE.COM', 'APPLE STORE'] },
     // Clothing
-    { canonical: 'ZARA', patterns: ['ZARA'] },
+    { canonical: 'ZARA', patterns: ['ZARA '] },
     { canonical: 'H&M', patterns: ['H&M'] },
     // P2P transfers / generic bank services — the whole point is to
     // collapse away the variable name that follows (a person, a company).
@@ -509,27 +587,105 @@
     { canonical: 'NOMINA', patterns: ['NOMINA'] },
   ];
 
-  function _matchKnownMerchant(descriptionUpper) {
+  // Same one-time normalization as the category dictionary above.
+  const _KNOWN_MERCHANTS_NORM = KNOWN_MERCHANTS.map(rule => ({
+    canonical: rule.canonical,
+    patterns: rule.patterns.map(_compilePattern),
+  }));
+
+  function _matchKnownMerchant(normalizedDescription) {
     let best = null; // { canonical, len }
-    for (const rule of KNOWN_MERCHANTS) {
+    for (const rule of _KNOWN_MERCHANTS_NORM) {
       for (const p of rule.patterns) {
-        if (descriptionUpper.includes(p) && (!best || p.length > best.len)) {
-          best = { canonical: rule.canonical, len: p.length };
+        if (p.test(normalizedDescription) && (!best || p.normalized.length > best.len)) {
+          best = { canonical: rule.canonical, len: p.normalized.length };
         }
       }
     }
     return best ? best.canonical : null;
   }
 
-  // Legal-entity suffixes and short Spanish stopwords that shouldn't lead
-  // (or occupy a slot in) the fallback grouping key for unrecognized merchants.
-  const MERCHANT_STOPWORDS = new Set(['EL', 'LA', 'LOS', 'LAS', 'DE', 'DEL', 'Y', 'SL', 'SA', 'SLU', 'SAU', 'SCP', 'CB']);
+  // ════════════════════════════════════════════════════════════════
+  // ── LIGHTWEIGHT FUZZY MATCHING (last resort, high-signal only) ──
+  // ════════════════════════════════════════════════════════════════
+  // Classic Levenshtein edit distance with an early-exit once the running
+  // minimum in the current row already exceeds the allowed budget — cheap
+  // enough to run against a short list of ~30 canonical merchant names
+  // without noticeably slowing down an import of hundreds of rows. Only
+  // ever called on the first couple of significant tokens of an already-
+  // normalized, unmatched description (see _fuzzyMatchMerchant), never on
+  // full sentences, keeping the string lengths — and therefore the cost —
+  // small regardless of how long the original transaction description is.
+  function _levenshtein(a, b, maxDist) {
+    if (a === b) return 0;
+    const al = a.length, bl = b.length;
+    if (Math.abs(al - bl) > maxDist) return maxDist + 1;
+    let prev = new Array(bl + 1);
+    for (let j = 0; j <= bl; j++) prev[j] = j;
+    for (let i = 1; i <= al; i++) {
+      const cur = new Array(bl + 1);
+      cur[0] = i;
+      let rowMin = cur[0];
+      for (let j = 1; j <= bl; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+        if (cur[j] < rowMin) rowMin = cur[j];
+      }
+      if (rowMin > maxDist) return maxDist + 1; // early exit — no way to recover
+      prev = cur;
+    }
+    return prev[bl];
+  }
+
+  // Compares each significant (length > 2) token of a normalized,
+  // already-unmatched description against every known canonical merchant
+  // name, tolerating small typos/variants ("MCDONALS", "BONPREY") without
+  // accepting wildly different words just because they're short. The edit
+  // budget scales with word length so short words need a near-exact hit
+  // (avoiding false positives like "BAR" fuzzy-matching "CAR"-ish brands)
+  // while longer names tolerate a couple of character slips.
+  function _fuzzyMatchMerchant(normalizedDescription) {
+    const tokens = normalizedDescription.split(' ').filter(w => w.length > 2 && !MERCHANT_STOPWORDS.has(w));
+    let best = null; // { canonical, dist, wordLen }
+    for (const rule of _KNOWN_MERCHANTS_NORM) {
+      // Fuzzy only makes sense against single-word-ish canonical names —
+      // multi-word canonicals (e.g. "EL CORTE INGLES") are already well
+      // covered by the substring check above and rarely typo'd token-by-token.
+      const canonicalWords = rule.canonical.split(' ');
+      if (canonicalWords.length > 1) continue;
+      const cw = canonicalWords[0];
+      const budget = cw.length <= 5 ? 1 : (cw.length <= 9 ? 2 : 3);
+      for (const tok of tokens) {
+        if (Math.abs(tok.length - cw.length) > budget) continue;
+        const dist = _levenshtein(tok, cw, budget);
+        if (dist <= budget && (!best || dist < best.dist)) {
+          best = { canonical: rule.canonical, dist, wordLen: cw.length };
+        }
+      }
+    }
+    if (!best) return null;
+    // A distance of 0 would already have been caught by the exact substring
+    // match, so anything reaching here is a genuine (small) variation —
+    // 'medium' confidence: good enough to suggest, not enough to feel 100%.
+    return { merchant: best.canonical, confidence: 'medium' };
+  }
+
+  // Legal-entity suffixes and short Spanish/Catalan stopwords that
+  // shouldn't lead (or occupy a slot in) the fallback grouping key for
+  // unrecognized merchants, nor be treated as fuzzy-matchable tokens.
+  const MERCHANT_STOPWORDS = new Set([
+    'EL','LA','LOS','LAS','DE','DEL','Y','SL','SA','SLU','SAU','SCP','CB',
+    // Catalan articles/prepositions + common location-suffix words that
+    // otherwise leak into the fallback key ("MCDONALD S BARCELONA" ->
+    // dropping "BARCELONA" so the key stays anchored on the merchant).
+    'EL','LA','ELS','LES','DE','DEL','I','BCN','BARCELONA','MADRID','VALENCIA',
+  ]);
 
   function _fallbackMerchantKey(description) {
-    let s = (description || '').toUpperCase();
+    let s = _normalizeText(description);
     s = s.replace(/\d{3,}/g, '');           // strip long number sequences (refs, card numbers, store codes)
-    s = s.replace(/\b\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?\b/g, ''); // strip dates
-    s = s.replace(/[^A-ZÁÉÍÓÚÑ&\s]/g, ' '); // strip punctuation (keep & for brands like H&M)
+    s = s.replace(/\b\d{1,2}\s\d{1,2}(\s\d{2,4})?\b/g, ''); // strip dates (already space-normalized by _normalizeText)
+    s = s.replace(/[^A-Z&\s]/g, ' ');       // strip anything non-letter (keep & for brands like H&M)
     s = s.replace(/\s+/g, ' ').trim();
     const words = s.split(' ').filter(w => w.length > 1 && !MERCHANT_STOPWORDS.has(w));
     // Up to 3 significant words — long enough to keep multi-word chain
@@ -542,13 +698,55 @@
   // transaction description — WITHOUT touching the original description
   // itself, which callers keep separately (row.description stays intact;
   // only row.merchantKey is derived from it). Known brands/services
-  // collapse every variant to one key; unrecognized merchants fall back
-  // to a normalized-but-heuristic key.
+  // collapse every variant to one key (exact match, then fuzzy as a
+  // last resort for small typos); unrecognized merchants fall back to a
+  // normalized-but-heuristic key.
   function merchantKeyFor(description) {
-    const d = (description || '').toUpperCase();
+    const d = _normalizeText(description);
     const known = _matchKnownMerchant(d);
     if (known) return known;
+    const fuzzy = _fuzzyMatchMerchant(d);
+    if (fuzzy) return fuzzy.merchant;
     return _fallbackMerchantKey(description);
+  }
+
+  // Known merchant -> implicit category, for cases where the merchant
+  // itself was identified (exact or fuzzy) but no literal category
+  // keyword appears in the description text. Deliberately conservative:
+  // only merchants unambiguously tied to one category are listed here
+  // (AMAZON, APPLE, BIZUM, TRANSFERENCIA... are left out on purpose —
+  // too generic to safely imply a category).
+  const MERCHANT_TO_CATEGORY = {
+    'MERCADONA': 'Alimentación', 'CARREFOUR': 'Alimentación', 'LIDL': 'Alimentación', 'DIA': 'Alimentación',
+    'ALCAMPO': 'Alimentación', 'EROSKI': 'Alimentación', 'CONSUM': 'Alimentación', 'ALDI': 'Alimentación',
+    'BONPREU': 'Alimentación', 'CAPRABO': 'Alimentación', 'EL CORTE INGLES': 'Alimentación',
+    'UBER EATS': 'Restaurantes', 'GLOVO': 'Restaurantes', 'JUST EAT': 'Restaurantes', 'MCDONALDS': 'Restaurantes', 'STARBUCKS': 'Restaurantes',
+    'ESTANCO': 'Tabaco',
+    'UBER': 'Transporte', 'CABIFY': 'Transporte', 'RENFE': 'Transporte',
+    'NETFLIX': 'Suscripciones', 'SPOTIFY': 'Suscripciones', 'AMAZON PRIME': 'Suscripciones',
+    'ZARA': 'Ropa', 'H&M': 'Ropa',
+  };
+
+  // Returns { category, confidence } — confidence is 'high' for an exact
+  // normalized keyword hit, or null if nothing matched. Keyword matches
+  // are inherently reliable (a real word like "supermercado" appearing
+  // anywhere in the description is a strong signal), so they're always
+  // 'high' here; genuinely uncertain cases (merchant only identified via
+  // fuzzy matching) come back as 'medium'.
+  function _autoDetectCategory(description, merchantKey) {
+    const d = _normalizeText(description);
+    for (const rule of _AUTO_CATEGORY_RULES_NORM) {
+      if (rule.patterns.some(p => p.test(d))) return { category: rule.category, confidence: 'high' };
+    }
+    // Fall back to a known-merchant -> category mapping — covers cases
+    // where the merchant was identified (possibly only via fuzzy
+    // matching) but the description has no literal category keyword.
+    const key = merchantKey || merchantKeyFor(description);
+    if (MERCHANT_TO_CATEGORY[key]) {
+      const exactMerchant = _matchKnownMerchant(d);
+      return { category: MERCHANT_TO_CATEGORY[key], confidence: exactMerchant === key ? 'high' : 'medium' };
+    }
+    return null;
   }
 
   function prettyMerchant(key) {
@@ -1594,13 +1792,24 @@
         if (prevByKey[g.key] && prevByKey[g.key].category) {
           return { ...g, category: prevByKey[g.key].category, isMapped: prevByKey[g.key].isMapped, isAuto: prevByKey[g.key].isAuto };
         }
-        // Then a category the user has taught before (remembered mapping).
+        // Then a category the user has taught before (remembered mapping,
+        // keyed by the already-normalized merchantKey — so a mapping
+        // learned from "ESTANCO BALMES BARCELONA" also applies to
+        // "Estanco 24H Barcelona" or any other variant that normalizes
+        // to the same key).
         if (map[g.key]) return { ...g, category: map[g.key], isMapped: true, isAuto: false };
-        // Then automatic detection by merchant name — only if that exact
-        // category still exists in the user's real category list, so a
-        // customized category set is never contradicted.
-        const guess = _autoDetectCategory(g.sample);
-        if (guess && realCats.includes(guess)) return { ...g, category: guess, isMapped: false, isAuto: true };
+        // Then automatic detection (keyword or known-merchant match) —
+        // only if that exact category still exists in the user's real
+        // category list, so a customized category set is never
+        // contradicted. Both 'high' and 'medium' confidence are surfaced
+        // as an editable suggestion (isAuto:true — same UI treatment as
+        // before: shown with the 🤖 badge, and the user can always change
+        // it). No match (low confidence) is left blank on purpose — the
+        // system never pretends to know when it doesn't.
+        const guess = _autoDetectCategory(g.sample, g.key);
+        if (guess && realCats.includes(guess.category)) {
+          return { ...g, category: guess.category, isMapped: false, isAuto: true, confidence: guess.confidence };
+        }
         return { ...g, category: '', isMapped: false, isAuto: false };
       });
   }
