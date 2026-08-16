@@ -560,11 +560,21 @@ window.MNPayment = (() => {
   // ningun descuento real al importe cobrado.
   async function _createAndMountPayment(priceId, email, promoCode) {
     try {
+      // Safety timeout on the network request itself: if the backend has
+      // a slow cold start or the connection simply hangs without ever
+      // failing or resolving, abort after a reasonable wait instead of
+      // leaving the promise pending forever. Aborting throws, which the
+      // catch block below already handles by trying the checkout-redirect
+      // fallback — exactly the right behavior here.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (!res.ok) {
         if (data.error === 'invalid_promo_code') {
@@ -657,7 +667,24 @@ window.MNPayment = (() => {
 
       const paymentElement = _elements.create('payment');
       paymentElement.mount('#mnPoElement');
-      paymentElement.on('ready', () => _setLoading(false));
+
+      // Safety timeout: if the embedded Stripe iframe never fires
+      // 'ready' (blocked by an ad/privacy blocker or browser extension,
+      // or a transient network issue loading Stripe's internal resources
+      // that happens AFTER the initial fetch already succeeded), the
+      // loading spinner would otherwise spin forever with no error and
+      // no way to recover — this is the root cause of the button
+      // appearing permanently stuck. Whichever fires first — 'ready' or
+      // this timeout — wins; the other becomes a no-op.
+      let readyFired = false;
+      paymentElement.on('ready', () => { readyFired = true; _setLoading(false); });
+      setTimeout(() => {
+        if (readyFired) return;
+        // Don't touch anything if the user already closed the modal.
+        if (!_overlay || !_overlay.classList.contains('mnpo--open')) return;
+        console.warn('[MNPayment] Payment element never fired "ready" — surfacing a recoverable error instead of leaving the spinner stuck.');
+        _showError(_spt('payment_error_timeout', 'El formulario de pago está tardando demasiado en cargar. Comprueba tu conexión, desactiva bloqueadores de anuncios/privacidad si los tienes activos, y vuelve a intentarlo.'));
+      }, 10000);
 
       if (promoCode) _showPromoResult(true, null, data.pricing);
 
@@ -666,11 +693,15 @@ window.MNPayment = (() => {
       // try the redirect-based Stripe Checkout flow instead.
       console.warn('[MNPayment] Embedded payment failed, trying checkout redirect fallback:', err);
       try {
+        const fbController = new AbortController();
+        const fbTimeoutId = setTimeout(() => fbController.abort(), 15000);
         const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
+          signal: fbController.signal,
         });
+        clearTimeout(fbTimeoutId);
         const checkoutData = await checkoutRes.json();
         if (checkoutRes.ok && checkoutData.url) {
           window.location.href = checkoutData.url;
