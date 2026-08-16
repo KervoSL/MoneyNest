@@ -3593,6 +3593,8 @@ const CAT_TRANSLATIONS = {
   'Restaurantes':   { en:'Restaurants', it:'Ristoranti',   fr:'Restaurants',de:'Restaurants',pt:'Restaurantes'},
   'Tecnología':     { en:'Technology',  it:'Tecnologia',   fr:'Technologie',de:'Technologie',pt:'Tecnologia' },
   'Seguros':        { en:'Insurance',   it:'Assicurazioni',fr:'Assurances', de:'Versicherungen',pt:'Seguros' },
+  'Tabaco':         { en:'Tobacco',     it:'Tabacco',      fr:'Tabac',      de:'Tabak',     pt:'Tabaco'     },
+  'Efectivo':       { en:'Cash',        it:'Contanti',     fr:'Espèces',    de:'Bargeld',   pt:'Dinheiro'   },
   // Inversiones
   'Acciones':       { en:'Stocks',      it:'Azioni',       fr:'Actions',    de:'Aktien',    pt:'Ações'      },
   'ETF':            { en:'ETF',         it:'ETF',          fr:'ETF',        de:'ETF',       pt:'ETF'        },
@@ -3832,6 +3834,7 @@ const CAT_EMOJIS = {
   'Vivienda':'🏠','Alimentación':'🍔','Transporte':'🚗','Salud':'🏥',
   'Ocio':'🎮','Ropa':'👕','Educación':'🎓','Suscripciones':'📱',
   'Restaurantes':'🍽️','Tecnología':'💻','Seguros':'🛡️','Impuestos':'📋',
+  'Tabaco':'🚬','Efectivo':'💵',
   // inversiones
   'Acciones':'📊','ETF':'🌐','Cripto':'₿','Inmuebles':'🏢',
   'Bonos':'📜','Fondo indexado':'🌍','Startups':'🚀',
@@ -3874,7 +3877,7 @@ function defaultState() {
     assets: [],
     categorias: {
       ingreso: ['Salario','Freelance','Alquiler','Dividendos','Venta','Bono','Otro'],
-      gasto: ['Vivienda','Alimentación','Transporte','Salud','Ocio','Ropa','Educación','Suscripciones','Restaurantes','Tecnología','Seguros','Otro'],
+      gasto: ['Vivienda','Alimentación','Transporte','Salud','Ocio','Ropa','Educación','Suscripciones','Restaurantes','Tecnología','Seguros','Otro','Tabaco','Efectivo'],
       inversion: ['Acciones','ETF','Cripto','Inmuebles','Bonos','Fondo indexado','Startups','Otro'],
       deuda: ['Hipoteca','Préstamo personal','Tarjeta crédito','Préstamo coche','Otro'],
       objetivo: ['Emergencia','Viaje','Coche','Casa','Jubilación','Educación','Otro']
@@ -4048,6 +4051,11 @@ function load() {
     for (const k of Object.keys(defCats)) {
       if (!Array.isArray(S.categorias[k])) S.categorias[k] = defCats[k]
     }
+    // Migracion: anadir Tabaco/Efectivo a usuarios existentes que ya
+    // tenian S.categorias.gasto guardado (creado antes de que estas 2
+    // categorias se incluyeran por defecto), sin duplicar si el usuario
+    // ya las tenia por su cuenta.
+    ;['Tabaco','Efectivo'].forEach(c => { if (!S.categorias.gasto.includes(c)) S.categorias.gasto.push(c) })
     // Guard usuario
     if (!S.usuario || typeof S.usuario !== 'object') S.usuario = defaultState().usuario
     S.cuentas = S.cuentas.map(c => ({...c, valorTotal: c.valorTotal !== undefined ? c.valorTotal : c.saldo}))
@@ -6565,18 +6573,22 @@ function borrarCuenta(id) {
 // ─── CATEGORIAS (seccion dedicada, accesible desde la navegacion) ──
 // Reutiliza EXACTAMENTE el mismo sistema que Configuracion (misma
 // fuente de verdad: S.categorias.gasto/ingreso, S.categoriaEmojis,
-// catEmoji(), catColor(), addCat(), removeCat(), _buildEmojiPicker())
+// catEmoji(), catColor(), removeCat(), _openCreateCategoryModal(), _buildEmojiPicker())
 // — solo cambia la presentacion: aqui se muestran unicamente los 2
 // grupos Gastos/Ingresos, con acceso directo sin pasar por Ajustes.
 function renderCategorias() {
   const groups = [
-    { key:'gasto',   label:t('cat_type_gasto','Gastos'),   icon:'💳' },
-    { key:'ingreso', label:t('cat_type_ingreso','Ingresos'), icon:'💰' },
+    { key:'gasto',     label:t('cat_type_gasto','Gastos'),      icon:'💳' },
+    { key:'ingreso',   label:t('cat_type_ingreso','Ingresos'),   icon:'💰' },
+    { key:'inversion', label:t('cat_type_inversion','Inversiones'), icon:'📈' },
+    { key:'deuda',     label:t('cat_type_deuda','Deudas'),       icon:'📉' },
+    { key:'objetivo',  label:t('cat_type_objetivo','Objetivos'), icon:'🎯' },
   ]
   const sections = groups.map(g => `
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
         <div class="card-title">${g.icon} ${g.label}</div>
+        <button class="btn btn-ghost btn-sm" onclick="_openCreateCategoryModal('${g.key}', (nombre)=>{render()}, {allowMultiple:true})" title="${t('crear_categoria','Crear categoría')}">+</button>
       </div>
       <div class="cat-pills" id="pills-${g.key}">
         ${(S.categorias[g.key]||[]).map(c=>{
@@ -6591,59 +6603,18 @@ function renderCategorias() {
           </span>`
         }).join('')}
       </div>
-      <div class="add-cat-row" style="align-items:center">
-        ${_buildEmojiPicker(g.key)}
-        <input type="text" id="newcat-${g.key}" placeholder="${t('cfg_nueva_cat')}"
-          onkeydown="if(event.key==='Enter'){addCat('${g.key}');event.preventDefault()}" style="flex:1">
-        <button class="btn btn-secondary btn-sm" onclick="addCat('${g.key}')">${t('cfg_anadir')}</button>
-      </div>
-      <div style="font-size:.72rem;color:var(--text3);margin-top:4px">${t('cfg_emoji_tip')}</div>
     </div>`).join('')
 
   document.getElementById('content').innerHTML = `
   <div class="section-header">
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg> ${t('nav_categorias','Categorías')}</div><div class="page-sub">${t('cat_page_sub','Organiza tus gastos e ingresos')}</div></div>
+    <button class="btn btn-primary btn-sm" onclick="_openCreateCategoryModal('gasto', (nombre)=>{render()}, {allowMultiple:true})">🏷️ ${t('crear_categoria','Crear categoría')}</button>
   </div>
   ${sections}
   `
 }
 
 function renderConfiguracion() {
-  const catTypes = [
-    {key:'ingreso',   label:t('cat_type_ingreso'),   icon:'💰'},
-    {key:'gasto',     label:t('cat_type_gasto'),     icon:'💳'},
-    {key:'inversion', label:t('cat_type_inversion'), icon:'📈'},
-    {key:'deuda',     label:t('cat_type_deuda'),     icon:'📉'},
-    {key:'objetivo',  label:t('cat_type_objetivo'),  icon:'🎯'},
-  ]
-  const catSections = catTypes.map(ct=>`
-    <div style="margin-bottom:18px">
-      <div style="font-size:.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${ct.icon} ${ct.label}</div>
-      <div class="cat-pills" id="pills-${ct.key}">
-        ${(S.categorias[ct.key]||[]).map(c=>{
-          const cc = catColor(c)
-          const dot = cc ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:4px;flex-shrink:0"></span>` : ''
-          const editableTipo = (ct.key === 'gasto' || ct.key === 'ingreso')
-          const nameSpan = editableTipo
-            ? `<span onclick="_openEditCategoryModal('${ct.key}','${c.replace(/'/g,"\\'")}')" style="cursor:pointer" title="${t('editar_cat_tip','Editar')}">${dot}${catEmoji(c)} ${tCat(c)}</span>`
-            : `${dot}${catEmoji(c)} ${tCat(c)}`
-          return `<span class="cat-pill" style="${cc?`border-color:${cc}44;background:${cc}12`:''}">${nameSpan}
-            <input type="color" title="Color" value="${cc||'#00D4AA'}"
-              style="width:14px;height:14px;border:none;background:none;cursor:pointer;padding:0;margin:0 2px;border-radius:50%;opacity:.6;vertical-align:middle"
-              onchange="S.catColors=S.catColors||{};S.catColors['${c.replace(/'/g,"\\'")}']= this.value;save();renderConfiguracion()">
-            <span class="remove" data-key="${ct.key}" data-cat="${c.replace(/"/g,'&quot;')}" onclick="removeCatEl(this)">✕</span>
-          </span>`
-        }).join('')}
-      </div>
-      <div class="add-cat-row" style="align-items:center">
-        ${_buildEmojiPicker(ct.key)}
-        <input type="text" id="newcat-${ct.key}" placeholder="${t('cfg_nueva_cat')}"
-          onkeydown="if(event.key==='Enter'){addCat('${ct.key}');event.preventDefault()}" style="flex:1">
-        <button class="btn btn-secondary btn-sm" onclick="addCat('${ct.key}')">${t('cfg_anadir')}</button>
-      </div>
-      <div style="font-size:.72rem;color:var(--text3);margin-top:4px">${t('cfg_emoji_tip')} · Haz clic en el círculo de color para personalizar</div>
-    </div>`).join('')
-
   const isDark = S.theme !== 'light'
 
   document.getElementById('content').innerHTML = `
@@ -6832,12 +6803,15 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- Columna derecha: categorías -->
+    <!-- Columna derecha: categorías (movido a su propia seccion) -->
     <div class="card" style="align-self:start">
       <div class="card-header">
         <div><div class="card-title">🏷 ${t('cfg_cats_titulo')}</div><div class="card-subtitle">${t('cfg_cats_sub')}</div></div>
       </div>
-      ${catSections}
+      <div style="text-align:center;padding:20px 8px">
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">${t('cfg_cats_movido','La gestión de categorías ahora tiene su propia sección.')}</div>
+        <button class="btn btn-primary btn-sm" onclick="goTo('categorias')">🏷️ ${t('nav_categorias','Categorías')} →</button>
+      </div>
     </div>
   </div>`
 
@@ -8918,27 +8892,6 @@ document.addEventListener('click', e => {
   }
 }, true)
 
-function addCat(key) {
-  const input = document.getElementById('newcat-'+key)
-  if (!input) return
-  const val = input.value.trim()
-  if (!val) return
-  if (!S.categorias[key].includes(val)) {
-    S.categorias[key].push(val)
-    // Register emoji from picker (or manual keyboard-entry input)
-    const pickedEmoji = _emojiPickerState[key]
-    const legacyInput = document.getElementById('newcat-emoji-'+key)
-    const emoji = pickedEmoji || (legacyInput && legacyInput.value.trim()) || ''
-    if (emoji) { S.categoriaEmojis = S.categoriaEmojis || {}; S.categoriaEmojis[val] = emoji }
-    // Clear picker state for this key
-    delete _emojiPickerState[key]
-    save()
-    render()
-    toast(t('toast_cat_añadida'))
-  } else {
-    toast(t('toast_cat_existe'),'error')
-  }
-}
 function removeCatEl(el) {
   const key = el.dataset.key
   const cat = el.dataset.cat
@@ -8994,10 +8947,11 @@ function removeCat(key, cat) {
 const _CREATE_CAT_PICKER_KEY = '__newcat_modal__'
 let _mnEditingCategory = null // { key, oldName } | null while editing an existing category
 
-function _openCreateCategoryModal(defaultTipo, onCreated) {
+function _openCreateCategoryModal(defaultTipo, onCreated, opts) {
   document.getElementById('mnCreateCatOverlay')?.remove()
   delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
   _mnEditingCategory = null
+  window._mnCreateCatAllowMultiple = !!(opts && opts.allowMultiple)
 
   const overlay = document.createElement('div')
   overlay.className = 'modal-overlay mn-modal-inline-top'
@@ -9018,15 +8972,19 @@ function _openCreateCategoryModal(defaultTipo, onCreated) {
           <select id="mnNewCatTipo">
             <option value="gasto" ${defaultTipo==='gasto'?'selected':''}>💳 ${t('cat_type_gasto','Gasto')}</option>
             <option value="ingreso" ${defaultTipo==='ingreso'?'selected':''}>💰 ${t('cat_type_ingreso','Ingreso')}</option>
+            <option value="inversion" ${defaultTipo==='inversion'?'selected':''}>📈 ${t('cat_type_inversion','Inversión')}</option>
+            <option value="deuda" ${defaultTipo==='deuda'?'selected':''}>📉 ${t('cat_type_deuda','Deuda')}</option>
+            <option value="objetivo" ${defaultTipo==='objetivo'?'selected':''}>🎯 ${t('cat_type_objetivo','Objetivo')}</option>
           </select>
         </div>
         <div class="form-group">
           <label>${t('modal_cat_emoji_lbl','Emoji')}</label>
           ${_buildEmojiPicker(_CREATE_CAT_PICKER_KEY)}
         </div>
+        <div id="mnNewCatSuccess" style="display:none;font-size:.78rem;font-weight:700;color:var(--accent);margin-top:2px">✓ ${t('toast_cat_añadida','Categoría añadida')}</div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost btn-sm" onclick="_closeCreateCategoryModal()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="_closeCreateCategoryModal()">${window._mnCreateCatAllowMultiple ? t('btn_cerrar','Cerrar') : t('btn_cancelar','Cancelar')}</button>
         <button class="btn btn-primary btn-sm" onclick="_confirmCreateCategory()">${t('btn_guardar','Guardar')}</button>
       </div>
     </div>`
@@ -9050,6 +9008,7 @@ function _openEditCategoryModal(key, cat) {
   delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
   _emojiPickerState[_CREATE_CAT_PICKER_KEY] = catEmoji(cat)
   _mnEditingCategory = { key, oldName: cat }
+  window._mnCreateCatAllowMultiple = false
 
   const overlay = document.createElement('div')
   overlay.className = 'modal-overlay mn-modal-inline-top'
@@ -9088,6 +9047,7 @@ function _closeCreateCategoryModal() {
   if (typeof window._popScrollLock === 'function') window._popScrollLock()
   delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
   window._mnCreateCatCallback = null
+  window._mnCreateCatAllowMultiple = false
   _mnEditingCategory = null
 }
 
@@ -9106,12 +9066,19 @@ function _confirmCreateCategory() {
     const idx = S.categorias[key].indexOf(oldName)
     if (idx >= 0) S.categorias[key][idx] = nombre
     if (nombre !== oldName) {
+      // Propaga el nuevo nombre a todos los registros existentes que
+      // referencian esta categoria, segun su tipo.
+      const refsByKey = {
+        gasto:     () => (S.gastos||[]).forEach(x => { if (x.categoria === oldName) x.categoria = nombre }),
+        ingreso:   () => (S.ingresos||[]).forEach(x => { if (x.categoria === oldName) x.categoria = nombre }),
+        inversion: () => (S.inversiones||[]).forEach(x => { if (x.categoria === oldName) x.categoria = nombre }),
+        deuda:     () => (S.deudas||[]).forEach(x => { if (x.categoria === oldName) x.categoria = nombre }),
+        objetivo:  () => (S.objetivos||[]).forEach(x => { if (x.categoria === oldName) x.categoria = nombre }),
+      }
+      if (refsByKey[key]) refsByKey[key]()
       if (key === 'gasto') {
-        (S.gastos||[]).forEach(g => { if (g.categoria === oldName) g.categoria = nombre })
         if (S.presupuestos && S.presupuestos[oldName] !== undefined) { S.presupuestos[nombre] = S.presupuestos[oldName]; delete S.presupuestos[oldName] }
         if (S.presupuestosV2 && S.presupuestosV2[oldName] !== undefined) { S.presupuestosV2[nombre] = S.presupuestosV2[oldName]; delete S.presupuestosV2[oldName] }
-      } else if (key === 'ingreso') {
-        (S.ingresos||[]).forEach(i => { if (i.categoria === oldName) i.categoria = nombre })
       }
       if (S.catColors && S.catColors[oldName] !== undefined) { S.catColors[nombre] = S.catColors[oldName]; delete S.catColors[oldName] }
       S.categoriaEmojis = S.categoriaEmojis || {}
@@ -9125,7 +9092,7 @@ function _confirmCreateCategory() {
     return
   }
 
-  // ── Modo creacion (comportamiento original) ──
+  // ── Modo creacion ──
   const tipo = document.getElementById('mnNewCatTipo')?.value || 'gasto'
   if (!S.categorias[tipo]) S.categorias[tipo] = []
   if (S.categorias[tipo].includes(nombre)) {
@@ -9136,6 +9103,29 @@ function _confirmCreateCategory() {
   if (emoji) { S.categoriaEmojis = S.categoriaEmojis || {}; S.categoriaEmojis[nombre] = emoji }
   save()
   const cb = window._mnCreateCatCallback
+
+  if (window._mnCreateCatAllowMultiple) {
+    // Crear varias sin cerrar: notificar al llamador, resetear el
+    // formulario (conservando el tipo elegido) y mostrar un indicador
+    // de exito discreto dentro del propio modal en vez de un toast.
+    if (typeof cb === 'function') cb(nombre, tipo)
+    const nameInput = document.getElementById('mnNewCatNombre')
+    if (nameInput) nameInput.value = ''
+    delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
+    const trigger = document.getElementById('emoji-trigger-'+_CREATE_CAT_PICKER_KEY)
+    if (trigger) trigger.textContent = '😀'
+    const manualInput = document.getElementById('newcat-emoji-'+_CREATE_CAT_PICKER_KEY)
+    if (manualInput) manualInput.value = ''
+    const successEl = document.getElementById('mnNewCatSuccess')
+    if (successEl) {
+      successEl.style.display = 'block'
+      clearTimeout(window._mnCreateCatSuccessTimer)
+      window._mnCreateCatSuccessTimer = setTimeout(() => { successEl.style.display = 'none' }, 1800)
+    }
+    if (nameInput) nameInput.focus()
+    return
+  }
+
   _closeCreateCategoryModal()
   if (typeof cb === 'function') cb(nombre, tipo)
   toast(t('toast_cat_añadida','Categoría añadida ✓'))
