@@ -4808,15 +4808,15 @@ function _ingToggleSelect(id) {
 }
 function _ingBulkDelete() {
   if (!_ingSelected.size) return
+  const ids = [..._ingSelected]
   confirmar(
-    `¿Eliminar ${_ingSelected.size} ingreso${_ingSelected.size>1?'s':''}?`,
-    t('confirm_eliminar_ingreso_titulo','Eliminar'),
-    t('btn_eliminar','Eliminar'),
+    `¿Eliminar ${ids.length} ingreso${ids.length>1?'s':''}?`,
     () => {
-      S.ingresos = S.ingresos.filter(i => !_ingSelected.has(i.id))
+      removeTransactions(ids, 'ingreso')
       _ingSelected.clear()
       save(); render()
-    }
+    },
+    {titulo:t('confirm_eliminar_ingreso_titulo','Eliminar'), icono:'🗑️', btnLabel:t('btn_eliminar','Eliminar')}
   )
 }
 
@@ -5085,15 +5085,15 @@ function _gasToggleSelect(id) {
 }
 function _gasBulkDelete() {
   if (!_gasSelected.size) return
+  const ids = [..._gasSelected]
   confirmar(
-    `¿Eliminar ${_gasSelected.size} gasto${_gasSelected.size>1?'s':''}?`,
-    t('confirm_eliminar_gasto_titulo','Eliminar'),
-    t('btn_eliminar','Eliminar'),
+    `¿Eliminar ${ids.length} gasto${ids.length>1?'s':''}?`,
     () => {
-      S.gastos = S.gastos.filter(g => !_gasSelected.has(g.id))
+      removeTransactions(ids, 'gasto')
       _gasSelected.clear()
       save(); render()
-    }
+    },
+    {titulo:t('confirm_eliminar_gasto_titulo','Eliminar'), icono:'🗑️', btnLabel:t('btn_eliminar','Eliminar')}
   )
 }
 
@@ -7792,11 +7792,14 @@ function guardarIngreso() {
   }
   if (id) {
     const idx = S.ingresos.findIndex(x=>x.id===id)
+    // _afectaSaldo NO se toca aqui a proposito — ver el mismo comentario
+    // en guardarGasto(): el checkbox se fuerza a false al editar, asi que
+    // no refleja si la transaccion afecto el saldo cuando se CREO.
     if (idx>=0) S.ingresos[idx] = {...S.ingresos[idx], ...base}
   } else {
     const clienteId = window._ingresoClienteId || null
     window._ingresoClienteId = null
-    S.ingresos.push({id:uid(), ...base, clienteId})
+    S.ingresos.push({id:uid(), ...base, clienteId, _afectaSaldo: !!(updateSaldo && cuentaId && !pending)})
     if (updateSaldo && cuentaId && !pending) {
       const c = getCuenta(cuentaId)
       if (c) c.saldo = (Number(c.saldo)||0) + importe
@@ -7812,9 +7815,48 @@ function guardarIngreso() {
   render()
   toast(t('toast_ingreso_guardado'))
 }
+// Unico punto de eliminacion de gastos/ingresos — usado tanto por el
+// borrado individual (borrarGasto/borrarIngreso) como por el borrado en
+// bloque (_gasBulkDelete/_ingBulkDelete), tal como pide la arquitectura:
+// una sola fuente de verdad para eliminar transacciones y mantener el
+// resto de datos financieros (saldo de cuenta, Net Worth, Dashboard,
+// Analytics) correctamente sincronizados, sin duplicar la logica de
+// recalculo entre el flujo individual y el flujo en bloque.
+//
+// ids: array de uno o mas ids a eliminar. tipo: 'gasto' | 'ingreso'.
+function removeTransactions(ids, tipo) {
+  if (!ids || !ids.length) return 0
+  const idSet = new Set(ids)
+  const list = tipo === 'ingreso' ? S.ingresos : S.gastos
+  let removed = 0
+  list.forEach(tx => {
+    if (!idSet.has(tx.id)) return
+    removed++
+    if (!tx.cuentaId) return
+    // Transacciones creadas tras este fix llevan el flag explicito
+    // _afectaSaldo, que refleja exactamente si esa transaccion concreta
+    // modifico el saldo al crearse. Para transacciones ya existentes sin
+    // ese flag, se usa la mejor aproximacion posible con los datos
+    // disponibles: si tenia cuenta asociada y no estaba pendiente de
+    // cobro, se asume que si afecto el saldo (comportamiento por
+    // defecto ya usado en el resto de la app).
+    const afectaSaldo = tx._afectaSaldo !== undefined ? tx._afectaSaldo : (tx.status !== 'pending')
+    if (!afectaSaldo) return
+    const c = getCuenta(tx.cuentaId)
+    if (!c) return
+    // Gasto: al crearse RESTO del saldo -> al eliminar se SUMA de vuelta.
+    // Ingreso: al crearse SUMO al saldo -> al eliminar se RESTA de vuelta.
+    const importe = Number(tx.importe) || 0
+    c.saldo = (Number(c.saldo) || 0) + (tipo === 'gasto' ? importe : -importe)
+  })
+  if (tipo === 'ingreso') S.ingresos = S.ingresos.filter(x => !idSet.has(x.id))
+  else S.gastos = S.gastos.filter(x => !idSet.has(x.id))
+  return removed
+}
+
 function borrarIngreso(id) {
   confirmar(t('confirm_eliminar_ingreso'), ()=>{
-    S.ingresos = S.ingresos.filter(x=>x.id!==id)
+    removeTransactions([id], 'ingreso')
     save(); render(); toast(t('toast_ingreso_eliminado'))
   }, {titulo:t('confirm_eliminar_ingreso_titulo'),icono:'🗑️'})
 }
@@ -7885,9 +7927,14 @@ function guardarGasto() {
   const _doSaveGasto = () => {
     if (id) {
       const idx = S.gastos.findIndex(x=>x.id===id)
+      // _afectaSaldo NO se toca aqui a proposito: el checkbox 'Descontar
+      // del saldo' siempre se muestra desmarcado al editar (el ajuste de
+      // saldo nunca se re-aplica en una edicion), asi que su valor actual
+      // no refleja si la transaccion afecto el saldo cuando se CREO. El
+      // spread preserva el flag original ya guardado.
       if (idx>=0) S.gastos[idx] = {...S.gastos[idx], ...base}
     } else {
-      S.gastos.push({id:uid(), ...base})
+      S.gastos.push({id:uid(), ...base, _afectaSaldo: !!(updateSaldo && cuentaId)})
       if (updateSaldo && cuentaId) {
         const c = getCuenta(cuentaId)
         if (c) c.saldo = (Number(c.saldo)||0) - importe
@@ -7924,7 +7971,7 @@ function guardarGasto() {
 }
 function borrarGasto(id) {
   confirmar(t('confirm_eliminar_gasto'), ()=>{
-    S.gastos = S.gastos.filter(x=>x.id!==id)
+    removeTransactions([id], 'gasto')
     if (window.MNGamification) MNGamification.checkAchievement('gasto_deleted')
     save(); render(); toast(t('toast_gasto_eliminado'))
   }, {titulo:t('confirm_eliminar_gasto_titulo'),icono:'🗑️'})
