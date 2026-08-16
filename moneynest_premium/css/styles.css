@@ -2143,6 +2143,13 @@ textarea{resize:vertical;min-height:70px}
 }
 .emoji-opt:hover{background:var(--accent-dim);border-color:rgba(0,212,170,.3)}
 .emoji-opt.selected{background:var(--accent-dim);border-color:var(--accent)}
+.emoji-manual-row{grid-column:1/-1;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.emoji-manual-input{
+  width:100%;padding:6px 8px;border-radius:6px;
+  border:1px solid var(--border2);background:var(--bg2);color:var(--text);
+  font-size:.95rem;font-family:inherit;box-sizing:border-box;
+}
+.emoji-manual-input:focus{outline:none;border-color:var(--accent)}
 
 /* ─── OBJ AVATAR ─────────────────────────────────────────────── */
 .obj-avatar{

@@ -381,7 +381,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Dashboard', nav_ingresos: 'Ingresos',
     nav_gastos: 'Gastos', nav_inversiones: 'Inversiones',
     nav_deudas: 'Deudas', nav_objetivos: 'Objetivos',
-    nav_presupuestos: 'Presupuestos', nav_cuentas: 'Cuentas',
+    nav_presupuestos: 'Presupuestos', nav_cuentas: 'Cuentas', nav_categorias: 'Categorías', nav_sub_categorias: 'Organiza tus movimientos', cat_page_sub: 'Organiza tus gastos e ingresos',
     nav_patrimonio: 'Patrimonio', nav_analisis: 'Análisis',
     nav_configuracion: 'Configuración', nav_faq: 'FAQ', nav_sugerencias: 'Sugerencias',
     nav_billing: 'Plan & Facturación',
@@ -890,7 +890,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Dashboard', nav_ingresos: 'Income',
     nav_gastos: 'Expenses', nav_inversiones: 'Investments',
     nav_deudas: 'Debts', nav_objetivos: 'Goals',
-    nav_presupuestos: 'Budgets', nav_cuentas: 'Accounts',
+    nav_presupuestos: 'Budgets', nav_cuentas: 'Accounts', nav_categorias: 'Categories', nav_sub_categorias: 'Organize your transactions', cat_page_sub: 'Organize your expenses and income',
     nav_patrimonio: 'Net Worth', nav_analisis: 'Analysis',
     nav_configuracion: 'Settings', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Plan & Billing',
@@ -1342,7 +1342,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Dashboard', nav_ingresos: 'Entrate',
     nav_gastos: 'Spese', nav_inversiones: 'Investimenti',
     nav_deudas: 'Debiti', nav_objetivos: 'Obiettivi',
-    nav_presupuestos: 'Budget', nav_cuentas: 'Conti',
+    nav_presupuestos: 'Budget', nav_cuentas: 'Conti', nav_categorias: 'Categorie',
     nav_patrimonio: 'Patrimonio', nav_analisis: 'Analisi',
     nav_configuracion: 'Impostazioni', nav_faq: 'FAQ', nav_sugerencias: 'Suggerimenti',
     nav_billing: 'Piano & Fatturazione',
@@ -1757,7 +1757,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Tableau de bord', nav_ingresos: 'Revenus',
     nav_gastos: 'Dépenses', nav_inversiones: 'Investissements',
     nav_deudas: 'Dettes', nav_objetivos: 'Objectifs',
-    nav_presupuestos: 'Budgets', nav_cuentas: 'Comptes',
+    nav_presupuestos: 'Budgets', nav_cuentas: 'Comptes', nav_categorias: 'Catégories',
     nav_patrimonio: 'Patrimoine', nav_analisis: 'Analyse',
     nav_configuracion: 'Paramètres', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Abonnement & Facturation',
@@ -2172,7 +2172,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Dashboard', nav_ingresos: 'Einnahmen',
     nav_gastos: 'Ausgaben', nav_inversiones: 'Investitionen',
     nav_deudas: 'Schulden', nav_objetivos: 'Ziele',
-    nav_presupuestos: 'Budgets', nav_cuentas: 'Konten',
+    nav_presupuestos: 'Budgets', nav_cuentas: 'Konten', nav_categorias: 'Kategorien',
     nav_patrimonio: 'Vermögen', nav_analisis: 'Analyse',
     nav_configuracion: 'Einstellungen', nav_faq: 'FAQ', nav_sugerencias: 'Vorschläge',
     nav_billing: 'Tarif & Abrechnung',
@@ -2587,7 +2587,7 @@ const TRANSLATIONS = {
     nav_dashboard: 'Dashboard', nav_ingresos: 'Receitas',
     nav_gastos: 'Despesas', nav_inversiones: 'Investimentos',
     nav_deudas: 'Dívidas', nav_objetivos: 'Objetivos',
-    nav_presupuestos: 'Orçamentos', nav_cuentas: 'Contas',
+    nav_presupuestos: 'Orçamentos', nav_cuentas: 'Contas', nav_categorias: 'Categorias',
     nav_patrimonio: 'Património', nav_analisis: 'Análise',
     nav_configuracion: 'Configurações', nav_faq: 'FAQ', nav_sugerencias: 'Sugestões',
     nav_billing: 'Plano & Faturação',
@@ -3630,7 +3630,7 @@ const CAT_TRANSLATIONS = {
     // ── Sidebar nav ─────────────────────────────────────────────
     nav_dashboard: 'Inici', nav_ingresos: 'Ingressos', nav_gastos: 'Despeses',
     nav_deudas: 'Deutes', nav_objetivos: 'Objectius', nav_presupuestos: 'Pressupostos',
-    nav_inversiones: 'Inversions', nav_cuentas: 'Comptes', nav_patrimonio: 'Patrimoni',
+    nav_inversiones: 'Inversions', nav_cuentas: 'Comptes', nav_patrimonio: 'Patrimoni', nav_categorias: 'Categories',
     nav_analisis: 'Anàlisi', nav_configuracion: 'Configuració',
     // ── Period filter ───────────────────────────────────────────
     periodo: 'Període', este_mes: 'Aquest mes', mes_anterior: 'Mes anterior',
@@ -3850,7 +3850,10 @@ function catColor(cat) {
   return (S.catColors && S.catColors[cat]) || null
 }
 
-function catEmoji(cat) { return CAT_EMOJIS[cat] || '📌' }
+function catEmoji(cat) {
+  const custom = (S.categoriaEmojis || {})[cat]
+  return custom || CAT_EMOJIS[cat] || '📌'
+}
 
 // ─── DEFAULT STATE ─────────────────────────────────────────────
 function defaultState() {
@@ -3879,6 +3882,7 @@ function defaultState() {
     },
     patrimonio_hist: [],
     catColors: {},
+    categoriaEmojis: {},
     deudaHiddenStrats: [],
     theme: 'dark'
   }
@@ -4257,7 +4261,7 @@ function getCuenta(id) { return S.cuentas.find(c=>c.id===id) }
 const _pageKeyMap = {
   dashboard:'nav_dashboard', ingresos:'nav_ingresos', gastos:'nav_gastos',
   inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
-  presupuestos:'nav_presupuestos', cuentas:'nav_cuentas',
+  presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
   analisis:'nav_analisis', configuracion:'nav_configuracion', billing:'nav_billing',
   patrimonio:'nav_patrimonio'
 }
@@ -6519,6 +6523,52 @@ function borrarCuenta(id) {
 }
 
 // ─── CONFIGURACION ─────────────────────────────────────────────
+// ─── CATEGORIAS (seccion dedicada, accesible desde la navegacion) ──
+// Reutiliza EXACTAMENTE el mismo sistema que Configuracion (misma
+// fuente de verdad: S.categorias.gasto/ingreso, S.categoriaEmojis,
+// catEmoji(), catColor(), addCat(), removeCat(), _buildEmojiPicker())
+// — solo cambia la presentacion: aqui se muestran unicamente los 2
+// grupos Gastos/Ingresos, con acceso directo sin pasar por Ajustes.
+function renderCategorias() {
+  const groups = [
+    { key:'gasto',   label:t('cat_type_gasto','Gastos'),   icon:'💳' },
+    { key:'ingreso', label:t('cat_type_ingreso','Ingresos'), icon:'💰' },
+  ]
+  const sections = groups.map(g => `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">${g.icon} ${g.label}</div>
+      </div>
+      <div class="cat-pills" id="pills-${g.key}">
+        ${(S.categorias[g.key]||[]).map(c=>{
+          const cc = catColor(c)
+          const dot = cc ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:4px;flex-shrink:0"></span>` : ''
+          return `<span class="cat-pill" style="${cc?`border-color:${cc}44;background:${cc}12`:''}">
+            <span onclick="_openEditCategoryModal('${g.key}','${c.replace(/'/g,"\\'")}')" style="cursor:pointer" title="${t('editar_cat_tip','Editar')}">${dot}${catEmoji(c)} ${tCat(c)}</span>
+            <input type="color" title="Color" value="${cc||'#00D4AA'}"
+              style="width:14px;height:14px;border:none;background:none;cursor:pointer;padding:0;margin:0 2px;border-radius:50%;opacity:.6;vertical-align:middle"
+              onchange="S.catColors=S.catColors||{};S.catColors['${c.replace(/'/g,"\\'")}']= this.value;save();render()">
+            <span class="remove" data-key="${g.key}" data-cat="${c.replace(/"/g,'&quot;')}" onclick="removeCatEl(this)">✕</span>
+          </span>`
+        }).join('')}
+      </div>
+      <div class="add-cat-row" style="align-items:center">
+        ${_buildEmojiPicker(g.key)}
+        <input type="text" id="newcat-${g.key}" placeholder="${t('cfg_nueva_cat')}"
+          onkeydown="if(event.key==='Enter'){addCat('${g.key}');event.preventDefault()}" style="flex:1">
+        <button class="btn btn-secondary btn-sm" onclick="addCat('${g.key}')">${t('cfg_anadir')}</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:4px">${t('cfg_emoji_tip')}</div>
+    </div>`).join('')
+
+  document.getElementById('content').innerHTML = `
+  <div class="section-header">
+    <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg> ${t('nav_categorias','Categorías')}</div><div class="page-sub">${t('cat_page_sub','Organiza tus gastos e ingresos')}</div></div>
+  </div>
+  ${sections}
+  `
+}
+
 function renderConfiguracion() {
   const catTypes = [
     {key:'ingreso',   label:t('cat_type_ingreso'),   icon:'💰'},
@@ -6534,7 +6584,11 @@ function renderConfiguracion() {
         ${(S.categorias[ct.key]||[]).map(c=>{
           const cc = catColor(c)
           const dot = cc ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:4px;flex-shrink:0"></span>` : ''
-          return `<span class="cat-pill" style="${cc?`border-color:${cc}44;background:${cc}12`:''}">${dot}${catEmoji(c)} ${tCat(c)}
+          const editableTipo = (ct.key === 'gasto' || ct.key === 'ingreso')
+          const nameSpan = editableTipo
+            ? `<span onclick="_openEditCategoryModal('${ct.key}','${c.replace(/'/g,"\\'")}')" style="cursor:pointer" title="${t('editar_cat_tip','Editar')}">${dot}${catEmoji(c)} ${tCat(c)}</span>`
+            : `${dot}${catEmoji(c)} ${tCat(c)}`
+          return `<span class="cat-pill" style="${cc?`border-color:${cc}44;background:${cc}12`:''}">${nameSpan}
             <input type="color" title="Color" value="${cc||'#00D4AA'}"
               style="width:14px;height:14px;border:none;background:none;cursor:pointer;padding:0;margin:0 2px;border-radius:50%;opacity:.6;vertical-align:middle"
               onchange="S.catColors=S.catColors||{};S.catColors['${c.replace(/'/g,"\\'")}']= this.value;save();renderConfiguracion()">
@@ -7486,10 +7540,30 @@ function confirmar(msg, onOk, opts={}) {
   openModal('confirmModal')
 }
 
+// Mapea el select de categoria al tipo (gasto/ingreso) que debe usar
+// el nuevo modal con emoji. Solo gasto/ingreso/presupuesto (que usa
+// categorias de gasto) entran en el alcance de esta fase — el resto
+// (inversion, deuda, objetivo: listas de categorias completamente
+// distintas) sigue con el campo de texto simple ya existente.
+function _catSelectTipo(selectId) {
+  if (selectId === 'gastoCat' || selectId === 'presCat') return 'gasto'
+  if (selectId === 'ingresoCat') return 'ingreso'
+  return null
+}
+
 function checkCustomCat(selectId, fieldId) {
   const sel = document.getElementById(selectId)
   const field = document.getElementById(fieldId)
-  if (!sel || !field) return
+  if (!sel) return
+  const tipo = _catSelectTipo(selectId)
+  if (sel.value === '__custom__' && tipo) {
+    const prevValue = sel.dataset.mnPrevCatValue || ''
+    sel.value = prevValue
+    _openCreateCategoryModal(tipo, (nombre) => { poblarSelect(selectId, tipo, nombre) })
+    return
+  }
+  if (sel.value !== '__custom__') sel.dataset.mnPrevCatValue = sel.value
+  if (!field) return
   if (sel.value === '__custom__') { field.classList.add('show') }
   else { field.classList.remove('show') }
 }
@@ -8704,6 +8778,8 @@ function _selectEmoji(key, emoji) {
   _emojiPickerState[key] = emoji
   const trigger = document.getElementById('emoji-trigger-'+key)
   if (trigger) trigger.textContent = emoji
+  const manualInput = document.getElementById('newcat-emoji-'+key)
+  if (manualInput) manualInput.value = emoji
   // Update selected highlight
   const dd = document.getElementById('emoji-dd-'+key)
   if (dd) {
@@ -8724,9 +8800,29 @@ function _buildEmojiPicker(key) {
     <div class="emoji-picker-wrap">
       <div class="emoji-trigger" id="emoji-trigger-${key}" onclick="_openEmojiPicker('${key}')" title="Seleccionar emoji">${current || '😀'}</div>
       <div class="emoji-dropdown" id="emoji-dd-${key}" data-key="${key}">
+        <div class="emoji-manual-row">
+          <input type="text" id="newcat-emoji-${key}" class="emoji-manual-input" maxlength="8"
+            placeholder="${t('emoji_manual_ph','Escribe o pega un emoji…')}"
+            value="${/^\p{Extended_Pictographic}/u.test(current) ? current : ''}"
+            oninput="_onManualEmojiInput('${key}', this.value)"
+            onclick="event.stopPropagation()">
+        </div>
         ${grid}
       </div>
     </div>`
+}
+
+// Manual keyboard entry of an emoji (typed or pasted), as an alternative
+// to picking one from the visual grid — both converge on the same
+// _emojiPickerState so whichever method the user finishes with wins.
+function _onManualEmojiInput(key, value) {
+  const v = (value || '').trim()
+  if (!v) return
+  _emojiPickerState[key] = v
+  const trigger = document.getElementById('emoji-trigger-'+key)
+  if (trigger) trigger.textContent = v
+  const dd = document.getElementById('emoji-dd-'+key)
+  if (dd) dd.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('selected', el.dataset.emoji === v))
 }
 
 // Close pickers on outside click
@@ -8743,15 +8839,15 @@ function addCat(key) {
   if (!val) return
   if (!S.categorias[key].includes(val)) {
     S.categorias[key].push(val)
-    // Register emoji from picker (or legacy text input fallback)
+    // Register emoji from picker (or manual keyboard-entry input)
     const pickedEmoji = _emojiPickerState[key]
     const legacyInput = document.getElementById('newcat-emoji-'+key)
     const emoji = pickedEmoji || (legacyInput && legacyInput.value.trim()) || ''
-    if (emoji) CAT_EMOJIS[val] = emoji
+    if (emoji) { S.categoriaEmojis = S.categoriaEmojis || {}; S.categoriaEmojis[val] = emoji }
     // Clear picker state for this key
     delete _emojiPickerState[key]
     save()
-    renderConfiguracion()
+    render()
     toast(t('toast_cat_añadida'))
   } else {
     toast(t('toast_cat_existe'),'error')
@@ -8762,9 +8858,201 @@ function removeCatEl(el) {
   const cat = el.dataset.cat
   removeCat(key, cat)
 }
+// Cuenta cuantos movimientos/entradas existentes usan esta categoria,
+// para decidir si eliminarla 'esta permitido' sin friccion o si hay
+// que avisar primero del impacto (los movimientos existentes
+// conservarian el nombre de categoria, pero dejaria de estar
+// disponible para seleccionar en nuevos movimientos).
+function _categoryUsageCount(key, cat) {
+  if (key === 'gasto') {
+    const enGastos = (S.gastos||[]).filter(g => g.categoria === cat).length
+    const enPresupuesto = (S.presupuestos && S.presupuestos[cat] !== undefined) ? 1 : 0
+    return enGastos + enPresupuesto
+  }
+  if (key === 'ingreso')   return (S.ingresos||[]).filter(i => i.categoria === cat).length
+  if (key === 'inversion') return (S.inversiones||[]).filter(i => i.categoria === cat).length
+  if (key === 'deuda')     return (S.deudas||[]).filter(d => d.categoria === cat).length
+  if (key === 'objetivo')  return (S.objetivos||[]).filter(o => o.categoria === cat).length
+  return 0
+}
 function removeCat(key, cat) {
-  S.categorias[key] = S.categorias[key].filter(c=>c!==cat)
-  save(); renderConfiguracion()
+  const doRemove = () => {
+    S.categorias[key] = S.categorias[key].filter(c=>c!==cat)
+    save(); render()
+    toast(t('toast_cat_eliminada','Categoría eliminada'))
+  }
+  const usageCount = _categoryUsageCount(key, cat)
+  if (usageCount > 0) {
+    confirmar(
+      `${t('confirm_cat_en_uso_pre','Esta categoría se usa en')} ${usageCount} ${usageCount===1?t('confirm_cat_en_uso_uno','movimiento'):t('confirm_cat_en_uso_varios','movimientos')}. ${t('confirm_cat_en_uso_post','Los movimientos existentes conservarán el nombre, pero ya no podrás elegirla en nuevos movimientos.')}`,
+      doRemove,
+      {titulo:t('confirm_cat_en_uso_titulo','Categoría en uso'), icono:'⚠️'}
+    )
+  } else {
+    doRemove()
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── CREAR CATEGORIA — modal reutilizable desde cualquier flujo ──
+// ════════════════════════════════════════════════════════════════
+// Unico punto de creacion de categorias con nombre+tipo+emoji en toda
+// la app, usado tanto desde la seccion dedicada 'Categorías' como
+// desde el boton '+ Crear categoría' de cualquier otro formulario
+// (gasto, ingreso, presupuesto...). Se abre POR ENCIMA del
+// modal/pagina actual sin cerrarlo (mismo patron ya usado para crear
+// cuenta/cliente/proveedor inline), y al guardar invoca
+// onCreated(nombreCategoria, tipo) para que el llamador actualice su
+// propio select y seleccione la nueva categoria — sin duplicar
+// ninguna logica de creacion de categorias en ningun otro sitio.
+const _CREATE_CAT_PICKER_KEY = '__newcat_modal__'
+let _mnEditingCategory = null // { key, oldName } | null while editing an existing category
+
+function _openCreateCategoryModal(defaultTipo, onCreated) {
+  document.getElementById('mnCreateCatOverlay')?.remove()
+  delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
+  _mnEditingCategory = null
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay mn-modal-inline-top'
+  overlay.id = 'mnCreateCatOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+      <div class="modal-header">
+        <span class="modal-title">🏷️ ${t('modal_nueva_cat_titulo','Nueva categoría')}</span>
+        <button class="modal-close" onclick="_closeCreateCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>${t('modal_cat_nombre_lbl','Nombre')}</label>
+          <input type="text" id="mnNewCatNombre" placeholder="${t('ph_nueva_categoria','Ej. Tabaco')}">
+        </div>
+        <div class="form-group">
+          <label>${t('modal_cat_tipo_lbl','Tipo')}</label>
+          <select id="mnNewCatTipo">
+            <option value="gasto" ${defaultTipo==='gasto'?'selected':''}>💳 ${t('cat_type_gasto','Gasto')}</option>
+            <option value="ingreso" ${defaultTipo==='ingreso'?'selected':''}>💰 ${t('cat_type_ingreso','Ingreso')}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>${t('modal_cat_emoji_lbl','Emoji')}</label>
+          ${_buildEmojiPicker(_CREATE_CAT_PICKER_KEY)}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="_closeCreateCategoryModal()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="_confirmCreateCategory()">${t('btn_guardar','Guardar')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) _closeCreateCategoryModal() })
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
+  setTimeout(() => overlay.classList.add('open'), 10)
+  setTimeout(() => document.getElementById('mnNewCatNombre')?.focus(), 60)
+
+  window._mnCreateCatCallback = onCreated
+}
+
+// Modo edicion del mismo modal: nombre y emoji pre-rellenados con los
+// valores actuales, sin selector de tipo (una categoria no cambia de
+// lista gasto/ingreso al editarla — para eso se elimina y se crea una
+// nueva en el grupo correcto). Al guardar, _confirmCreateCategory()
+// renombra en cascada todas las referencias existentes en vez de
+// crear una categoria nueva.
+function _openEditCategoryModal(key, cat) {
+  document.getElementById('mnCreateCatOverlay')?.remove()
+  delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
+  _emojiPickerState[_CREATE_CAT_PICKER_KEY] = catEmoji(cat)
+  _mnEditingCategory = { key, oldName: cat }
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay mn-modal-inline-top'
+  overlay.id = 'mnCreateCatOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+      <div class="modal-header">
+        <span class="modal-title">✏️ ${t('modal_editar_cat_titulo','Editar categoría')}</span>
+        <button class="modal-close" onclick="_closeCreateCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>${t('modal_cat_nombre_lbl','Nombre')}</label>
+          <input type="text" id="mnNewCatNombre" value="${cat.replace(/"/g,'&quot;')}">
+        </div>
+        <div class="form-group">
+          <label>${t('modal_cat_emoji_lbl','Emoji')}</label>
+          ${_buildEmojiPicker(_CREATE_CAT_PICKER_KEY)}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="_closeCreateCategoryModal()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="_confirmCreateCategory()">${t('btn_guardar','Guardar')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) _closeCreateCategoryModal() })
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
+  setTimeout(() => overlay.classList.add('open'), 10)
+  setTimeout(() => document.getElementById('mnNewCatNombre')?.focus(), 60)
+}
+
+function _closeCreateCategoryModal() {
+  const overlay = document.getElementById('mnCreateCatOverlay')
+  if (overlay) overlay.remove()
+  if (typeof window._popScrollLock === 'function') window._popScrollLock()
+  delete _emojiPickerState[_CREATE_CAT_PICKER_KEY]
+  window._mnCreateCatCallback = null
+  _mnEditingCategory = null
+}
+
+function _confirmCreateCategory() {
+  const nombre = (document.getElementById('mnNewCatNombre')?.value || '').trim()
+  if (!nombre) { toast(t('err_nombre_requerido','El nombre es requerido'),'error'); return }
+  const emoji = _emojiPickerState[_CREATE_CAT_PICKER_KEY] || (document.getElementById('newcat-emoji-'+_CREATE_CAT_PICKER_KEY)?.value || '').trim()
+
+  // ── Modo edicion: renombrar en cascada en vez de crear ──
+  if (_mnEditingCategory) {
+    const { key, oldName } = _mnEditingCategory
+    if (nombre !== oldName && (S.categorias[key]||[]).includes(nombre)) {
+      toast(t('toast_cat_existe','Esa categoría ya existe'),'error')
+      return
+    }
+    const idx = S.categorias[key].indexOf(oldName)
+    if (idx >= 0) S.categorias[key][idx] = nombre
+    if (nombre !== oldName) {
+      if (key === 'gasto') {
+        (S.gastos||[]).forEach(g => { if (g.categoria === oldName) g.categoria = nombre })
+        if (S.presupuestos && S.presupuestos[oldName] !== undefined) { S.presupuestos[nombre] = S.presupuestos[oldName]; delete S.presupuestos[oldName] }
+        if (S.presupuestosV2 && S.presupuestosV2[oldName] !== undefined) { S.presupuestosV2[nombre] = S.presupuestosV2[oldName]; delete S.presupuestosV2[oldName] }
+      } else if (key === 'ingreso') {
+        (S.ingresos||[]).forEach(i => { if (i.categoria === oldName) i.categoria = nombre })
+      }
+      if (S.catColors && S.catColors[oldName] !== undefined) { S.catColors[nombre] = S.catColors[oldName]; delete S.catColors[oldName] }
+      S.categoriaEmojis = S.categoriaEmojis || {}
+      delete S.categoriaEmojis[oldName]
+    }
+    if (emoji) { S.categoriaEmojis = S.categoriaEmojis || {}; S.categoriaEmojis[nombre] = emoji }
+    save()
+    _closeCreateCategoryModal()
+    render()
+    toast(t('toast_cat_editada','Categoría actualizada ✓'))
+    return
+  }
+
+  // ── Modo creacion (comportamiento original) ──
+  const tipo = document.getElementById('mnNewCatTipo')?.value || 'gasto'
+  if (!S.categorias[tipo]) S.categorias[tipo] = []
+  if (S.categorias[tipo].includes(nombre)) {
+    toast(t('toast_cat_existe','Esa categoría ya existe'),'error')
+    return
+  }
+  S.categorias[tipo].push(nombre)
+  if (emoji) { S.categoriaEmojis = S.categoriaEmojis || {}; S.categoriaEmojis[nombre] = emoji }
+  save()
+  const cb = window._mnCreateCatCallback
+  _closeCreateCategoryModal()
+  if (typeof cb === 'function') cb(nombre, tipo)
+  toast(t('toast_cat_añadida','Categoría añadida ✓'))
 }
 // ─── CERRAR SESIÓN ───────────────────────────────────────────────
 // Limpia la sesión de MNAuth (plan, trial) y recarga la app para
@@ -13945,6 +14233,7 @@ function render() {
     objetivos:    renderObjetivos,
     presupuestos: renderPresupuestos,
     cuentas:      renderCuentas,
+    categorias:   renderCategorias,
     analisis:     renderAnalisis,
     configuracion:renderConfiguracion,
     // billing: removed
@@ -13956,7 +14245,7 @@ function render() {
   const pageKeyMap = {
     dashboard:'nav_dashboard', ingresos:'nav_ingresos', gastos:'nav_gastos',
     inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
-    presupuestos:'nav_presupuestos', cuentas:'nav_cuentas',
+    presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
     analisis:'nav_analisis', configuracion:'nav_configuracion',
     patrimonio:'nav_patrimonio', faq:'nav_faq', sugerencias:'nav_sugerencias', billing:'nav_billing',
     logros:'nav_logros',
