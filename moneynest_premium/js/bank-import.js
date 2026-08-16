@@ -37,8 +37,10 @@
       accountId: '',
       newAccountName: '',
       newAccountTipo: 'banco',  // mismo esquema que el modal real de Cuentas (banco/efectivo/cripto/inversion/ahorro/otro)
-      groups: [],               // [{key, sample, count, total, category, isNew}]
+      groups: [],               // [{key, sample, count, total, category, isNew}] — GASTOS
+      groupsIngreso: [],        // misma estructura que groups, pero para INGRESOS
       categorizeChoice: null,   // 'now' | 'skip'
+      categorizeTab: 'gasto',   // 'gasto' | 'ingreso' — pestaña activa en el paso 4
       categorizeView: 'groups', // 'groups' | 'individual'
       _selectedForBulk: {},     // { [rowIndexInSTrows]: true } — seleccion multiple en vista individual
       rememberMappings: true,
@@ -757,11 +759,13 @@
   // ── PERSISTENT MERCHANT → CATEGORY MAPPING ────────────────────
   // ════════════════════════════════════════════════════════════════
   const MAP_KEY = 'mn_merchant_category_map';
-  function _loadMap() {
-    try { return JSON.parse(localStorage.getItem(MAP_KEY) || '{}'); } catch { return {}; }
+  const MAP_KEY_INGRESO = 'mn_merchant_category_map_ingreso';
+  function _mapKeyFor(kind) { return kind === 'ingreso' ? MAP_KEY_INGRESO : MAP_KEY; }
+  function _loadMap(kind) {
+    try { return JSON.parse(localStorage.getItem(_mapKeyFor(kind)) || '{}'); } catch { return {}; }
   }
-  function _saveMap(map) {
-    try { localStorage.setItem(MAP_KEY, JSON.stringify(map)); } catch (_) {}
+  function _saveMap(map, kind) {
+    try { localStorage.setItem(_mapKeyFor(kind), JSON.stringify(map)); } catch (_) {}
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -981,6 +985,13 @@
       .mnbi-cat-tabs { display:flex; gap:6px; margin-bottom:14px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:4px; }
       .mnbi-cat-tab { flex:1; background:none; border:none; padding:8px 6px; border-radius:9px; font-size:.76rem; font-weight:700; color:var(--text2); cursor:pointer; font-family:inherit; transition:all .15s; }
       .mnbi-cat-tab.active { background:var(--accent); color:#04231b; }
+      .mnbi-type-tabs { display:flex; gap:8px; margin:14px 0; }
+      .mnbi-type-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--bg2); border:1.5px solid var(--border); padding:11px 10px; border-radius:12px; font-size:.85rem; font-weight:800; color:var(--text2); cursor:pointer; font-family:inherit; transition:all .15s; }
+      .mnbi-type-tab-count { font-size:.7rem; font-weight:700; padding:1px 7px; border-radius:99px; background:var(--bg3,rgba(255,255,255,.08)); color:var(--text3); }
+      .mnbi-type-tab--gasto.active { background:rgba(239,68,68,.12); border-color:var(--red); color:var(--red); }
+      .mnbi-type-tab--gasto.active .mnbi-type-tab-count { background:var(--red); color:#fff; }
+      .mnbi-type-tab--ingreso.active { background:rgba(16,185,129,.12); border-color:var(--green); color:var(--green); }
+      .mnbi-type-tab--ingreso.active .mnbi-type-tab-count { background:var(--green); color:#04231b; }
       .mnbi-bulk-bar { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:var(--accent-dim); border:1px solid rgba(0,212,170,.35); margin-bottom:10px; font-size:.78rem; font-weight:700; color:var(--text); }
 
       /* Summary */
@@ -1772,20 +1783,22 @@
   // ════════════════════════════════════════════════════════════════
   // ── STEP 4 — CATEGORIZE ────────────────────────────────────────
   // ════════════════════════════════════════════════════════════════
-  function _buildGroups() {
-    const map = _loadMap();
-    const realCats = _gastoCats();
+  function _buildGroupsFor(kind) {
+    const isGasto = kind !== 'ingreso';
+    const map = _loadMap(kind);
+    const realCats = isGasto ? _gastoCats() : _ingresoCats();
+    const prevGroups = isGasto ? ST.groups : ST.groupsIngreso;
     const prevByKey = {};
-    (ST.groups || []).forEach(g => { prevByKey[g.key] = g; });
+    (prevGroups || []).forEach(g => { prevByKey[g.key] = g; });
 
     const byKey = {};
-    (ST._cleanRows || ST.rows).filter(r => r.isExpense).forEach(r => {
+    (ST._cleanRows || ST.rows).filter(r => isGasto ? r.isExpense : !r.isExpense).forEach(r => {
       const k = r.merchantKey;
       if (!byKey[k]) byKey[k] = { key: k, sample: r.description, count: 0, total: 0 };
       byKey[k].count++;
       byKey[k].total += r.amount;
     });
-    ST.groups = Object.values(byKey)
+    return Object.values(byKey)
       .sort((a, b) => b.count - a.count)
       .map(g => {
         // Preserve a choice already made earlier in this same session first.
@@ -1793,25 +1806,29 @@
           return { ...g, category: prevByKey[g.key].category, isMapped: prevByKey[g.key].isMapped, isAuto: prevByKey[g.key].isAuto };
         }
         // Then a category the user has taught before (remembered mapping,
-        // keyed by the already-normalized merchantKey — so a mapping
-        // learned from "ESTANCO BALMES BARCELONA" also applies to
-        // "Estanco 24H Barcelona" or any other variant that normalizes
-        // to the same key).
+        // keyed by the already-normalized merchantKey, SEPARATELY per
+        // gasto/ingreso — so a merchant that can be either, like
+        // "TRANSFERENCIA", never mixes a learned expense category into an
+        // income row or vice versa).
         if (map[g.key]) return { ...g, category: map[g.key], isMapped: true, isAuto: false };
         // Then automatic detection (keyword or known-merchant match) —
-        // only if that exact category still exists in the user's real
-        // category list, so a customized category set is never
-        // contradicted. Both 'high' and 'medium' confidence are surfaced
-        // as an editable suggestion (isAuto:true — same UI treatment as
-        // before: shown with the 🤖 badge, and the user can always change
-        // it). No match (low confidence) is left blank on purpose — the
-        // system never pretends to know when it doesn't.
-        const guess = _autoDetectCategory(g.sample, g.key);
+        // only meaningful for expenses today (no semantic keyword
+        // dictionary exists yet for income categories like
+        // Salario/Freelance/Dividendos), so for income this simply never
+        // matches — no guess is safer than a wrong one. Only applied if
+        // that exact category still exists in the user's real category
+        // list, so a customized category set is never contradicted.
+        const guess = isGasto ? _autoDetectCategory(g.sample, g.key) : null;
         if (guess && realCats.includes(guess.category)) {
           return { ...g, category: guess.category, isMapped: false, isAuto: true, confidence: guess.confidence };
         }
         return { ...g, category: '', isMapped: false, isAuto: false };
       });
+  }
+
+  function _buildGroups() {
+    ST.groups = _buildGroupsFor('gasto');
+    ST.groupsIngreso = _buildGroupsFor('ingreso');
   }
 
   function _renderStep4() {
@@ -1846,7 +1863,51 @@
     if (ST.categorizeChoice === false) { ST.step = 5; return _renderStep5(); }
 
     // Categorize now — grouped merchant list (default) or individual view
-    if (!ST.groups.length) _buildGroups();
+    if (!ST.groups.length && !ST.groupsIngreso.length) _buildGroups();
+
+    const allRows = ST._cleanRows || ST.rows;
+    const expenseRowCount = allRows.filter(r => r.isExpense).length;
+    const incomeRowCount  = allRows.filter(r => !r.isExpense).length;
+    const tab = ST.categorizeTab === 'ingreso' ? 'ingreso' : 'gasto';
+    const isGasto = tab === 'gasto';
+    const activeGroups = isGasto ? ST.groups : ST.groupsIngreso;
+    const activeRowCount = isGasto ? expenseRowCount : incomeRowCount;
+
+    // ── Nivel superior: GASTOS / INGRESOS — la distincion mas importante,
+    // visualmente separada de las pestañas "Por comercio"/"Individual" de
+    // abajo, que operan DENTRO del tipo seleccionado aqui.
+    const typeTabs = `
+      <div class="mnbi-type-tabs">
+        <button type="button" class="mnbi-type-tab mnbi-type-tab--gasto ${isGasto ? 'active' : ''}" onclick="MNBankImport._setCategorizeTab('gasto')">
+          💳 ${_t('bi_tab_gastos', 'Gastos')} <span class="mnbi-type-tab-count">${expenseRowCount}</span>
+        </button>
+        <button type="button" class="mnbi-type-tab mnbi-type-tab--ingreso ${!isGasto ? 'active' : ''}" onclick="MNBankImport._setCategorizeTab('ingreso')">
+          💰 ${_t('bi_tab_ingresos', 'Ingresos')} <span class="mnbi-type-tab-count">${incomeRowCount}</span>
+        </button>
+      </div>`;
+
+    if (activeRowCount === 0) {
+      const body = `
+        <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 4 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
+        <div class="mnbi-h1">${_t('bi_s4b_titulo', 'Asigna una categoría a cada comercio')}</div>
+        ${typeTabs}
+        <div class="mnbi-empty">${isGasto ? _t('bi_sin_gastos_archivo', 'Este archivo no tiene gastos que categorizar.') : _t('bi_sin_ingresos_archivo', 'Este archivo no tiene ingresos que categorizar.')}</div>
+        <div class="mnbi-remember-row">
+          <input type="checkbox" id="mnbiRememberMappings" ${ST.rememberMappings ? 'checked' : ''} onchange="MNBankImport._setRemember(this.checked)">
+          <label for="mnbiRememberMappings">${_t('bi_recordar_mapeos', 'Recordar estas categorías para futuras importaciones')}</label>
+        </div>`;
+      const footer = `
+        <button class="mnbi-btn-back" onclick="MNBankImport._backToChoice()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ${_t('bi_atras', 'Atrás')}
+        </button>
+        <button class="mnbi-btn-primary" onclick="MNBankImport._toStep5()">
+          ${_t('bi_continuar', 'Continuar')}
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>`;
+      _shell(body, footer);
+      return;
+    }
 
     const view = ST.categorizeView || 'groups';
     const tabs = `
@@ -1859,8 +1920,9 @@
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 4 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
       <div class="mnbi-h1">${_t('bi_s4b_titulo', 'Asigna una categoría a cada comercio')}</div>
       <div class="mnbi-sub">${_t('bi_s4_individual_sub', 'Marca varios movimientos y aplica una categoría a todos a la vez, o cambia uno solo.')}</div>
+      ${typeTabs}
       ${tabs}
-      ${_individualViewHtml()}
+      ${_individualViewHtml(tab)}
       <div class="mnbi-remember-row">
         <input type="checkbox" id="mnbiRememberMappings" ${ST.rememberMappings ? 'checked' : ''} onchange="MNBankImport._setRemember(this.checked)">
         <label for="mnbiRememberMappings">${_t('bi_recordar_mapeos', 'Recordar estas categorías para futuras importaciones')}</label>
@@ -1868,12 +1930,13 @@
     ` : `
       <div class="mnbi-step-label">${_t('bi_paso', 'Paso')} 4 ${_t('bi_de', 'de')} ${TOTAL_STEPS}</div>
       <div class="mnbi-h1">${_t('bi_s4b_titulo', 'Asigna una categoría a cada comercio')}</div>
-      <div class="mnbi-sub">${ST.groups.length} ${_t('bi_comercios_detectados', 'comercios detectados')} · ${_t('bi_s4b_sub', 'se aplicará a todos los movimientos de ese grupo')}</div>
+      <div class="mnbi-sub">${activeGroups.length} ${_t('bi_comercios_detectados', 'comercios detectados')} · ${_t('bi_s4b_sub', 'se aplicará a todos los movimientos de ese grupo')}</div>
+      ${typeTabs}
       ${tabs}
       <input type="text" class="mnbi-input mnbi-group-search" id="mnbiGroupSearch" placeholder="🔍 ${_t('bi_buscar_comercio', 'Buscar comercio...')}" oninput="MNBankImport._filterGroups(this.value)">
 
       <div class="mnbi-group-list" id="mnbiGroupList">
-        ${_groupRowsHtml(ST.groups)}
+        ${_groupRowsHtml(activeGroups, tab)}
       </div>
 
       <div class="mnbi-remember-row">
@@ -1899,7 +1962,8 @@
 
   function _effectiveCategoryFor(r) {
     if (r._categoryOverride) return r._categoryOverride;
-    const g = ST.groups.find(x => x.key === r.merchantKey);
+    const groups = r.isExpense ? ST.groups : ST.groupsIngreso;
+    const g = (groups || []).find(x => x.key === r.merchantKey);
     return (g && g.category) || '';
   }
 
@@ -1910,19 +1974,22 @@
       `<option value="__new__">➕ ${_t('bi_nueva_categoria', 'Nueva categoría...')}</option>`;
   }
 
-  function _individualViewHtml() {
-    const expenseRows = (ST._cleanRows || ST.rows).filter(r => r.isExpense);
+  function _individualViewHtml(kind) {
+    kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
+    const isGasto = kind === 'gasto';
+    const cats = isGasto ? _gastoCats() : _ingresoCats();
+    const typeRows = (ST._cleanRows || ST.rows).filter(r => isGasto ? r.isExpense : !r.isExpense);
     const selectedCount = Object.keys(ST._selectedForBulk || {}).length;
-    const allSelected = expenseRows.length > 0 && expenseRows.every(r => ST._selectedForBulk[ST.rows.indexOf(r)]);
+    const allSelected = typeRows.length > 0 && typeRows.every(r => ST._selectedForBulk[ST.rows.indexOf(r)]);
 
     const bulkBar = selectedCount > 0 ? `
       <div class="mnbi-bulk-bar">
         <span>${selectedCount} ${selectedCount === 1 ? _t('bi_seleccionado', 'seleccionado') : _t('bi_seleccionados', 'seleccionados')}</span>
-        <select class="mnbi-select" id="mnbiBulkCatSelect" style="flex:1">${_catOptionsHtml('')}</select>
+        <select class="mnbi-select" id="mnbiBulkCatSelect" style="flex:1">${_catOptionsHtml('', cats)}</select>
         <button type="button" class="mnbi-btn-primary" style="padding:8px 14px" onclick="MNBankImport._applyBulkCategory()">${_t('bi_aplicar', 'Aplicar')}</button>
       </div>` : '';
 
-    const rows = expenseRows.map(r => {
+    const rows = typeRows.map(r => {
       const idx = ST.rows.indexOf(r);
       const cat = _effectiveCategoryFor(r);
       const checked = !!ST._selectedForBulk[idx];
@@ -1936,7 +2003,7 @@
             </div>
           </div>
           <select class="mnbi-group-cat-select ${cat ? 'mapped' : ''}" onchange="MNBankImport._setIndividualRowCategory(${idx}, this.value)">
-            ${_catOptionsHtml(cat)}
+            ${_catOptionsHtml(cat, cats)}
           </select>
         </div>`;
     }).join('');
@@ -1948,6 +2015,13 @@
         <label for="mnbiIndivSelectAll">${_t('bi_seleccionar_todos', 'Seleccionar todos')}</label>
       </div>
       <div class="mnbi-review-list" id="mnbiIndivTableWrap">${rows || `<div class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</div>`}</div>`;
+  }
+
+  function _setCategorizeTab(tab) {
+    ST.categorizeTab = tab === 'ingreso' ? 'ingreso' : 'gasto';
+    ST.categorizeView = 'groups';
+    ST._selectedForBulk = {};
+    _renderStep4();
   }
 
   function _setCategorizeView(view) {
@@ -1963,9 +2037,10 @@
   }
 
   function _toggleSelectAllIndividual(checked) {
-    const expenseRows = (ST._cleanRows || ST.rows).filter(r => r.isExpense);
+    const isGasto = ST.categorizeTab !== 'ingreso';
+    const typeRows = (ST._cleanRows || ST.rows).filter(r => isGasto ? r.isExpense : !r.isExpense);
     ST._selectedForBulk = {};
-    if (checked) expenseRows.forEach(r => { ST._selectedForBulk[ST.rows.indexOf(r)] = true; });
+    if (checked) typeRows.forEach(r => { ST._selectedForBulk[ST.rows.indexOf(r)] = true; });
     _renderStep4();
   }
 
@@ -1986,12 +2061,12 @@
   }
 
   function _setIndividualRowCategory(idx, value) {
+    const r = ST.rows[idx];
     if (value === '__new__') {
-      const created = _promptNewCategory();
+      const created = _promptNewCategory(r && !r.isExpense ? 'ingreso' : 'gasto');
       if (!created) { _renderStep4(); return; }
       value = created;
     }
-    const r = ST.rows[idx];
     if (r) r._categoryOverride = value;
     _renderStep4();
   }
@@ -1999,21 +2074,24 @@
   function _applyBulkCategory() {
     let value = document.getElementById('mnbiBulkCatSelect')?.value;
     if (!value) return;
+    const selectedIdxs = Object.keys(ST._selectedForBulk || {}).map(Number);
+    const firstRow = ST.rows[selectedIdxs[0]];
     if (value === '__new__') {
-      const created = _promptNewCategory();
+      const created = _promptNewCategory(firstRow && !firstRow.isExpense ? 'ingreso' : 'gasto');
       if (!created) return;
       value = created;
     }
-    Object.keys(ST._selectedForBulk || {}).forEach(idxStr => {
-      const r = ST.rows[Number(idxStr)];
+    selectedIdxs.forEach(idx => {
+      const r = ST.rows[idx];
       if (r) r._categoryOverride = value;
     });
     ST._selectedForBulk = {};
     _renderStep4();
   }
 
-  function _groupRowsHtml(groups) {
-    const cats = _gastoCats();
+  function _groupRowsHtml(groups, kind) {
+    kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
+    const cats = kind === 'ingreso' ? _ingresoCats() : _gastoCats();
     if (!groups.length) return `<div class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</div>`;
     return groups.map((g, idx) => `
       <div class="mnbi-group-row" data-key="${g.key}">
@@ -2021,7 +2099,7 @@
           <div class="mnbi-group-name" title="${prettyMerchant(g.key)}">${_catEmoji(g.category)} ${prettyMerchant(g.key)}</div>
           <div class="mnbi-group-meta">${g.count} ${g.count === 1 ? _t('bi_movimiento', 'movimiento') : _t('bi_movimientos', 'movimientos')} · ${_fmtEur(g.total)}${g.isMapped ? ` · <span style="color:var(--accent)">✓ ${_t('bi_recordado', 'recordado')}</span>` : (g.isAuto ? ` · <span style="color:var(--gold)">🤖 ${_t('bi_automatico', 'automático')}</span>` : '')}</div>
         </div>
-        <select class="mnbi-group-cat-select ${g.category ? 'mapped' : ''}" onchange="MNBankImport._setGroupCategory('${g.key}', this.value)">
+        <select class="mnbi-group-cat-select ${g.category ? 'mapped' : ''}" onchange="MNBankImport._setGroupCategory('${g.key}', this.value, '${kind}')">
           <option value="">${_t('bi_elegir', 'Elegir...')}</option>
           ${cats.map(c => `<option value="${c}" ${g.category === c ? 'selected' : ''}>${_catEmoji(c)} ${c}</option>`).join('')}
           <option value="__new__">➕ ${_t('bi_nueva_categoria', 'Nueva categoría...')}</option>
@@ -2031,31 +2109,44 @@
 
   function _chooseCategorize(val) {
     ST.categorizeChoice = val;
-    if (val) _buildGroups();
+    if (val) {
+      _buildGroups();
+      // Land on whichever tab actually has content when the other is empty
+      // (e.g. an income-only file), instead of always defaulting to
+      // 'gasto' and showing an empty-state message on first view.
+      const hasExpense = (ST._cleanRows || ST.rows).some(r => r.isExpense);
+      const hasIncome  = (ST._cleanRows || ST.rows).some(r => !r.isExpense);
+      if (!hasExpense && hasIncome) ST.categorizeTab = 'ingreso';
+      else if (hasExpense) ST.categorizeTab = 'gasto';
+    }
     _renderStep4();
   }
   function _backToChoice() { ST.categorizeChoice = null; _renderStep4(); }
 
   function _filterGroups(q) {
+    const kind = ST.categorizeTab === 'ingreso' ? 'ingreso' : 'gasto';
+    const groups = kind === 'ingreso' ? ST.groupsIngreso : ST.groups;
     const query = (q || '').toLowerCase();
     const list = document.getElementById('mnbiGroupList');
     if (!list) return;
-    const filtered = !query ? ST.groups : ST.groups.filter(g => g.key.toLowerCase().includes(query));
-    list.innerHTML = _groupRowsHtml(filtered);
+    const filtered = !query ? groups : groups.filter(g => g.key.toLowerCase().includes(query));
+    list.innerHTML = _groupRowsHtml(filtered, kind);
   }
 
-  function _setGroupCategory(key, value) {
+  function _setGroupCategory(key, value, kind) {
+    kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
+    const groups = kind === 'ingreso' ? ST.groupsIngreso : ST.groups;
     if (value === '__new__') {
       const name = prompt(_t('bi_nombre_nueva_categoria', 'Nombre de la nueva categoría:'));
       if (!name || !name.trim()) { _renderStep4(); return; }
       const trimmed = name.trim();
-      if (!_S().categorias.gasto.includes(trimmed)) {
-        _S().categorias.gasto.push(trimmed);
+      if (!_S().categorias[kind].includes(trimmed)) {
+        _S().categorias[kind].push(trimmed);
         ST.newCategoriesCreated.push(trimmed);
       }
       value = trimmed;
     }
-    const g = ST.groups.find(x => x.key === key);
+    const g = groups.find(x => x.key === key);
     if (g) { g.category = value; g.isAuto = false; }
     _filterGroups(document.getElementById('mnbiGroupSearch')?.value || '');
   }
@@ -2280,15 +2371,26 @@
         accountName = (S.cuentas || []).find(c => c.id === cuentaId)?.nombre || _t('bi_cuenta_desconocida', 'Cuenta');
       }
 
-      // Save merchant→category mappings if requested
+      // Save merchant→category mappings if requested — separately per
+      // gasto/ingreso, so a shared merchantKey (e.g. "TRANSFERENCIA") never
+      // mixes a learned expense category into future income imports or
+      // vice versa.
       if (ST.categorizeChoice && ST.rememberMappings) {
-        const map = _loadMap();
-        ST.groups.forEach(g => { if (g.category) map[g.key] = g.category; });
-        _saveMap(map);
+        const mapGasto = _loadMap('gasto');
+        ST.groups.forEach(g => { if (g.category) mapGasto[g.key] = g.category; });
+        _saveMap(mapGasto, 'gasto');
+
+        const mapIngreso = _loadMap('ingreso');
+        ST.groupsIngreso.forEach(g => { if (g.category) mapIngreso[g.key] = g.category; });
+        _saveMap(mapIngreso, 'ingreso');
       }
 
-      const groupCatByKey = {};
-      if (ST.categorizeChoice) ST.groups.forEach(g => { groupCatByKey[g.key] = g.category; });
+      const groupCatByKeyGasto = {};
+      const groupCatByKeyIngreso = {};
+      if (ST.categorizeChoice) {
+        ST.groups.forEach(g => { groupCatByKeyGasto[g.key] = g.category; });
+        ST.groupsIngreso.forEach(g => { groupCatByKeyIngreso[g.key] = g.category; });
+      }
 
       // Recompute duplicates fresh, scoped to the FINAL target account — not
       // reused from Step 3's cached ST._cleanRows, which could be stale if
@@ -2306,11 +2408,11 @@
         const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
         const fingerprint = _fingerprintFor(r);
         if (r.isExpense) {
-          const categoria = r._categoryOverride || groupCatByKey[r.merchantKey] || 'Otro';
+          const categoria = r._categoryOverride || groupCatByKeyGasto[r.merchantKey] || 'Otro';
           S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import' });
           importedExpense++; expenseTotal += r.amount;
         } else {
-          const categoria = r._categoryOverride || 'Otro';
+          const categoria = r._categoryOverride || groupCatByKeyIngreso[r.merchantKey] || 'Otro';
           S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import' });
           importedIncome++; incomeTotal += r.amount;
         }
@@ -2471,6 +2573,7 @@
     _filterGroups: _filterGroups,
     _setGroupCategory: _setGroupCategory,
     _setCategorizeView: _setCategorizeView,
+    _setCategorizeTab: _setCategorizeTab,
     _toggleRowSelection: _toggleRowSelection,
     _toggleSelectAllIndividual: _toggleSelectAllIndividual,
     _setIndividualRowCategory: _setIndividualRowCategory,
