@@ -4332,11 +4332,51 @@ function updateBadges() {
 }
 
 // ─── RECORD PATRIMONIO ──────────────────────────────────────────
+// Reconstruye el patrimonio neto historico para un mes pasado,
+// deshaciendo desde el patrimonio ACTUAL (misma formula que Dashboard:
+// calcPatrimonio() = liquidez + cartera + activos - deudas) los
+// ingresos/gastos que ocurrieron DESPUES de ese mes. cuenta.saldo es un
+// campo acumulativo sin historico propio, asi que los movimientos con
+// fecha real (ingresos/gastos) son la unica fuente fiable para
+// reconstruir retroactivamente cuanta liquidez habia en un momento
+// pasado. Para el mes actual o futuro, devuelve el patrimonio real tal
+// cual (sin ningun ajuste) — exactamente el mismo valor que Dashboard.
+function calcPatrimonioHistoricoMes(monthStr) {
+  const currentM = currentMonth()
+  if (monthStr >= currentM) return calcPatrimonio()
+  let valor = calcPatrimonio()
+  // Un ingreso posterior aumento la liquidez actual, pero aun no habia
+  // ocurrido en el mes solicitado — se resta para "retroceder" en el tiempo.
+  S.ingresos.forEach(i => { if (i.fecha && i.fecha.slice(0,7) > monthStr) valor -= Number(i.importe)||0 })
+  // Un gasto posterior redujo la liquidez actual, pero aun no habia
+  // ocurrido en el mes solicitado — se suma de vuelta.
+  S.gastos.forEach(g => { if (g.fecha && g.fecha.slice(0,7) > monthStr) valor += Number(g.importe)||0 })
+  return valor
+}
+
 function recordPatrimonio() {
   const month = currentMonth()
   const valor = calcPatrimonio()
   const existing = S.patrimonio_hist.find(h=>h.mes===month)
   if (existing) { existing.valor = valor } else { S.patrimonio_hist.push({mes:month,valor}) }
+
+  // Reconstruir tambien cualquier mes PASADO que tenga movimientos
+  // reales, en vez de dejarlo vacio (o desactualizado) solo porque el
+  // usuario no abrio la app exactamente en ese mes — asi el grafico de
+  // evolucion representa la caida/subida real, no el patrimonio actual
+  // repetido ni huecos en la linea.
+  const monthsWithActivity = new Set()
+  S.ingresos.forEach(i => { if (i.fecha) monthsWithActivity.add(i.fecha.slice(0,7)) })
+  S.gastos.forEach(g => { if (g.fecha) monthsWithActivity.add(g.fecha.slice(0,7)) })
+  monthsWithActivity.forEach(m => {
+    if (m >= month) return // el mes actual ya se registro arriba con el valor real; meses futuros se ignoran
+    const v = calcPatrimonioHistoricoMes(m)
+    const ex = S.patrimonio_hist.find(h => h.mes === m)
+    if (ex) ex.valor = v
+    else S.patrimonio_hist.push({ mes: m, valor: v })
+  })
+
+  S.patrimonio_hist.sort((a, b) => a.mes.localeCompare(b.mes))
   // keep last 24 months
   S.patrimonio_hist = S.patrimonio_hist.slice(-24)
   save()
@@ -10812,6 +10852,7 @@ function renderAnalisis() {
     const patCtx = document.getElementById('chartAnalisisPatrimonio')
     if (patCtx) {
       destroyChart('analisisPat')
+      recordPatrimonio() // mismo patron que renderChartPatrimonio() del Dashboard: asegura que el historico este actualizado y reconstruido antes de leerlo, sin importar si el usuario llego aqui sin pasar por Dashboard
       const meses = getMonths(12)
       const patVals = meses.map(mo => { const h = S.patrimonio_hist.find(x => x.mes === mo); return h ? h.valor : null })
       charts['analisisPat'] = new Chart(patCtx, {
