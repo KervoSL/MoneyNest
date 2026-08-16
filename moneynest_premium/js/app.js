@@ -3860,8 +3860,7 @@ function defaultState() {
   return {
     usuario: { nombre: 'Usuario', empresa: '', mode: 'personal', partnerName: '', partnerEmail: '' },
     cuentas: [
-      { id: 'c1', nombre: 'Cuenta Principal', tipo: 'banco', saldo: 0, valorTotal: 0, color: '#00D4AA' },
-      { id: 'c2', nombre: 'Efectivo', tipo: 'efectivo', saldo: 0, valorTotal: 0, color: '#F59E0B' }
+      { id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 0, valorTotal: 0, color: '#F59E0B' }
     ],
     ingresos: [],
     gastos: [],
