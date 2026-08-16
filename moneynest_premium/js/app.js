@@ -14678,8 +14678,8 @@ function setQuickType(type) {
   document.getElementById('qat-gasto').className = 'quick-add-type' + (type==='gasto'?' gasto-active':'')
   document.getElementById('qat-ingreso').className = 'quick-add-type' + (type==='ingreso'?' active':'')
   const cats = type === 'gasto'
-    ? (S.categorias.gasto || []).slice(0,8)
-    : (S.categorias.ingreso || []).slice(0,6)
+    ? (S.categorias.gasto || [])
+    : (S.categorias.ingreso || [])
   const activeClass = type === 'gasto' ? 'gasto-active' : 'active'
   document.getElementById('quickCatRow').innerHTML = cats.map(c =>
     `<div class="quick-cat-btn" onclick="selectQuickCat('${c}',this,'${activeClass}')">${catEmoji(c)} ${c}</div>`

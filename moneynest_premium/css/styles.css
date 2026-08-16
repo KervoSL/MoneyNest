@@ -695,7 +695,7 @@ tbody tr:hover{cursor:default}
   letter-spacing:-1px;
 }
 .quick-amount-input::placeholder{color:var(--border2)}
-.quick-cat-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center}
+.quick-cat-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center;max-height:38vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:2px}
 .quick-cat-btn{
   padding:5px 12px;border-radius:99px;font-size:.75rem;font-weight:600;
   border:1px solid var(--border2);background:var(--bg2);color:var(--text2);
