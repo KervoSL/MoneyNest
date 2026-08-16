@@ -63,6 +63,33 @@
     generic:   { label: 'Genérico',  emoji: '🏦' },
   };
 
+  // ── Bank learning: remember a manually-confirmed column fingerprint ──
+  // If the user manually picks "Banco X" for a file whose headers don't
+  // match any known layout, remember that exact header structure (order
+  // doesn't matter — sorted before hashing) so future files with the
+  // identical structure are recognized automatically next time, without
+  // asking again. Only the column NAMES are stored — never any actual
+  // transaction data — keeping this to the minimum structural
+  // information needed for recognition.
+  const BANK_FINGERPRINT_KEY = 'mn_bank_fingerprint_map';
+  function _fingerprintForHeaders(headers) {
+    return (headers || []).map(h => (h || '').toLowerCase().trim()).filter(Boolean).sort().join('|');
+  }
+  function _loadBankFingerprints() {
+    try { return JSON.parse(localStorage.getItem(BANK_FINGERPRINT_KEY) || '{}'); } catch { return {}; }
+  }
+  function _learnBankFingerprint(headers, bankKey) {
+    const fp = _fingerprintForHeaders(headers);
+    // Never learn a fingerprint for a layout that already matches a
+    // known bank by headers, or for 'generic' itself — only genuinely
+    // unrecognized structures the user resolved manually are worth
+    // remembering.
+    if (!fp || bankKey === 'generic') return;
+    const map = _loadBankFingerprints();
+    map[fp] = bankKey;
+    try { localStorage.setItem(BANK_FINGERPRINT_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+
   function detectBankFormat(headers) {
     const h = headers.map(s => (s || '').toLowerCase().trim());
     const has = (s) => h.some(x => x.includes(s));
@@ -75,6 +102,12 @@
     if (has('sabadell') || (has('fecha operación') && has('concepto') && has('importe'))) return 'sabadell';
     if (has('value date') && has('description') && (has('income') || has('expenses'))) return 'ing';
     if (h.includes('id') && has('status') && has('target currency')) return 'wise';
+    // Learned fingerprint: a structure the user has manually confirmed
+    // before for this exact set of column names. Treated exactly like a
+    // header-based match (same authoritative signal that drives the
+    // parser) since the columns are, by definition, identical.
+    const learned = _loadBankFingerprints()[_fingerprintForHeaders(headers)];
+    if (learned) return learned;
     return 'generic';
   }
 
@@ -466,22 +499,22 @@
     { category: 'Alimentación', patterns: [
         'MERCADONA','CARREFOUR','LIDL','DIA SUPERMERCADO','SUPERMERCADOS DIA','ALCAMPO','EROSKI','CONSUM','ALDI','HIPERCOR','SUPERCOR',
         'BONPREU','CAPRABO','CONDIS','SPAR','COVIRAN','MASYMAS','FROIZ','GADIS','SUPERSOL','AHORRAMAS','ECI SUPERMERCADO',
-        'SUPERMERCADO','SUPERMERCAT','ALIMENTACION','ALIMENTACIO','FRUTERIA','FRUITERIA','VERDULERIA',
+        'SUPERMERCADO','SUPERMERCAT','SUPERMARKET','HIPERMERCADO','ALIMENTACION','ALIMENTACIO','FRUTERIA','FRUITERIA','VERDULERIA',
         'CHARCUTERIA','XARCUTERIA','CARNICERIA','CARNISSERIA','PANADERIA','FLECA','FORN DE PA','PESCADERIA','PEIXATERIA',
       ] },
     { category: 'Restaurantes', patterns: [
-        'MCDONALD','MC DONALD','BURGER KING','KFC','TELEPIZZA','DOMINOS','GLOVO','UBER EATS','UBEREATS','JUST EAT','JUSTEAT','STARBUCKS',
-        'RESTAURANTE','RESTAURANT','CAFETERIA','CERVECERIA','CERVESERIA','PIZZERIA','HAMBURGUESERIA','BAR ','TAPAS','MENU DEL DIA','MENU DIARI',
+        'MCDONALD','MC DONALD','BURGER KING','KFC','SUBWAY','GOIKO','TELEPIZZA','DOMINOS','GLOVO','UBER EATS','UBEREATS','JUST EAT','JUSTEAT','STARBUCKS',
+        'RESTAURANTE','RESTAURANT','CAFETERIA','CAFE ','CERVECERIA','CERVESERIA','PIZZERIA','HAMBURGUESERIA','BAR ','TAPAS','MENU DEL DIA','MENU DIARI','DELIVERY',
       ] },
     { category: 'Tabaco', patterns: [
         'ESTANCO','ESTANC ','ESTANC24','TABACS','TABAC ','TABACOS','TABACALERA','EXPENDEDURIA',
       ] },
     { category: 'Transporte', patterns: [
-        'CABIFY','RENFE','METRO DE','BLABLACAR','IBERIA','VUELING','RYANAIR','AUTOPISTA','PEAJE','TAXI','FREE NOW','FREENOW','TMB',
+        'UBER','CABIFY','BOLT ','RENFE','RODALIES','METRO DE','BLABLACAR','IBERIA','VUELING','RYANAIR','AUTOPISTA','PEAJE','TAXI','FREE NOW','FREENOW','TMB',
         'REPSOL','CEPSA','GASOLINERA','GASOLINERES','ESTACION DE SERVICIO','SHELL','GALP','BP ','AUTOBUS','AUTOBUS URBANO','PARKING','APARCAMIENTO','APARCAMENT',
       ] },
     { category: 'Suscripciones', patterns: [
-        'NETFLIX','SPOTIFY','HBO','DISNEY PLUS','DISNEY+','YOUTUBE PREMIUM','ICLOUD','APPLE.COM/BILL','PLAYSTATION PLUS','XBOX GAME PASS','AMAZON PRIME',
+        'NETFLIX','SPOTIFY','HBO','HBO MAX','MAX.COM','DISNEY PLUS','DISNEY+','PRIME VIDEO','YOUTUBE PREMIUM','ICLOUD','APPLE.COM/BILL','APPLE SERVICES','PLAYSTATION PLUS','XBOX GAME PASS','AMAZON PRIME',
       ] },
     { category: 'Tecnología', patterns: [
         'APPLE STORE','MEDIAMARKT','PCCOMPONENTES','FNAC','WORTEN','MICROSOFT STORE',
@@ -500,6 +533,34 @@
       ] },
     { category: 'Educación', patterns: [
         'UNIVERSIDAD','UNIVERSITAT','ACADEMIA','COURSERA','UDEMY','LIBRERIA','LLIBRERIA',
+      ] },
+  ];
+
+  // Keyword dictionary for INCOME categories — a completely separate list
+  // from AUTO_CATEGORY_RULES above, since income and expense categories
+  // are different lists with different meanings ("Alquiler" as an
+  // expense means rent PAID; as income it means rent RECEIVED). This
+  // was the single biggest gap in automatic categorization: without it,
+  // every payroll/interest/freelance-invoice transaction — a large
+  // share of most real bank statements — was always left uncategorized.
+  const AUTO_INCOME_CATEGORY_RULES = [
+    { category: 'Salario', patterns: [
+        'NOMINA','SALARIO','SUELDO','PAGA MENSUAL','PAYROLL','TRANSFERENCIA NOMINA','ABONO NOMINA','HABERES',
+      ] },
+    { category: 'Freelance', patterns: [
+        'FACTURA EMITIDA','HONORARIOS','FREELANCE','AUTONOMO ','SERVICIOS PROFESIONALES','TRANSFERENCIA FACTURA',
+      ] },
+    { category: 'Alquiler', patterns: [
+        'ALQUILER RECIBIDO','RENTA ALQUILER','INGRESO ALQUILER','PAGO ALQUILER RECIBIDO',
+      ] },
+    { category: 'Dividendos', patterns: [
+        'DIVIDENDO','INTERES ','INTERESES','RENDIMIENTO','CUPON ','LIQUIDACION INTERESES','ABONO INTERESES',
+      ] },
+    { category: 'Venta', patterns: [
+        'VENTA ','WALLAPOP','VINTED','MILANUNCIOS','SEGUNDA MANO','EBAY',
+      ] },
+    { category: 'Bono', patterns: [
+        'BONUS','PAGA EXTRA','INCENTIVO','PRIMA PRODUCTIVIDAD',
       ] },
   ];
 
@@ -532,6 +593,10 @@
   // hot path for hundreds/thousands of imported rows only normalizes the
   // transaction description itself, never re-normalizes the dictionary.
   const _AUTO_CATEGORY_RULES_NORM = AUTO_CATEGORY_RULES.map(rule => ({
+    category: rule.category,
+    patterns: rule.patterns.map(_compilePattern),
+  }));
+  const _AUTO_INCOME_CATEGORY_RULES_NORM = AUTO_INCOME_CATEGORY_RULES.map(rule => ({
     category: rule.category,
     patterns: rule.patterns.map(_compilePattern),
   }));
@@ -724,7 +789,7 @@
     'BONPREU': 'Alimentación', 'CAPRABO': 'Alimentación', 'EL CORTE INGLES': 'Alimentación',
     'UBER EATS': 'Restaurantes', 'GLOVO': 'Restaurantes', 'JUST EAT': 'Restaurantes', 'MCDONALDS': 'Restaurantes', 'STARBUCKS': 'Restaurantes',
     'ESTANCO': 'Tabaco',
-    'UBER': 'Transporte', 'CABIFY': 'Transporte', 'RENFE': 'Transporte',
+    'UBER': 'Transporte', 'CABIFY': 'Transporte', 'RENFE': 'Transporte', 'BOLT': 'Transporte',
     'NETFLIX': 'Suscripciones', 'SPOTIFY': 'Suscripciones', 'AMAZON PRIME': 'Suscripciones',
     'ZARA': 'Ropa', 'H&M': 'Ropa',
   };
@@ -734,12 +799,20 @@
   // are inherently reliable (a real word like "supermercado" appearing
   // anywhere in the description is a strong signal), so they're always
   // 'high' here; genuinely uncertain cases (merchant only identified via
-  // fuzzy matching) come back as 'medium'.
-  function _autoDetectCategory(description, merchantKey) {
+  // fuzzy matching) come back as 'medium'. kind ('gasto'|'ingreso')
+  // selects which keyword dictionary to use — income and expense
+  // categories are different lists with different meanings, so they can
+  // never share one set of rules (see AUTO_INCOME_CATEGORY_RULES).
+  function _autoDetectCategory(description, merchantKey, kind) {
     const d = _normalizeText(description);
-    for (const rule of _AUTO_CATEGORY_RULES_NORM) {
+    const isIngreso = kind === 'ingreso';
+    const rules = isIngreso ? _AUTO_INCOME_CATEGORY_RULES_NORM : _AUTO_CATEGORY_RULES_NORM;
+    for (const rule of rules) {
       if (rule.patterns.some(p => p.test(d))) return { category: rule.category, confidence: 'high' };
     }
+    // Merchant->category fallback only applies to expenses today (no
+    // brand-name merchant reliably implies one specific income category).
+    if (isIngreso) return null;
     // Fall back to a known-merchant -> category mapping — covers cases
     // where the merchant was identified (possibly only via fuzzy
     // matching) but the description has no literal category keyword.
@@ -970,6 +1043,15 @@
       /* Merchant groups */
       .mnbi-group-search { margin-bottom:14px; }
       .mnbi-group-list { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; margin-bottom:14px; padding-right:2px; }
+      .mnbi-group-section-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:14px 0 8px; padding-left:2px; }
+      .mnbi-group-section-label:first-child { margin-top:0; }
+      .mnbi-group-section-label--warn { color:var(--gold, #F5A623); }
+      .mnbi-group-section-label--ok { color:var(--accent); }
+      .mnbi-reco-section { margin-bottom:16px; }
+      .mnbi-reco-card { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:12px; background:rgba(245,166,35,.08); border:1px solid rgba(245,166,35,.35); margin-bottom:8px; flex-wrap:wrap; }
+      .mnbi-reco-title { font-weight:800; font-size:.88rem; }
+      .mnbi-reco-sub { font-size:.72rem; color:var(--text3); margin-top:2px; }
+      .mnbi-reco-actions { display:flex; gap:6px; flex-shrink:0; }
       .mnbi-group-row { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:var(--bg2); border:1px solid var(--border); }
       .mnbi-group-info { flex:1; min-width:0; }
       .mnbi-group-name { font-size:.86rem; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1677,7 +1759,11 @@
     ST.newAccountName = BANKS[key].label;
     // A manual pick is not the same as an auto-detection; keep 'high'
     // only if the header-based detector already agreed with this bank.
-    ST.bankConfidence = (detectBankFormat(ST.headers) === key) ? 'high' : 'manual';
+    const alreadyKnownByHeaders = detectBankFormat(ST.headers) === key;
+    ST.bankConfidence = alreadyKnownByHeaders ? 'high' : 'manual';
+    // Bank learning: only worth remembering when the user is resolving a
+    // structure the detector didn't already recognize on its own.
+    if (!alreadyKnownByHeaders) _learnBankFingerprint(ST.headers, key);
     _renderStep2();
   }
   function _forceManualBank() {
@@ -1811,24 +1897,108 @@
         // "TRANSFERENCIA", never mixes a learned expense category into an
         // income row or vice versa).
         if (map[g.key]) return { ...g, category: map[g.key], isMapped: true, isAuto: false };
-        // Then automatic detection (keyword or known-merchant match) —
-        // only meaningful for expenses today (no semantic keyword
-        // dictionary exists yet for income categories like
-        // Salario/Freelance/Dividendos), so for income this simply never
-        // matches — no guess is safer than a wrong one. Only applied if
-        // that exact category still exists in the user's real category
-        // list, so a customized category set is never contradicted.
-        const guess = isGasto ? _autoDetectCategory(g.sample, g.key) : null;
+        // Then automatic detection (keyword or known-merchant match),
+        // using the dictionary that matches this group's type (expense
+        // keywords for gasto, income keywords for ingreso — see
+        // AUTO_INCOME_CATEGORY_RULES). Only applied if that exact
+        // category still exists in the user's real category list, so a
+        // customized category set is never contradicted.
+        const guess = _autoDetectCategory(g.sample, g.key, kind)
         if (guess && realCats.includes(guess.category)) {
           return { ...g, category: guess.category, isMapped: false, isAuto: true, confidence: guess.confidence };
+        }
+        // The dictionary found a plausible category but the user doesn't
+        // have it yet — don't force it onto their real category list;
+        // instead surface it as a "recommended category" suggestion (see
+        // _buildRecommendedCategories) so the user can approve it
+        // explicitly before it's created.
+        if (guess && guess.confidence === 'high') {
+          return { ...g, category: '', isMapped: false, isAuto: false, suggestedNewCategory: guess.category };
         }
         return { ...g, category: '', isMapped: false, isAuto: false };
       });
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ── RECOMMENDED CATEGORIES ─────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // Aggregates every group's suggestedNewCategory (set above, when the
+  // dictionary is confident about a category the user hasn't created
+  // yet) into one recommendation per category name, so e.g. Spotify +
+  // Netflix + Disney+ all missing "Suscripciones" become a SINGLE
+  // recommendation covering all of them — never auto-created, always
+  // requires explicit user approval (see _acceptRecommendedCategory).
+  function _buildRecommendedCategories(groups, kind) {
+    const byCategory = {};
+    groups.forEach(g => {
+      if (!g.suggestedNewCategory) return
+      const cat = g.suggestedNewCategory
+      if (!byCategory[cat]) byCategory[cat] = { category: cat, kind, count: 0, examples: [], keys: [] }
+      byCategory[cat].count += g.count
+      byCategory[cat].keys.push(g.key)
+      if (byCategory[cat].examples.length < 3) byCategory[cat].examples.push(prettyMerchant(g.key))
+    })
+    return Object.values(byCategory)
+  }
+
+  // Creates the recommended category (if the user doesn't already have
+  // it — a duplicate could exist if they added it manually mid-review)
+  // and immediately applies it to every group that suggested it, exactly
+  // as if the user had picked it for each one individually. Also saves
+  // the merchant->category mapping so future imports recognize the same
+  // merchants without needing the recommendation again.
+  function _acceptRecommendedCategory(category, kind) {
+    const cats = _S().categorias[kind] || (_S().categorias[kind] = [])
+    if (!cats.includes(category)) cats.push(category)
+    const groups = kind === 'ingreso' ? ST.groupsIngreso : ST.groups
+    const map = _loadMap(kind)
+    groups.forEach(g => {
+      if (g.suggestedNewCategory === category) {
+        g.category = category
+        g.isAuto = true
+        map[g.key] = category
+      }
+    })
+    _saveMap(map, kind)
+    if (typeof window.save === 'function') window.save()
+    if (kind === 'ingreso') ST.recommendedIngreso = (ST.recommendedIngreso || []).filter(r => r.category !== category)
+    else ST.recommendedGasto = (ST.recommendedGasto || []).filter(r => r.category !== category)
+    _renderStep4()
+  }
+
+  function _dismissRecommendedCategory(category) {
+    ST._dismissedRecommendations = ST._dismissedRecommendations || {}
+    ST._dismissedRecommendations[category] = true
+    ST.recommendedGasto = (ST.recommendedGasto || []).filter(r => r.category !== category)
+    ST.recommendedIngreso = (ST.recommendedIngreso || []).filter(r => r.category !== category)
+    _renderStep4()
+  }
+
+  function _recommendedCategoriesHtml(recommendations) {
+    if (!recommendations || !recommendations.length) return ''
+    return `
+      <div class="mnbi-reco-section">
+        <div class="mnbi-group-section-label" style="color:var(--gold,#F5A623)">✨ ${_t('bi_categorias_recomendadas', 'Categorías recomendadas')}</div>
+        ${recommendations.map(r => `
+          <div class="mnbi-reco-card">
+            <div class="mnbi-reco-main">
+              <div class="mnbi-reco-title">${_catEmoji(r.category)} ${r.category}</div>
+              <div class="mnbi-reco-sub">${r.count} ${r.count === 1 ? _t('bi_movimiento', 'movimiento') : _t('bi_movimientos', 'movimientos')} · ${r.examples.join(', ')}</div>
+            </div>
+            <div class="mnbi-reco-actions">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="MNBankImport._dismissRecommendedCategory('${r.category.replace(/'/g,"\\'")}')">${_t('bi_ignorar', 'Ignorar')}</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="MNBankImport._acceptRecommendedCategory('${r.category.replace(/'/g,"\\'")}','${r.kind}')">✓ ${_t('bi_crear_categoria', 'Crear categoría')}</button>
+            </div>
+          </div>`).join('')}
+      </div>`
+  }
+
   function _buildGroups() {
     ST.groups = _buildGroupsFor('gasto');
     ST.groupsIngreso = _buildGroupsFor('ingreso');
+    const dismissed = ST._dismissedRecommendations || {};
+    ST.recommendedGasto = _buildRecommendedCategories(ST.groups, 'gasto').filter(r => !dismissed[r.category]);
+    ST.recommendedIngreso = _buildRecommendedCategories(ST.groupsIngreso, 'ingreso').filter(r => !dismissed[r.category]);
   }
 
   function _renderStep4() {
@@ -1871,6 +2041,7 @@
     const tab = ST.categorizeTab === 'ingreso' ? 'ingreso' : 'gasto';
     const isGasto = tab === 'gasto';
     const activeGroups = isGasto ? ST.groups : ST.groupsIngreso;
+    const activeRecommendations = isGasto ? ST.recommendedGasto : ST.recommendedIngreso;
     const activeRowCount = isGasto ? expenseRowCount : incomeRowCount;
 
     // ── Nivel superior: GASTOS / INGRESOS — la distincion mas importante,
@@ -1922,6 +2093,7 @@
       <div class="mnbi-sub">${_t('bi_s4_individual_sub', 'Marca varios movimientos y aplica una categoría a todos a la vez, o cambia uno solo.')}</div>
       ${typeTabs}
       ${tabs}
+      ${_recommendedCategoriesHtml(activeRecommendations)}
       ${_individualViewHtml(tab)}
       <div class="mnbi-remember-row">
         <input type="checkbox" id="mnbiRememberMappings" ${ST.rememberMappings ? 'checked' : ''} onchange="MNBankImport._setRemember(this.checked)">
@@ -1933,6 +2105,7 @@
       <div class="mnbi-sub">${activeGroups.length} ${_t('bi_comercios_detectados', 'comercios detectados')} · ${_t('bi_s4b_sub', 'se aplicará a todos los movimientos de ese grupo')}</div>
       ${typeTabs}
       ${tabs}
+      ${_recommendedCategoriesHtml(activeRecommendations)}
       <input type="text" class="mnbi-input mnbi-group-search" id="mnbiGroupSearch" placeholder="🔍 ${_t('bi_buscar_comercio', 'Buscar comercio...')}" oninput="MNBankImport._filterGroups(this.value)">
 
       <div class="mnbi-group-list" id="mnbiGroupList">
@@ -2093,7 +2266,8 @@
     kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
     const cats = kind === 'ingreso' ? _ingresoCats() : _gastoCats();
     if (!groups.length) return `<div class="mnbi-empty">${_t('bi_sin_resultados', 'Sin resultados')}</div>`;
-    return groups.map((g, idx) => `
+
+    const rowHtml = (g) => `
       <div class="mnbi-group-row" data-key="${g.key}">
         <div class="mnbi-group-info">
           <div class="mnbi-group-name" title="${prettyMerchant(g.key)}">${_catEmoji(g.category)} ${prettyMerchant(g.key)}</div>
@@ -2104,7 +2278,25 @@
           ${cats.map(c => `<option value="${c}" ${g.category === c ? 'selected' : ''}>${_catEmoji(c)} ${c}</option>`).join('')}
           <option value="__new__">➕ ${_t('bi_nueva_categoria', 'Nueva categoría...')}</option>
         </select>
-      </div>`).join('');
+      </div>`;
+
+    // Uncategorized groups need the user's attention — surfaced first,
+    // above the ones the engine already handled — so reviewing hundreds
+    // of imported transactions is fast: the user only has to look at the
+    // (usually short) top section instead of scanning the whole list.
+    const uncategorized = groups.filter(g => !g.category);
+    const categorized   = groups.filter(g => g.category);
+
+    const uncatSection = uncategorized.length ? `
+      <div class="mnbi-group-section-label mnbi-group-section-label--warn">⚠️ ${_t('bi_sin_categorizar', 'Sin categorizar')} (${uncategorized.length})</div>
+      ${uncategorized.map(rowHtml).join('')}
+    ` : '';
+    const catSection = categorized.length ? `
+      <div class="mnbi-group-section-label mnbi-group-section-label--ok">✓ ${_t('bi_categorizados', 'Categorizados')} (${categorized.length})</div>
+      ${categorized.map(rowHtml).join('')}
+    ` : '';
+
+    return uncatSection + catSection;
   }
 
   function _chooseCategorize(val) {
@@ -2574,6 +2766,8 @@
     _setGroupCategory: _setGroupCategory,
     _setCategorizeView: _setCategorizeView,
     _setCategorizeTab: _setCategorizeTab,
+    _acceptRecommendedCategory: _acceptRecommendedCategory,
+    _dismissRecommendedCategory: _dismissRecommendedCategory,
     _toggleRowSelection: _toggleRowSelection,
     _toggleSelectAllIndividual: _toggleSelectAllIndividual,
     _setIndividualRowCategory: _setIndividualRowCategory,
