@@ -2605,12 +2605,18 @@
         const fecha = (r.date instanceof Date && !isNaN(r.date)) ? r.date.toISOString().slice(0, 10) : todayISO();
         const fingerprint = _fingerprintFor(r);
         if (r.isExpense) {
-          const categoria = r._categoryOverride || groupCatByKeyGasto[r.merchantKey] || 'Otro';
-          S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import' });
+          const resolvedCategoria = r._categoryOverride || groupCatByKeyGasto[r.merchantKey] || '';
+          const categoria = resolvedCategoria || 'Otro';
+          // Only flag as needing review when NOTHING resolved a category
+          // (neither the user's own choice in the wizard nor the
+          // detection engine) — a category the user explicitly picked
+          // (even "Otro") is a deliberate decision, not an unresolved item.
+          S.gastos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, origen: 'bank-import', _needsReview: !resolvedCategoria });
           importedExpense++; expenseTotal += r.amount;
         } else {
-          const categoria = r._categoryOverride || groupCatByKeyIngreso[r.merchantKey] || 'Otro';
-          S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import' });
+          const resolvedCategoria = r._categoryOverride || groupCatByKeyIngreso[r.merchantKey] || '';
+          const categoria = resolvedCategoria || 'Otro';
+          S.ingresos.push({ id: _uid(), concepto: r.description, importe: r.amount, fecha, categoria, cuentaId, merchant: r.merchantKey, _importFingerprint: fingerprint, status: 'cobrado', origen: 'bank-import', _needsReview: !resolvedCategoria });
           importedIncome++; incomeTotal += r.amount;
         }
       });
@@ -2791,5 +2797,9 @@
     fingerprintFor: _fingerprintFor,
     computeDuplicates: _computeDuplicates,
     parseAmount: _parseAmount, parseDate: _parseDate, decodeBestEffort: _decodeBestEffort,
+    // exposed so other MoneyNest features (e.g. the Revisión center) can
+    // reuse the exact same merchant→category learning mechanism instead
+    // of building a second, disconnected one.
+    loadMerchantMap: _loadMap, saveMerchantMap: _saveMap,
   };
 })();

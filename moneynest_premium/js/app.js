@@ -382,6 +382,12 @@ const TRANSLATIONS = {
     nav_gastos: 'Gastos', nav_inversiones: 'Inversiones',
     nav_deudas: 'Deudas', nav_objetivos: 'Objetivos',
     nav_presupuestos: 'Presupuestos', nav_cuentas: 'Cuentas', nav_categorias: 'Categorías', nav_sub_categorias: 'Organiza tus movimientos', cat_page_sub: 'Organiza tus gastos e ingresos',
+    nav_revision: 'Revisión', nav_sub_revision: 'Movimientos pendientes',
+    revision_titulo: 'Revisión', revision_sub: 'Estas transacciones necesitan tu atención.',
+    revision_vacio_titulo: 'Todo revisado', revision_vacio_sub: 'Perfecto. No tienes movimientos pendientes de revisar.',
+    revision_recordar: 'Recordar esta decisión', categoria_lbl: 'Categoría', sin_categoria: 'Sin categoría',
+    toast_categorizado: 'Categorizado ✓', cargar_mas: 'Cargar más', restantes: 'restantes',
+    revision_banner_singular: 'cosa necesita', revision_banner_plural: 'cosas necesitan', revision_banner_atencion: 'tu atención', revisar_ahora: 'Revisar',
     nav_patrimonio: 'Patrimonio', nav_analisis: 'Análisis',
     nav_configuracion: 'Configuración', nav_faq: 'FAQ', nav_sugerencias: 'Sugerencias',
     nav_billing: 'Plan & Facturación',
@@ -891,6 +897,12 @@ const TRANSLATIONS = {
     nav_gastos: 'Expenses', nav_inversiones: 'Investments',
     nav_deudas: 'Debts', nav_objetivos: 'Goals',
     nav_presupuestos: 'Budgets', nav_cuentas: 'Accounts', nav_categorias: 'Categories', nav_sub_categorias: 'Organize your transactions', cat_page_sub: 'Organize your expenses and income',
+    nav_revision: 'Review', nav_sub_revision: 'Pending transactions',
+    revision_titulo: 'Review', revision_sub: 'These transactions need your attention.',
+    revision_vacio_titulo: 'All reviewed', revision_vacio_sub: 'Nice work. No pending transactions to review.',
+    revision_recordar: 'Remember this decision', categoria_lbl: 'Category', sin_categoria: 'No category',
+    toast_categorizado: 'Categorized ✓', cargar_mas: 'Load more', restantes: 'remaining',
+    revision_banner_singular: 'item needs', revision_banner_plural: 'items need', revision_banner_atencion: 'your attention', revisar_ahora: 'Review',
     nav_patrimonio: 'Net Worth', nav_analisis: 'Analysis',
     nav_configuracion: 'Settings', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Plan & Billing',
@@ -4270,7 +4282,7 @@ const _pageKeyMap = {
   inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
   presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
   analisis:'nav_analisis', configuracion:'nav_configuracion', billing:'nav_billing',
-  patrimonio:'nav_patrimonio'
+  patrimonio:'nav_patrimonio', revision:'nav_revision'
 }
 function goTo(page) {
   currentPage = page
@@ -4500,6 +4512,16 @@ function renderDashboard() {
       </div>`).join('')}</div>`
   })()
 
+  const _revCount = _reviewCount()
+  const revisionBanner = _revCount > 0 ? `
+    <div class="card" style="margin-bottom:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;border-color:var(--gold,#F5A623);background:rgba(245,166,35,.08)" onclick="goTo('revision')">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0">
+        <div style="font-size:1.3rem;flex-shrink:0">🔔</div>
+        <div style="font-weight:700;color:var(--text);font-size:.9rem">${_revCount} ${_revCount===1 ? t('revision_banner_singular','cosa necesita') : t('revision_banner_plural','cosas necesitan')} ${t('revision_banner_atencion','tu atención')}</div>
+      </div>
+      <span style="color:var(--gold,#F5A623);font-weight:700;font-size:.82rem;flex-shrink:0;white-space:nowrap">${t('revisar_ahora','Revisar')} →</span>
+    </div>` : ''
+
   const html = `
   <!-- ── HEADER ───────────────────────────────────────────────── -->
   <div class="section-header" style="margin-bottom:20px;align-items:flex-start">
@@ -4526,6 +4548,8 @@ function renderDashboard() {
       </div>
     </div>
   </div>
+
+  ${revisionBanner}
 
   <!-- ── IMPORTAR DATOS BANCARIOS (CTA de primera importacion, mismo flujo real) ── -->
   ${_hasCompletedBankImport() ? '' : `
@@ -6576,6 +6600,153 @@ function borrarCuenta(id) {
 // catEmoji(), catColor(), removeCat(), _openCreateCategoryModal(), _buildEmojiPicker())
 // — solo cambia la presentacion: aqui se muestran unicamente los 2
 // grupos Gastos/Ingresos, con acceso directo sin pasar por Ajustes.
+// ════════════════════════════════════════════════════════════════
+// ── CENTRO DE REVISIÓN ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// A transaction "needs review" if its explicit _needsReview flag is
+// true (set by the bank importer when neither the user's own choice
+// in the wizard nor the detection engine resolved a category — see
+// bank-import.js _runImport()), or — for transactions created BEFORE
+// that flag existed — if it fell into the generic 'Otro' fallback
+// during a bank import specifically (the only historical source of
+// that behavior). A category of 'Otro' picked anywhere else (the
+// manual Gasto/Ingreso form, editing, Revisión itself) is always a
+// deliberate user decision and never needs review.
+function _txNeedsReview(tx) {
+  if (tx._needsReview === true) return true
+  if (tx._needsReview === false) return false
+  return tx.origen === 'bank-import' && tx.categoria === 'Otro'
+}
+function _getReviewItems() {
+  const gastos   = (S.gastos||[]).filter(_txNeedsReview).map(tx => ({ ...tx, _tipo: 'gasto' }))
+  const ingresos = (S.ingresos||[]).filter(_txNeedsReview).map(tx => ({ ...tx, _tipo: 'ingreso' }))
+  return [...gastos, ...ingresos].sort((a, b) => (b.fecha||'').localeCompare(a.fecha||''))
+}
+function _reviewCount() {
+  return (S.gastos||[]).filter(_txNeedsReview).length + (S.ingresos||[]).filter(_txNeedsReview).length
+}
+
+const REVISION_PAGE_SIZE = 50 // reuse simple incremental rendering so hundreds/thousands of pending items never render at once
+let _revisionRenderLimit = REVISION_PAGE_SIZE
+
+function renderRevision() {
+  const items = _getReviewItems()
+  const visibleItems = items.slice(0, _revisionRenderLimit)
+  const hasMore = items.length > _revisionRenderLimit
+
+  const emptyHtml = `
+    <div class="empty" style="padding:60px 20px;text-align:center">
+      <div class="empty-icon">✅</div>
+      <div class="empty-title">${t('revision_vacio_titulo','Todo revisado')}</div>
+      <div class="empty-sub" style="color:var(--text2);margin-top:4px">${t('revision_vacio_sub','Perfecto. No tienes movimientos pendientes de revisar.')}</div>
+    </div>`
+
+  document.getElementById('content').innerHTML = `
+  <div class="section-header">
+    <div>
+      <div class="page-h1">🔔 ${t('revision_titulo','Revisión')}</div>
+      <div class="page-sub">${items.length ? t('revision_sub','Estas transacciones necesitan tu atención.') : ''}</div>
+    </div>
+  </div>
+  ${items.length ? `
+    <div id="revisionList">${visibleItems.map(_revisionItemHtml).join('')}</div>
+    ${hasMore ? `
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn btn-ghost btn-sm" onclick="_revisionRenderLimit+=${REVISION_PAGE_SIZE};renderRevision()">
+          ${t('cargar_mas','Cargar más')} (${items.length - _revisionRenderLimit} ${t('restantes','restantes')})
+        </button>
+      </div>` : ''}
+  ` : emptyHtml}`
+}
+
+function _revisionItemHtml(tx) {
+  const isIngreso = tx._tipo === 'ingreso'
+  const cats = isIngreso ? (S.categorias.ingreso||[]) : (S.categorias.gasto||[])
+  const signColor = isIngreso ? 'var(--green)' : 'var(--red)'
+  const sign = isIngreso ? '+' : '−'
+  const typeLabel = isIngreso ? `🟢 ${t('cat_type_ingreso','Ingreso')}` : `🔴 ${t('cat_type_gasto','Gasto')}`
+  const domId = `${tx._tipo}-${tx.id}`
+  return `
+    <div class="card" id="revItem-${domId}" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:700;font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.concepto||'—'}</div>
+          <div style="font-size:.75rem;color:var(--text2);margin-top:2px">${typeLabel} · ${fmtDate(tx.fecha)}</div>
+        </div>
+        <div style="font-weight:800;font-size:1rem;color:${signColor};flex-shrink:0">${sign}${eur(tx.importe)}</div>
+      </div>
+      <div style="margin-top:10px">
+        <label style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);display:block;margin-bottom:4px">${t('categoria_lbl','Categoría')}</label>
+        <select id="revCat-${domId}" style="width:100%;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.85rem" onchange="_categorizeFromRevision('${tx._tipo}','${tx.id}', this.value)">
+          <option value="" selected>${t('sin_categoria','Sin categoría')}</option>
+          ${cats.map(c => `<option value="${c.replace(/"/g,'&quot;')}">${catEmoji(c)} ${tCat(c)}</option>`).join('')}
+          <option value="__new__">➕ ${t('bi_nueva_categoria','Nueva categoría...')}</option>
+        </select>
+      </div>
+      <div class="form-check" style="margin-top:8px">
+        <input type="checkbox" id="revRemember-${domId}" checked>
+        <label for="revRemember-${domId}" style="font-size:.75rem;color:var(--text2)">${t('revision_recordar','Recordar esta decisión')}</label>
+      </div>
+    </div>`
+}
+
+// Opening "+ Nueva categoría..." from a select briefly leaves it on
+// that sentinel value — revert it visually while the shared category
+// modal is open, exactly like every other "+ Categoría personalizada"
+// entry point in the app.
+function _categorizeFromRevision(tipo, id, categoria) {
+  const sel = document.getElementById(`revCat-${tipo}-${id}`)
+  if (categoria === '__new__') {
+    if (sel) sel.value = ''
+    _openCreateCategoryModal(tipo, (nombre) => { _applyRevisionCategory(tipo, id, nombre) })
+    return
+  }
+  if (!categoria) return
+  _applyRevisionCategory(tipo, id, categoria)
+}
+
+function _applyRevisionCategory(tipo, id, categoria) {
+  const list = tipo === 'ingreso' ? S.ingresos : S.gastos
+  const tx = list.find(x => x.id === id)
+  if (!tx) return
+  tx.categoria = categoria
+  tx._needsReview = false
+
+  // Learning: reuse the bank importer's existing merchant→category map
+  // instead of a second, disconnected mechanism — only when the user
+  // opts in and there's a normalized merchant to safely associate the
+  // decision with.
+  const rememberEl = document.getElementById(`revRemember-${tipo}-${id}`)
+  if (rememberEl && rememberEl.checked && tx.merchant && window.MNBankImport && MNBankImport.loadMerchantMap) {
+    try {
+      const map = MNBankImport.loadMerchantMap(tipo)
+      map[tx.merchant] = categoria
+      MNBankImport.saveMerchantMap(map, tipo)
+    } catch (e) { /* learning is a best-effort convenience, never block categorization */ }
+  }
+
+  save()
+  // Remove just this item from the DOM — no full reload, no losing the
+  // scroll position/state of the rest of the review list.
+  const el = document.getElementById(`revItem-${tipo}-${id}`)
+  if (el) el.remove()
+  _updateRevisionBadges()
+  toast(t('toast_categorizado','Categorizado ✓'))
+  if (!_getReviewItems().length) renderRevision() // show the empty state once nothing is left
+}
+
+// Keeps the Dashboard/sidebar "needs attention" badge in sync without
+// a full render() — called after each inline categorization so the
+// counter is always accurate immediately, per the task's requirement.
+function _updateRevisionBadges() {
+  const count = _reviewCount()
+  document.querySelectorAll('[data-revision-count]').forEach(el => {
+    el.textContent = count
+    const wrap = el.closest('[data-revision-badge]')
+    if (wrap) wrap.style.display = count > 0 ? '' : 'none'
+  })
+}
+
 function renderCategorias() {
   const groups = [
     { key:'gasto',     label:t('cat_type_gasto','Gastos'),      icon:'💳' },
@@ -7773,7 +7944,11 @@ function guardarIngreso(keepOpen) {
     // _afectaSaldo NO se toca aqui a proposito — ver el mismo comentario
     // en guardarGasto(): el checkbox se fuerza a false al editar, asi que
     // no refleja si la transaccion afecto el saldo cuando se CREO.
-    if (idx>=0) S.ingresos[idx] = {...S.ingresos[idx], ...base}
+    // _needsReview se limpia siempre: editar y guardar desde el
+    // formulario normal es en si mismo una revision consciente de la
+    // transaccion (incluida su categoria), manteniendo la consistencia
+    // con el Centro de Revision.
+    if (idx>=0) S.ingresos[idx] = {...S.ingresos[idx], ...base, _needsReview: false}
   } else {
     const clienteId = window._ingresoClienteId || null
     window._ingresoClienteId = null
@@ -7946,8 +8121,11 @@ function guardarGasto(keepOpen) {
       // del saldo' siempre se muestra desmarcado al editar (el ajuste de
       // saldo nunca se re-aplica en una edicion), asi que su valor actual
       // no refleja si la transaccion afecto el saldo cuando se CREO. El
-      // spread preserva el flag original ya guardado.
-      if (idx>=0) S.gastos[idx] = {...S.gastos[idx], ...base}
+      // spread preserva el flag original ya guardado. _needsReview SI se
+      // limpia siempre: editar y guardar es en si mismo una revision
+      // consciente de la transaccion, manteniendo la consistencia con el
+      // Centro de Revision.
+      if (idx>=0) S.gastos[idx] = {...S.gastos[idx], ...base, _needsReview: false}
     } else {
       S.gastos.push({id:uid(), ...base, _afectaSaldo: !!(updateSaldo && cuentaId)})
       if (updateSaldo && cuentaId) {
@@ -14450,6 +14628,7 @@ function render() {
     presupuestos: renderPresupuestos,
     cuentas:      renderCuentas,
     categorias:   renderCategorias,
+    revision:     renderRevision,
     analisis:     renderAnalisis,
     configuracion:renderConfiguracion,
     // billing: removed
@@ -14462,12 +14641,14 @@ function render() {
     dashboard:'nav_dashboard', ingresos:'nav_ingresos', gastos:'nav_gastos',
     inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
     presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
+    revision:'nav_revision',
     analisis:'nav_analisis', configuracion:'nav_configuracion',
     patrimonio:'nav_patrimonio', faq:'nav_faq', sugerencias:'nav_sugerencias', billing:'nav_billing',
     logros:'nav_logros',
   }
   const el = document.getElementById('pageTitle')
   if (el) el.textContent = pageKeyMap[currentPage] ? t(pageKeyMap[currentPage]) : currentPage
+  if (typeof _updateRevisionBadges === 'function') _updateRevisionBadges()
   const renderFn = fn[currentPage]
   if (renderFn) {
     destroyAllCharts()
