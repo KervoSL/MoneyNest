@@ -3797,6 +3797,31 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
 .kpi-card, .card, .inv-card, .debt-card, .goal-card {
   will-change: transform;
 }
+/* ── PATRIMONIO: COMPARACIÓN Y EXPLICACIÓN ───────────────────── */
+.nw-range-row { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+.nw-range-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border); background:var(--bg2); color:var(--text2); font-size:.78rem; font-weight:700; cursor:pointer; transition:all .15s; }
+.nw-range-btn:hover { border-color:var(--border2); color:var(--text); }
+.nw-range-btn.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+.nw-summary-row { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:10px; }
+.nw-summary-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text2); margin-bottom:3px; }
+.nw-summary-value { font-size:1.3rem; font-weight:800; color:var(--text); }
+.nw-summary-arrow { font-size:1.1rem; color:var(--text3); flex-shrink:0; }
+.nw-change-badge { font-size:1.05rem; font-weight:800; margin-bottom:6px; }
+.nw-since-jan { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg2); border-radius:var(--radius-sm); font-size:.8rem; color:var(--text2); margin-bottom:16px; }
+.nw-section-label { font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--text); margin:16px 0 10px; padding-top:14px; border-top:1px solid var(--border); }
+.nw-comp-list { display:flex; flex-direction:column; gap:2px; }
+.nw-comp-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:.86rem; }
+.nw-comp-label { color:var(--text); }
+.nw-comp-value { font-weight:700; }
+.nw-result-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0 0; margin-top:6px; font-weight:800; font-size:.95rem; color:var(--text); }
+.nw-highlights { margin-top:16px; display:flex; flex-direction:column; gap:6px; }
+.nw-highlight-item { font-size:.82rem; color:var(--text2); background:var(--bg2); padding:8px 12px; border-radius:var(--radius-sm); }
+
+@media (max-width: 560px) {
+  .nw-summary-value { font-size:1.1rem; }
+  .nw-change-badge { font-size:.95rem; }
+  .nw-range-btn { padding:5px 11px; font-size:.72rem; }
+}
 /* ── CALENDARIO FINANCIERO ────────────────────────────────────── */
 .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
 .cal-nav-center { display:flex; align-items:center; gap:10px; }

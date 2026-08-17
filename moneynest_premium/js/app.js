@@ -403,6 +403,11 @@ const TRANSLATIONS = {
     event_type_pago: 'Pago', event_type_prestamo: 'Préstamo', event_type_seguro: 'Seguro',
     event_type_suscripcion: 'Suscripción', event_type_alquiler: 'Alquiler', event_type_aportacion_objetivo: 'Aportación a objetivo',
     event_type_ingreso_previsto: 'Ingreso previsto', event_type_personalizado: 'Evento personalizado',
+    rango_todo: 'Todo', nw_hace_3m: 'Hace 3 meses', nw_hace_6m: 'Hace 6 meses', nw_hace_1a: 'Hace 1 año', nw_inicio: 'Inicio',
+    nw_construyendo_historial: 'Seguiremos construyendo tu historial de patrimonio a medida que utilices MoneyNest.',
+    nw_sin_cambios: 'Sin cambios en este periodo', desde_enero: 'Desde enero', que_ha_pasado: '¿Qué ha pasado?',
+    nw_actual: 'Actual', nw_resultado: 'Resultado', nw_comp_inversiones: 'Inversiones', nw_comp_efectivo: 'Efectivo / ahorro',
+    nw_comp_activos: 'Activos', nw_comp_deudas: 'Deudas', nw_mayor_crecimiento: 'Mayor crecimiento', nw_mayor_impacto_neg: 'Mayor impacto negativo',
     nav_patrimonio: 'Patrimonio', nav_analisis: 'Análisis',
     nav_configuracion: 'Configuración', nav_faq: 'FAQ', nav_sugerencias: 'Sugerencias',
     nav_billing: 'Plan & Facturación',
@@ -933,6 +938,11 @@ const TRANSLATIONS = {
     event_type_pago: 'Payment', event_type_prestamo: 'Loan', event_type_seguro: 'Insurance',
     event_type_suscripcion: 'Subscription', event_type_alquiler: 'Rent', event_type_aportacion_objetivo: 'Goal contribution',
     event_type_ingreso_previsto: 'Expected income', event_type_personalizado: 'Custom event',
+    rango_todo: 'All', nw_hace_3m: '3 months ago', nw_hace_6m: '6 months ago', nw_hace_1a: '1 year ago', nw_inicio: 'Start',
+    nw_construyendo_historial: 'We will keep building your net worth history as you use MoneyNest.',
+    nw_sin_cambios: 'No changes in this period', desde_enero: 'Since January', que_ha_pasado: 'What happened?',
+    nw_actual: 'Now', nw_resultado: 'Result', nw_comp_inversiones: 'Investments', nw_comp_efectivo: 'Cash / savings',
+    nw_comp_activos: 'Assets', nw_comp_deudas: 'Debts', nw_mayor_crecimiento: 'Biggest growth', nw_mayor_impacto_neg: 'Biggest negative impact',
     nav_patrimonio: 'Net Worth', nav_analisis: 'Analysis',
     nav_configuracion: 'Settings', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Plan & Billing',
@@ -7125,6 +7135,116 @@ function _deleteEvent(id) {
     if (currentPage === 'calendario') renderCalendario()
     toast(t('toast_evento_eliminado','Evento eliminado'))
   }, { titulo: t('confirm_eliminar_evento_titulo','Eliminar evento'), icono: '🗑️' })
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── PATRIMONIO: COMPARACIÓN Y EXPLICACIÓN POR PERIODO ───────────
+// ════════════════════════════════════════════════════════════════
+// Reconstructs cartera/activos/deuda for a past month using each
+// model's OWN reliable date fields (investment open/close dates, asset
+// purchase/sale dates, each individual debt payment's date) — never a
+// generic approximation. Liquidez is intentionally excluded here: the
+// caller derives it as the residual needed to make the breakdown
+// reconcile exactly with the REAL total change already recorded in
+// S.patrimonio_hist (the same source of truth used by the existing
+// evolution chart), so small historical-reconstruction gaps never
+// produce a mathematically contradictory total.
+function _calcComponentesNoLiquidos(monthStr) {
+  if (monthStr >= currentMonth()) {
+    return { cartera: calcCartera(), activos: calcAssetsValue(), deuda: calcTotalDeuda() }
+  }
+  const cartera = (S.inversiones||[]).reduce((sum, inv) => {
+    if (!inv.fecha || inv.fecha.slice(0,7) > monthStr) return sum // not opened yet
+    if (inv.cerrada && inv.fechaCierre && inv.fechaCierre.slice(0,7) <= monthStr) return sum // already closed
+    return sum + (Number(inv.importe)||0)
+  }, 0)
+  const activos = (S.assets||[]).reduce((sum, a) => {
+    if (!a.fecha || a.fecha.slice(0,7) > monthStr) return sum // not bought yet
+    if (a.status === 'sold' && a.fechaVenta && a.fechaVenta.slice(0,7) <= monthStr) return sum // already sold
+    let val = Number(a.valor)||0
+    if (a.depreciacion && a.depPct && a.fecha) {
+      const years = (new Date(monthStr+'-15').getTime() - new Date(a.fecha).getTime()) / (1000*60*60*24*365.25)
+      val = val * Math.pow(1 - (Number(a.depPct)||0)/100, Math.max(0,years))
+    }
+    return sum + val
+  }, 0)
+  // Debts have no reliable creation date, so importeTotal is assumed to
+  // have existed in full from the start; only the payments (which DO
+  // have a reliable date each) are undone going backward in time.
+  const deuda = (S.deudas||[]).reduce((sum, d) => {
+    const pagadoHastaEntonces = (d.pagos||[]).filter(p => p.fecha && p.fecha.slice(0,7) <= monthStr).reduce((a,p)=>a+(Number(p.importe)||0),0)
+    return sum + Math.max(0, (Number(d.importeTotal)||0) - pagadoHastaEntonces)
+  }, 0)
+  return { cartera, activos, deuda }
+}
+
+// Net worth TOTAL at/around a given month — S.patrimonio_hist (the
+// same infrastructure the existing evolution chart already uses)
+// stays the single source of truth, falling back to
+// calcPatrimonioHistoricoMes() on the fly for a month not recorded yet.
+function _patrimonioAt(monthStr) {
+  const rec = S.patrimonio_hist.find(h => h.mes === monthStr)
+  if (rec) return rec.valor
+  return calcPatrimonioHistoricoMes(monthStr)
+}
+
+const NW_RANGE_MONTHS = { '1M':1, '3M':3, '6M':6, '1A':12 }
+function _monthsAgoStr(n) {
+  const d = new Date()
+  d.setMonth(d.getMonth() - n)
+  return d.toISOString().slice(0,7)
+}
+
+// Full comparison payload for one range key ('1M'|'3M'|'6M'|'1A'|'TODO'):
+// current/starting values, absolute + percentage change, and a
+// component breakdown that ALWAYS reconciles exactly with that change.
+function _buildNetWorthComparison(rangeKey) {
+  const current = calcPatrimonio()
+  const currentM = currentMonth()
+  const hasAnyHistory = S.patrimonio_hist.length > 0
+
+  let startMonth
+  if (rangeKey === 'TODO') {
+    startMonth = hasAnyHistory ? S.patrimonio_hist[0].mes : currentM
+  } else {
+    startMonth = _monthsAgoStr(NW_RANGE_MONTHS[rangeKey] || 1)
+  }
+  // Reliable comparison requires either a recorded point at/before the
+  // start month, or the start month being the current one (no history
+  // needed to compare "now" against "now").
+  const hasHistory = startMonth === currentM || S.patrimonio_hist.some(h => h.mes <= startMonth) || rangeKey === 'TODO' && hasAnyHistory
+
+  const startValue = hasHistory ? _patrimonioAt(startMonth) : current
+  const change = current - startValue
+  const pct = startValue !== 0 ? (change / Math.abs(startValue)) * 100 : null
+
+  const compNow   = { cartera: calcCartera(), activos: calcAssetsValue(), deuda: calcTotalDeuda() }
+  const compStart = hasHistory ? _calcComponentesNoLiquidos(startMonth) : compNow
+  const deltaCartera  = compNow.cartera - compStart.cartera
+  const deltaActivos  = compNow.activos - compStart.activos
+  const deltaDeuda    = -(compNow.deuda - compStart.deuda) // rising debt subtracts from net worth
+  const deltaLiquidez = change - deltaCartera - deltaActivos - deltaDeuda // residual: guarantees exact reconciliation
+
+  const components = [
+    { key:'cartera',  label:t('nw_comp_inversiones','Inversiones'),      icon:'📈', value: deltaCartera },
+    { key:'liquidez', label:t('nw_comp_efectivo','Efectivo / ahorro'),   icon:'💰', value: deltaLiquidez },
+    { key:'activos',  label:t('nw_comp_activos','Activos'),              icon:'🏠', value: deltaActivos },
+    { key:'deuda',    label:t('nw_comp_deudas','Deudas'),                icon:'💳', value: deltaDeuda },
+  ].filter(c => Math.abs(c.value) >= 0.005) // nothing reliable to explain for a ~0 contribution
+
+  return { current, startValue, startMonth, change, pct, hasHistory, components }
+}
+
+// Deterministic highlights — no AI/external calls, just picking the
+// largest positive and largest negative contributor from the same
+// reconciled breakdown.
+function _netWorthHighlights(components) {
+  const highlights = []
+  const positives = components.filter(c => c.value > 0).sort((a,b) => b.value - a.value)
+  const negatives = components.filter(c => c.value < 0).sort((a,b) => a.value - b.value)
+  if (positives.length) highlights.push(`${positives[0].icon} ${t('nw_mayor_crecimiento','Mayor crecimiento')}: ${positives[0].label}`)
+  if (negatives.length) highlights.push(`${negatives[0].icon} ${t('nw_mayor_impacto_neg','Mayor impacto negativo')}: ${negatives[0].label}`)
+  return highlights
 }
 
 function renderCategorias() {
@@ -14401,6 +14521,77 @@ function mostrarSaldoCuenta() {
 // ─── MÓDULO: PATRIMONIO ──────────────────────────────────────
 // ════════════════════════════════════════════════════════════════
 
+let _nwRange = '1M'
+
+function _setNwRange(rangeKey) {
+  _nwRange = rangeKey
+  document.querySelectorAll('.nw-range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === rangeKey))
+  const body = document.getElementById('nwComparisonBody')
+  if (body) body.innerHTML = _renderNetWorthComparisonBody()
+}
+
+function _nwRangeStartLabel(rangeKey) {
+  const labels = { '1M': t('mes_anterior','Mes anterior'), '3M': t('nw_hace_3m','Hace 3 meses'), '6M': t('nw_hace_6m','Hace 6 meses'), '1A': t('nw_hace_1a','Hace 1 año'), 'TODO': t('nw_inicio','Inicio') }
+  return labels[rangeKey] || rangeKey
+}
+
+function _renderNetWorthComparisonBody() {
+  const comp = _buildNetWorthComparison(_nwRange)
+
+  if (!comp.hasHistory) {
+    return `<div style="text-align:center;padding:34px 16px;color:var(--text2)">
+      <div style="font-size:1.7rem;margin-bottom:10px">🌱</div>
+      <div style="font-size:.9rem;max-width:360px;margin:0 auto">${t('nw_construyendo_historial','Seguiremos construyendo tu historial de patrimonio a medida que utilices MoneyNest.')}</div>
+      <div style="margin-top:16px;font-size:1.4rem;font-weight:800;color:var(--text)">${eur(comp.current)}</div>
+    </div>`
+  }
+
+  const changeColor = comp.change > 0 ? 'var(--green)' : (comp.change < 0 ? 'var(--red)' : 'var(--text2)')
+  const changeIcon  = comp.change > 0 ? '🟢' : (comp.change < 0 ? '🔴' : '⚪')
+  const pctStr = comp.pct !== null ? ` · ${comp.pct>=0?'+':''}${pct(comp.pct)}` : ''
+
+  const componentsHtml = comp.components.length ? comp.components.map(c => `
+    <div class="nw-comp-row">
+      <span class="nw-comp-label">${c.icon} ${c.label}</span>
+      <span class="nw-comp-value" style="color:${c.value>=0?'var(--green)':'var(--red)'}">${c.value>=0?'+':'−'}${eur(Math.abs(c.value))}</span>
+    </div>`).join('') : `<div style="text-align:center;padding:14px;color:var(--text2);font-size:.85rem">${t('nw_sin_cambios','Sin cambios en este periodo')}</div>`
+
+  const highlights = _netWorthHighlights(comp.components)
+
+  // "Desde enero" — only shown when a January record for the current
+  // year actually exists; never fabricated.
+  const janMonth = new Date().getFullYear() + '-01'
+  const janRecord = S.patrimonio_hist.find(h => h.mes === janMonth)
+  const sinceJanHtml = janRecord ? (() => {
+    const changeJan = comp.current - janRecord.valor
+    const pctJan = janRecord.valor !== 0 ? (changeJan/Math.abs(janRecord.valor))*100 : null
+    return `<div class="nw-since-jan">
+      <span>${t('desde_enero','Desde enero')}</span>
+      <span style="color:${changeJan>=0?'var(--green)':'var(--red)'};font-weight:800">${changeJan>=0?'+':''}${eur(changeJan)}${pctJan!==null?' · '+(pctJan>=0?'+':'')+pct(pctJan):''}</span>
+    </div>`
+  })() : ''
+
+  return `
+    <div class="nw-summary-row">
+      <div>
+        <div class="nw-summary-label">${t('nw_actual','Actual')}</div>
+        <div class="nw-summary-value">${eur(comp.current)}</div>
+      </div>
+      <div class="nw-summary-arrow">→</div>
+      <div style="text-align:right">
+        <div class="nw-summary-label">${_nwRangeStartLabel(_nwRange)}</div>
+        <div class="nw-summary-value" style="color:var(--text2)">${eur(comp.startValue)}</div>
+      </div>
+    </div>
+    <div class="nw-change-badge" style="color:${changeColor}">${changeIcon} ${comp.change>=0?'+':''}${eur(comp.change)}${pctStr}</div>
+    ${sinceJanHtml}
+    <div class="nw-section-label">${t('que_ha_pasado','¿Qué ha pasado?')}</div>
+    <div class="nw-comp-list">${componentsHtml}</div>
+    ${comp.components.length ? `<div class="nw-result-row"><span>${t('nw_resultado','Resultado')}</span><span style="color:${changeColor};font-weight:800">${comp.change>=0?'+':''}${eur(comp.change)}</span></div>` : ''}
+    ${highlights.length ? `<div class="nw-highlights">${highlights.map(h=>`<div class="nw-highlight-item">${h}</div>`).join('')}</div>` : ''}
+  `
+}
+
 function renderPatrimonio() {
   if (!S.assets) S.assets = []
   const pat       = calcPatrimonio()
@@ -14551,7 +14742,6 @@ function renderPatrimonio() {
     <div class="pat-nw-label">${t('patrimonio_neto','Patrimonio Neto Total')}</div>
     <div class="pat-nw-row">
       <div class="pat-nw-value">${eur(pat)}</div>
-      ${patDelta!==null?`<span class="kpi-delta ${deltaClass(patDelta)}" style="font-size:.88rem">${deltaIcon(patDelta)} ${pct(Math.abs(patDelta))} ${t('vs_mes_ant','vs. mes ant.')}</span>`:`<span class="kpi-delta neu">${t('primer_registro','Primer registro')}</span>`}
     </div>
     <div class="pat-breakdown">
       <div class="pat-bd-item">
@@ -14571,6 +14761,14 @@ function renderPatrimonio() {
         <div class="pat-bd-value" style="color:${deuda>0?'var(--red)':'var(--green)'}">${deuda>0?'−'+eur(deuda):t('sin_deudas','Sin deudas ✅')}</div>
       </div>
     </div>
+  </div>
+
+  <!-- NET WORTH COMPARISON & EXPLANATION -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="nw-range-row">
+      ${['1M','3M','6M','1A','TODO'].map(r=>`<button type="button" class="nw-range-btn ${r===_nwRange?'active':''}" data-range="${r}" onclick="_setNwRange('${r}')">${r==='TODO'?t('rango_todo','Todo'):r}</button>`).join('')}
+    </div>
+    <div id="nwComparisonBody">${_renderNetWorthComparisonBody()}</div>
   </div>
 
   <!-- SPLIT VIEW: LEFT = Accounts + Investments + Evolution (Physical Assets now full-width below) -->
