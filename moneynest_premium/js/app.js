@@ -7813,8 +7813,14 @@ function removeTransactions(ids, tipo) {
     // ese flag, se usa la mejor aproximacion posible con los datos
     // disponibles: si tenia cuenta asociada y no estaba pendiente de
     // cobro, se asume que si afecto el saldo (comportamiento por
-    // defecto ya usado en el resto de la app).
-    const afectaSaldo = tx._afectaSaldo !== undefined ? tx._afectaSaldo : (tx.status !== 'pending')
+    // defecto ya usado en el resto de la app). 'pendiente' (español) se
+    // reconoce junto a 'pending' (ingles) porque los datos de demo
+    // (loadDemoData, una ruta de generacion completamente distinta a
+    // guardarIngreso) usan el status en español — sin esto, eliminar un
+    // ingreso demo pendiente restaba incorrectamente su importe de un
+    // saldo que nunca habia llegado a afectar.
+    const PENDING_STATUSES = ['pending', 'pendiente']
+    const afectaSaldo = tx._afectaSaldo !== undefined ? tx._afectaSaldo : !PENDING_STATUSES.includes(tx.status)
     if (!afectaSaldo) return
     const c = getCuenta(tx.cuentaId)
     if (!c) return
