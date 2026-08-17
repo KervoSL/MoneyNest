@@ -744,7 +744,9 @@ function _startCountdownTimer() {
 
 function _applyExportGating(scenario) {
   scenario = scenario || _getScenario();
-  const isLocked = scenario === 'TRIAL' || scenario === 'EXPIRED';
+  // Export is available during the trial, Local and Pro alike — only
+  // gated once the trial has actually EXPIRED (no active plan at all).
+  const isLocked = scenario === 'EXPIRED';
 
   document.querySelectorAll(
     '[onclick*="exportarGastos"], [onclick*="exportarPDF"], [onclick*="exportarIngresos"]'
@@ -771,7 +773,7 @@ function _exportBlocked() {
   if (typeof window.toast === 'function') {
     toast(t('billing_export_blocked_toast'), 'warning');
   }
-  if (typeof window.goTo === 'function') goTo('billing');
+  if (window.MNAuthUI) MNAuthUI.openPlanModal('export_gate');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -817,6 +819,10 @@ function _closeCheckoutModal() {
 function startBuyLocal() {
   document.getElementById('billingLockOverlay')?.remove();
   _lockActive = false;
+  // Mock plan flow for now (no Stripe connection in this phase) — see
+  // js/auth-ui.js. Falls back to the real Stripe flow only if the mock
+  // UI module somehow isn't loaded, so this never silently does nothing.
+  if (window.MNAuthUI) { MNAuthUI.openPlanModal('billing_lock'); return; }
   const email = window.MNAuth?.getUser()?.email ?? '';
   MNStripe.openPayment(MNStripeConfig.prices.local, email);
 }
@@ -824,6 +830,7 @@ function startBuyLocal() {
 function startActivatePro() {
   document.getElementById('billingLockOverlay')?.remove();
   _lockActive = false;
+  if (window.MNAuthUI) { MNAuthUI.openPlanModal('billing_lock'); return; }
   const email = window.MNAuth?.getUser()?.email ?? '';
   MNStripe.openPayment(MNStripeConfig.prices.pro, email);
 }

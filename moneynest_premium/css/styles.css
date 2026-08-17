@@ -3797,6 +3797,52 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
 .kpi-card, .card, .inv-card, .debt-card, .goal-card {
   will-change: transform;
 }
+/* ── SISTEMA DE PLANES (auth-ui.js) ──────────────────────────── */
+#planModalOverlay { z-index:100000; }
+.auth-plan-badge { font-size:.68rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.03em; }
+.auth-badge--trial { background:rgba(99,102,241,.15); color:#818CF8; }
+.auth-badge--expired { background:rgba(244,63,94,.15); color:#FB7185; }
+.auth-badge--local { background:var(--accent-dim); color:var(--accent); }
+.auth-badge--pro { background:rgba(236,72,153,.15); color:#F472B6; }
+
+.trial-pill { display:flex; align-items:center; gap:7px; padding:7px 12px; border-radius:99px; background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); cursor:pointer; font-size:.74rem; font-weight:700; color:#A5B4FC; transition:all .15s; }
+.trial-pill:hover { background:rgba(99,102,241,.2); }
+.trial-pill--urgent { background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.35); color:#FBBF24; }
+.trial-pill-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; animation:pulse 2s infinite; }
+
+.plan-modal { max-width:640px; }
+.plan-modal-sub { font-size:.85rem; color:var(--text2); margin-bottom:18px; text-align:center; }
+.plan-modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.plan-mini-card { position:relative; border-radius:16px; padding:20px 18px; background:var(--bg2); border:1.5px solid var(--border); display:flex; flex-direction:column; }
+.plan-mini-card--pro { border-color:rgba(236,72,153,.4); background:linear-gradient(160deg, rgba(236,72,153,.08), var(--bg2) 60%); }
+.plan-mini-card__ribbon { position:absolute; top:-10px; right:14px; background:#EC4899; color:#fff; font-size:.65rem; font-weight:800; padding:3px 10px; border-radius:99px; }
+.plan-mini-card__name { font-weight:800; font-size:.95rem; color:var(--text); }
+.plan-mini-card__price { font-size:1.5rem; font-weight:900; color:var(--text); margin:4px 0 6px; }
+.plan-mini-card__price span { font-size:.72rem; font-weight:600; color:var(--text2); }
+.plan-mini-card--pro .plan-mini-card__price { color:#EC4899; }
+.plan-mini-card__desc { font-size:.75rem; color:var(--text2); margin-bottom:14px; min-height:32px; }
+.plan-mini-card__list { list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:6px; flex:1; }
+.plan-mini-card__list li { font-size:.78rem; padding-left:20px; position:relative; color:var(--text2); }
+.plan-mini-card__list li.yes { color:var(--text); }
+.plan-mini-card__list li.yes::before { content:'✓'; position:absolute; left:0; color:var(--accent); font-weight:800; }
+.plan-mini-card__list li.no { opacity:.5; }
+.plan-mini-card__list li.no::before { content:'✕'; position:absolute; left:0; }
+.plan-mini-card--pro .plan-mini-card__pro-btn { background:#EC4899; border-color:#EC4899; }
+.plan-mini-card--pro .plan-mini-card__pro-btn:hover { background:#DB2777; }
+
+.plan-confirm-step { text-align:center; padding:10px 4px; }
+.plan-confirm-step__icon { font-size:2.4rem; margin-bottom:8px; }
+.plan-confirm-step__name { font-weight:800; font-size:1.05rem; color:var(--text); }
+.plan-confirm-step__price { font-size:1.7rem; font-weight:900; margin:6px 0 16px; }
+.plan-confirm-step__price span { font-size:.75rem; font-weight:600; color:var(--text2); }
+.plan-confirm-step__notice { font-size:.8rem; color:var(--text2); background:var(--bg2); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:18px; line-height:1.5; }
+.plan-confirm-step__actions { display:flex; justify-content:center; gap:8px; }
+
+@media (max-width: 560px) {
+  .plan-modal-grid { grid-template-columns:1fr; }
+  .plan-mini-card__ribbon { top:-8px; right:12px; }
+}
+
 /* ── PATRIMONIO: COMPARACIÓN Y EXPLICACIÓN ───────────────────── */
 .nw-range-row { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
 .nw-range-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border); background:var(--bg2); color:var(--text2); font-size:.78rem; font-weight:700; cursor:pointer; transition:all .15s; }

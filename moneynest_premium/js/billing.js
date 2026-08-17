@@ -58,7 +58,7 @@ const BILLING_PLANS = Object.freeze({
   PRO_ANNUAL: {
     id:          'pro_annual',
     name:        'Pro',
-    price:       5,
+    price:       14.99,
     period:      'year',
     trialDays:   7,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'cloud_sync', 'multi_device', 'priority_support', 'ai_insights'],

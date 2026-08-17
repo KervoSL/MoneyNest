@@ -62,8 +62,8 @@
             <div class="sidebar-logo" onclick="goTo('dashboard')" title="Ir al Dashboard" style="cursor:pointer">
       <div id="sidebarLogoImg" style="display:flex;align-items:center;justify-content:center;width:100%">
         <!-- Logo rendered dynamically by JS (⚡ PRO badge injected inline by updateSidebarLogo when isPro) -->
-        <div id="trialPillContainer" style="display:contents"></div>
       </div>
+      <div id="trialPillContainer" style="display:contents"></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section" data-i18n="nav_seccion_principal">Principal</div>
@@ -152,6 +152,7 @@
           <span></span><span></span><span></span>
         </button>
         <div class="page-title-bar" id="pageTitle">Dashboard</div>
+        <span id="authPlanBadge" style="margin-left:8px"></span>
       </div>
       <div class="topbar-right">
         <div class="dinero-display" title="Dinero disponible en cuentas">
@@ -1392,6 +1393,7 @@
 <script src="js/stripe-payment.js"></script>
 <script src="js/billing.js"></script>
 <script src="js/billing-ui.js"></script>
+<script src="js/auth-ui.js"></script>
 <script src="js/billing-i18n-patch.js"></script>
 <script src="js/data-manager.js"></script>
 <script src="js/sync.js"></script>

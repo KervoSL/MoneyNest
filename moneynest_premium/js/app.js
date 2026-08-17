@@ -156,17 +156,17 @@ function bloquearApp(user) {
           <div style="font-size:3rem;margin-bottom:8px">🔒</div>
           <div style="font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:10px">Acceso bloqueado</div>
           <div style="font-size:.9rem;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:26px">
-            Tu período de prueba gratuita de 24h ha concluido.<br>Desbloquea MoneyNest para siempre por un pago único de <strong style="color:#fff">6,99€</strong>.
+            Tu período de prueba gratuita de 24h ha concluido.<br>Elige un plan para seguir usando MoneyNest — tus datos siguen intactos.
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
-          ${['Todos tus datos están seguros','Acceso ilimitado sin suscripción','Exportación PDF y Excel','Sin publicidad, sin rastreo'].map(f => `
+          ${['Todos tus datos están seguros','Acceso ilimitado sin publicidad','Exportación PDF y Excel','Sin rastreo'].map(f => `
             <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;font-size:.78rem;color:rgba(255,255,255,0.8);font-weight:600">
               <span style="color:#00D4AA">✅</span> ${f}
             </div>`).join('')}
         </div>
         <button id="mn-lock-unlock-btn" style="width:100%;padding:16px;border-radius:14px;border:none;background:#00D4AA;color:#042b20;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,212,170,.25)">
-          🔒 Desbloquear para siempre — 6,99€ único
+          🔒 Elegir plan — desde 6,99€/año
         </button>
         <div id="mn-lock-error" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#FCA5A5;font-size:.8rem;font-weight:600;line-height:1.5;text-align:center"></div>
         <div style="text-align:center;margin-top:16px;font-size:.78rem;color:rgba(255,255,255,0.4)">
@@ -186,15 +186,18 @@ function bloquearApp(user) {
 
   if (unlockBtn) unlockBtn.addEventListener('click', () => {
     _hideLockError()
+    if (window.MNAuthUI) {
+      MNAuthUI.openPlanModal('trial_expired_lock')
+      return
+    }
+    // Fallback to the real Stripe flow only if the mock plan UI module
+    // somehow isn't loaded, so this never silently does nothing.
     const priceId = window.MNStripeConfig?.prices?.local
     if (!window.MNPayment || !priceId) {
       console.error('[bloquearApp] No se pudo iniciar el checkout: MNPayment o priceId no disponibles', { hasMNPayment: !!window.MNPayment, priceId })
       _showLockError('No se pudo iniciar el pago. Recarga la página e inténtalo de nuevo.')
       return
     }
-    // Brief loading state so the tap always gets visible feedback, even
-    // though MNPayment.open() itself shows its own modal with its own
-    // error handling once it's open (never a silently "dead" button).
     const originalLabel = unlockBtn.innerHTML
     unlockBtn.disabled = true
     unlockBtn.style.opacity = '.7'
@@ -210,12 +213,12 @@ function bloquearApp(user) {
       unlockBtn.style.opacity = '1'
       unlockBtn.innerHTML = originalLabel
     }, 600)
-    const onPaid = () => {
-      document.removeEventListener('mn:paymentSuccess', onPaid)
-      location.reload()
-    }
-    document.addEventListener('mn:paymentSuccess', onPaid)
   })
+
+  // Reload once a plan is confirmed (mock or real) so the app leaves
+  // the lock screen and reflects the newly unlocked state.
+  document.addEventListener('mn:billing:activated', () => location.reload())
+  document.addEventListener('mn:paymentSuccess', () => location.reload())
 
   // ── "Restaurar acceso" — modal propio de MoneyNest (sin prompt/alert nativos) ──
   const restoreLink = document.getElementById('mn-lock-restore-link')
@@ -7356,51 +7359,98 @@ function renderConfiguracion() {
         </div>
       </div>
 
-      <!-- Facturación -->
+      <!-- Plan y facturación -->
       <div class="card" id="mn-billing-card">
         <div class="card-header">
           <div>
-            <div class="card-title">🧾 Facturación</div>
-            <div class="card-subtitle">Tu plan, recibos y gestión de pago</div>
+            <div class="card-title">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
+            <div class="card-subtitle">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
           </div>
         </div>
         ${(() => {
-          const sub = window.MNBilling ? window.MNBilling.getSub() : null
-          const invoices = window.MNBilling ? window.MNBilling.getInvoices() : []
-          const planLabel = { free_trial: '⏳ Prueba gratuita', local_lifetime: '💾 MoneyNest', pro_annual: '☁️ MoneyNest + Sync' }[sub?.plan] || '⏳ Prueba gratuita'
-          const planColor = { free_trial: 'var(--gold)', local_lifetime: 'var(--accent)', pro_annual: '#A78BFA' }[sub?.plan] || 'var(--gold)'
+          const b = window.MNBilling
+          const status = b ? b.getSubStatus() : null
+          const state = status ? status.state : null
+          const S = b ? b.STATES : {}
+          const isPro = state === S.PRO_ACTIVE || state === S.PRO_TRIALING
+          const isLocal = state === S.LOCAL_ACTIVE || state === S.PRO_CANCELLED
+          const isExpired = state === S.EXPIRED_TRIAL
+          const pink = '#EC4899'
 
+          // ── TRIAL (activo o terminando) ──
+          if (!isPro && !isLocal && !isExpired) {
+            const tl = b ? b.getTrialTimeLeft() : { label: '' }
+            return `
+            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
+              <div style="font-size:1.05rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.8rem;color:var(--text2)">· ${tl.label || '24h'}</span></div>
+              <div style="font-size:.8rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_local','Elegir Local')}</button>
+                <button class="btn btn-sm" style="background:${pink};color:#fff;border:none" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_pro','Elegir Pro')}</button>
+              </div>
+            </div>`
+          }
+
+          // ── LOCAL ──
+          if (isLocal) {
+            const price = b ? b.PLANS.LOCAL_LIFETIME.price : 6.99
+            return `
+            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
+                  <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
+                </div>
+                <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
+              </div>
+              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todas_funciones','Todas las funciones')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_importacion','Importación')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_exportacion','Exportación')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
+              </ul>
+              <div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">☁️ ${_aut('cfg_cloud_lbl','Cloud')}: <strong style="color:var(--text3)">${_aut('cfg_no_incluido','No incluido')}</strong></div>
+              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_pasar_pro','Pasar a Pro')}</button>
+              <div style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px">${_aut('cfg_local_upsell','Actualiza a Pro para sincronizar tus datos entre dispositivos.')}</div>
+            </div>`
+          }
+
+          // ── PRO (tratamiento rosa/premium) ──
+          if (isPro) {
+            const price = b ? b.PLANS.PRO_ANNUAL.price : 14.99
+            return `
+            <div style="padding:16px 18px;background:linear-gradient(160deg, rgba(236,72,153,.1), var(--bg2) 65%);border-radius:12px;border:1.5px solid rgba(236,72,153,.4);margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
+                  <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
+                </div>
+                <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
+              </div>
+              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
+              </ul>
+              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_showManagePlanPlaceholder()">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
+            </div>`
+          }
+
+          // ── EXPIRED (trial terminado, sin plan activo) ──
           return `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-            <div>
-              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Plan actual</div>
-              <div style="font-size:1rem;font-weight:800;color:${planColor}">${planLabel}</div>
-            </div>
-            ${sub?.plan === 'free_trial' ? `<button class="btn btn-primary btn-sm" onclick="_showPaymentPrompt('')">🔓 Comprar MoneyNest</button>` : ''}
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-            <button class="btn btn-secondary btn-sm" style="width:100%" onclick="window._openStripePortal()">
-              💳 Gestionar facturación en Stripe
-            </button>
-            <div style="font-size:.7rem;color:var(--text3);text-align:center">Ver recibos, cambiar método de pago, cancelar — todo gestionado de forma segura por Stripe</div>
-          </div>
-
-          <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Historial de pagos</div>
-          ${invoices.length ? invoices.map(inv => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
-              <div>
-                <div style="font-size:.8rem;font-weight:600;color:var(--text)">${inv.plan === 'local_lifetime' ? 'MoneyNest — pago único' : inv.plan === 'pro_annual' ? 'MoneyNest + Sync — anual' : inv.plan}</div>
-                <div style="font-size:.68rem;color:var(--text3)">${new Date(inv.date).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})} · ${inv.id}</div>
-              </div>
-              <div style="text-align:right">
-                <div style="font-size:.85rem;font-weight:800;color:var(--text)">${inv.amount.toFixed(2).replace('.',',')}€</div>
-                <span style="font-size:.62rem;font-weight:700;color:var(--green);text-transform:uppercase">✓ ${inv.status === 'paid' ? 'Pagado' : inv.status}</span>
-              </div>
-            </div>`).join('')
-            : `<div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">Aún no tienes pagos registrados.</div>`}
-          `
+          <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+            <div style="font-size:1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Tu prueba ha terminado')}</div>
+            <div style="font-size:.8rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
+            <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_plan','Elegir plan')}</button>
+          </div>`
         })()}
+
+        <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>
       </div>
 
       <!-- Modo uso: personal / pareja (próximamente v2) -->
@@ -13509,6 +13559,31 @@ window._openStripePortal = async function() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💳 Gestionar facturación en Stripe' }
   }
+}
+
+function _showManagePlanPlaceholder() {
+  document.getElementById('mn-manage-plan-placeholder')?.remove()
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'mn-manage-plan-placeholder'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+      <div class="modal-header">
+        <span class="modal-title">☁️ ${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</span>
+        <button class="modal-close" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:10px 4px 20px">
+        <div style="font-size:2rem;margin-bottom:10px">🔧</div>
+        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','La gestión completa de tu suscripción (cambiar método de pago, ver recibos, cancelar) estará disponible en cuanto conectemos el sistema de facturación.')}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_entendido','Entendido')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); if (window._popScrollLock) window._popScrollLock() } })
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
+  setTimeout(() => overlay.classList.add('open'), 10)
 }
 
 function _showPaymentPrompt(email) {
