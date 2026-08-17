@@ -13841,9 +13841,17 @@ function renderPatrimonio() {
   }
 
   function renderAssetCard(a, isSold) {
-    const cv = assetCurrentVal(a)
+    // For a SOLD asset, the result must be computed from the REAL sale
+    // price (a.precioVenta, saved at the moment of the sale) — never
+    // from the last market valuation (a.valor), which only reflects
+    // "Actualizar valor" updates and can be stale (or simply wrong) by
+    // the time the asset is actually sold. Active (not yet sold) assets
+    // keep using their live current value exactly as before.
     const vc = Number(a.valorCompra)||Number(a.valor)||0
-    const gainLoss = cv - vc
+    const displayVal = isSold
+      ? (a.precioVenta !== undefined ? Number(a.precioVenta)||0 : assetCurrentVal(a)) // fallback for sales recorded before this fix
+      : assetCurrentVal(a)
+    const gainLoss = displayVal - vc
     const icon = getAssetIcon(a.tipo)
     const bg   = isSold ? 'var(--border)' : getAssetBg(a.tipo)
     const label = getAssetLabel(a.tipo, a.tipoCustom)
@@ -13857,8 +13865,11 @@ function renderPatrimonio() {
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:.95rem;font-weight:700;color:${isSold?'var(--text2)':'var(--text)'}">${eur(cv)}</div>
-          ${vc&&vc!==cv?`<div style="font-size:.68rem;color:${gainLoss>=0?'var(--green)':'var(--red)'}">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} vs compra</div>`:''}
+          ${isSold?`<div style="font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">${t('precio_venta','Precio de venta')}</div>`:''}
+          <div style="font-size:.95rem;font-weight:700;color:${isSold?'var(--text2)':'var(--text)'}">${eur(displayVal)}</div>
+          ${isSold
+            ? (vc?`<div style="font-size:.68rem;font-weight:700;color:${gainLoss>=0?'var(--green)':'var(--red)'}">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} ${t('resultado','resultado')}</div>`:'')
+            : (vc&&vc!==displayVal?`<div style="font-size:.68rem;color:${gainLoss>=0?'var(--green)':'var(--red)'}">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} vs compra</div>`:'')}
           ${a.valorCompra?`<div style="font-size:.65rem;color:var(--text3)">Compra: ${eur(a.valorCompra)}</div>`:''}
         </div>
       </div>
@@ -14233,9 +14244,15 @@ function marcarAssetVendido(id) {
     // Update account balance
     const cuenta = getCuenta(cuentaId)
     if (cuenta) cuenta.saldo = (Number(cuenta.saldo)||0) + saleVal
-    // Mark asset as sold
+    // Mark asset as sold — precioVenta is the REAL sale price, kept
+    // separate from `valor` (last market valuation) so the sale result
+    // is always computed from what the asset actually sold for, never
+    // from a stale valuation. `valor` itself is left untouched, since a
+    // valuation update is conceptually different from a sale and its
+    // history shouldn't be overwritten by the sale event.
     a.status = 'sold'
     a.fechaVenta = todayISO()
+    a.precioVenta = saleVal
     recordPatrimonio()
     save()
     closeModal('confirmModal')
