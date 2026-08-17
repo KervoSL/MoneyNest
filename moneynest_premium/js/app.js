@@ -7726,6 +7726,8 @@ function resetIngresoForm() {
   poblarCuentaSelect('ingresoCuenta')
   const cl = document.getElementById('ingresoClienteLink')
   if (cl) cl.value = ''
+  const saveAddBtn = document.getElementById('ingresoSaveAddAnotherBtn')
+  if (saveAddBtn) saveAddBtn.style.display = ''
 }
 function editarIngreso(id) {
   const i = S.ingresos.find(x=>x.id===id)
@@ -7742,9 +7744,11 @@ function editarIngreso(id) {
   document.getElementById('ingresoUpdateSaldo').checked = false
   poblarSelect('ingresoCat','ingreso',i.categoria||'')
   poblarCuentaSelect('ingresoCuenta',i.cuentaId||'')
+  const saveAddBtn = document.getElementById('ingresoSaveAddAnotherBtn')
+  if (saveAddBtn) saveAddBtn.style.display = 'none'
   openModal('ingresoModal')
 }
-function guardarIngreso() {
+function guardarIngreso(keepOpen) {
   if (!_formGuard.lock('ingresoModal')) return
   const _unlock = () => _formGuard.unlock('ingresoModal')
   const concepto = document.getElementById('ingresoConcepto').value.trim()
@@ -7782,12 +7786,39 @@ function guardarIngreso() {
   save()
   updateStreak()
   if (window.MNGamification) { MNGamification.checkAchievement('ingreso_added'); MNGamification.checkAchievement('data_check'); }
-  closeModal('ingresoModal')
-  _unlock()
   // Clear month filter so all incomes are visible after saving
   if (!id) _ingMesFilter = ''
-  render()
-  toast(t('toast_ingreso_guardado'))
+  // "Guardar y añadir otro" solo aplica a creacion nueva — editar
+  // siempre cierra el modal normalmente, sin importar keepOpen.
+  if (keepOpen && !id) {
+    render()
+    _resetIngresoFormKeepingContext()
+    _unlock()
+    toast('✓ ' + t('toast_ingreso_guardado') + ' · ' + t('toast_seguir_anadiendo','sigue añadiendo otro'))
+  } else {
+    closeModal('ingresoModal')
+    _unlock()
+    render()
+    toast(t('toast_ingreso_guardado'))
+  }
+}
+
+// Reseteo PARCIAL para "Guardar y añadir otro": mantiene la fecha y la
+// cuenta (lo mas util al introducir varias transacciones seguidas del
+// mismo dia/cuenta — el usuario puede cambiarlas libremente si quiere
+// "otra fecha"), pero NUNCA copia importe, concepto ni categoria — cada
+// transaccion debe introducirse explicitamente para evitar duplicados
+// accidentales por descuido.
+function _resetIngresoFormKeepingContext() {
+  document.getElementById('ingresoId').value = ''
+  document.getElementById('ingresoModalTitle').textContent = t('modal_nuevo_ingreso')
+  document.getElementById('ingresoConcepto').value = ''
+  document.getElementById('ingresoImporte').value = ''
+  document.getElementById('ingresoNotas').value = ''
+  document.getElementById('ingresoPendiente').checked = false
+  poblarSelect('ingresoCat','ingreso')
+  const concepto = document.getElementById('ingresoConcepto')
+  if (concepto) concepto.focus()
 }
 // Unico punto de eliminacion de gastos/ingresos — usado tanto por el
 // borrado individual (borrarGasto/borrarIngreso) como por el borrado en
@@ -7865,6 +7896,8 @@ function resetGastoForm() {
   poblarCuentaSelect('gastoCuenta')
   poblarProveedorSelect('gastoProveedor','')
   window._gastoProveedorId = null
+  const saveAddBtn = document.getElementById('gastoSaveAddAnotherBtn')
+  if (saveAddBtn) saveAddBtn.style.display = ''
 }
 function editarGasto(id) {
   const g = S.gastos.find(x=>x.id===id)
@@ -7883,9 +7916,11 @@ function editarGasto(id) {
   poblarSelect('gastoCat','gasto',g.categoria||'')
   poblarCuentaSelect('gastoCuenta',g.cuentaId||'')
   poblarProveedorSelect('gastoProveedor',g.proveedorId||'')
+  const saveAddBtn = document.getElementById('gastoSaveAddAnotherBtn')
+  if (saveAddBtn) saveAddBtn.style.display = 'none'
   openModal('gastoModal')
 }
-function guardarGasto() {
+function guardarGasto(keepOpen) {
   if (!_formGuard.lock('gastoModal')) return
   const _unlock = () => _formGuard.unlock('gastoModal')
   const concepto = document.getElementById('gastoConcepto').value.trim()
@@ -7932,7 +7967,16 @@ function guardarGasto() {
         })
       } catch(e) {}
     }
-    closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
+    // "Guardar y añadir otro" solo aplica a creacion nueva — editar
+    // siempre cierra el modal normalmente, sin importar keepOpen.
+    if (keepOpen && !id) {
+      render()
+      _resetGastoFormKeepingContext()
+      _unlock()
+      toast('✓ ' + t('toast_gasto_guardado') + ' · ' + t('toast_seguir_anadiendo','sigue añadiendo otro'))
+    } else {
+      closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
+    }
   }
 
   // Warn if operation would leave account in negative balance
@@ -7948,6 +7992,20 @@ function guardarGasto() {
     }
   }
   _doSaveGasto()
+}
+
+// Reseteo PARCIAL para "Guardar y añadir otro": mantiene fecha, cuenta
+// y proveedor (utiles al introducir varias transacciones seguidas),
+// pero NUNCA copia importe, concepto ni categoria.
+function _resetGastoFormKeepingContext() {
+  document.getElementById('gastoId').value = ''
+  document.getElementById('gastoModalTitle').textContent = t('modal_nuevo_gasto')
+  document.getElementById('gastoConcepto').value = ''
+  document.getElementById('gastoImporte').value = ''
+  document.getElementById('gastoNotas').value = ''
+  poblarSelect('gastoCat','gasto')
+  const concepto = document.getElementById('gastoConcepto')
+  if (concepto) concepto.focus()
 }
 function borrarGasto(id) {
   confirmar(t('confirm_eliminar_gasto'), ()=>{
