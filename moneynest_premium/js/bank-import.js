@@ -2217,28 +2217,19 @@
     _renderStep4();
   }
 
-  // Prompts for a new category name and, if provided, adds it to the
-  // user's REAL category list (_S().categorias.gasto) — the same
-  // mechanism the group view already uses — so "crear categoría" always
-  // stays compatible with the app's actual category model.
-  function _promptNewCategory(kind) {
-    kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
-    const name = prompt(_t('bi_nombre_nueva_categoria', 'Nombre de la nueva categoría:'));
-    if (!name || !name.trim()) return null;
-    const trimmed = name.trim();
-    if (!_S().categorias[kind].includes(trimmed)) {
-      _S().categorias[kind].push(trimmed);
-      ST.newCategoriesCreated.push(trimmed);
-    }
-    return trimmed;
-  }
-
   function _setIndividualRowCategory(idx, value) {
     const r = ST.rows[idx];
     if (value === '__new__') {
-      const created = _promptNewCategory(r && !r.isExpense ? 'ingreso' : 'gasto');
-      if (!created) { _renderStep4(); return; }
-      value = created;
+      _renderStep4(); // revert the select visually while the modal is open
+      const kind = (r && !r.isExpense) ? 'ingreso' : 'gasto';
+      if (typeof window._openCreateCategoryModal === 'function') {
+        window._openCreateCategoryModal(kind, (nombre) => {
+          ST.newCategoriesCreated.push(nombre);
+          if (r) r._categoryOverride = nombre;
+          _renderStep4();
+        });
+      }
+      return;
     }
     if (r) r._categoryOverride = value;
     _renderStep4();
@@ -2250,9 +2241,19 @@
     const selectedIdxs = Object.keys(ST._selectedForBulk || {}).map(Number);
     const firstRow = ST.rows[selectedIdxs[0]];
     if (value === '__new__') {
-      const created = _promptNewCategory(firstRow && !firstRow.isExpense ? 'ingreso' : 'gasto');
-      if (!created) return;
-      value = created;
+      const kind = (firstRow && !firstRow.isExpense) ? 'ingreso' : 'gasto';
+      if (typeof window._openCreateCategoryModal === 'function') {
+        window._openCreateCategoryModal(kind, (nombre) => {
+          ST.newCategoriesCreated.push(nombre);
+          selectedIdxs.forEach(idx => {
+            const r = ST.rows[idx];
+            if (r) r._categoryOverride = nombre;
+          });
+          ST._selectedForBulk = {};
+          _renderStep4();
+        });
+      }
+      return;
     }
     selectedIdxs.forEach(idx => {
       const r = ST.rows[idx];
@@ -2329,14 +2330,18 @@
     kind = kind === 'ingreso' ? 'ingreso' : 'gasto';
     const groups = kind === 'ingreso' ? ST.groupsIngreso : ST.groups;
     if (value === '__new__') {
-      const name = prompt(_t('bi_nombre_nueva_categoria', 'Nombre de la nueva categoría:'));
-      if (!name || !name.trim()) { _renderStep4(); return; }
-      const trimmed = name.trim();
-      if (!_S().categorias[kind].includes(trimmed)) {
-        _S().categorias[kind].push(trimmed);
-        ST.newCategoriesCreated.push(trimmed);
+      // Revert the select visually while MoneyNest's own category modal
+      // is open — never a native prompt().
+      _filterGroups(document.getElementById('mnbiGroupSearch')?.value || '');
+      if (typeof window._openCreateCategoryModal === 'function') {
+        window._openCreateCategoryModal(kind, (nombre) => {
+          ST.newCategoriesCreated.push(nombre);
+          const g = groups.find(x => x.key === key);
+          if (g) { g.category = nombre; g.isAuto = false; }
+          _filterGroups(document.getElementById('mnbiGroupSearch')?.value || '');
+        });
       }
-      value = trimmed;
+      return;
     }
     const g = groups.find(x => x.key === key);
     if (g) { g.category = value; g.isAuto = false; }
