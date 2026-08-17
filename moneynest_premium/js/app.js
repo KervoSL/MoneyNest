@@ -388,6 +388,21 @@ const TRANSLATIONS = {
     revision_recordar: 'Recordar esta decisión', categoria_lbl: 'Categoría', sin_categoria: 'Sin categoría',
     toast_categorizado: 'Categorizado ✓', cargar_mas: 'Cargar más', restantes: 'restantes',
     revision_banner_singular: 'cosa necesita', revision_banner_plural: 'cosas necesitan', revision_banner_atencion: 'tu atención', revisar_ahora: 'Revisar',
+    nav_calendario: 'Calendario', nav_sub_calendario: 'Actividad día a día',
+    calendario_titulo: 'Calendario', calendario_sub: 'Tu actividad financiera día a día',
+    anadir_evento: 'Añadir evento financiero', mes_anterior: 'Mes anterior', mes_siguiente: 'Mes siguiente', hoy: 'Hoy',
+    cal_evento_sg: 'evento', cal_evento_pl: 'eventos', eventos_previstos: 'Eventos previstos', previsto: 'previsto',
+    sin_actividad_dia: 'Sin actividad este día', balance_dia: 'Balance del día', cerrar: 'Cerrar',
+    editar_evento: 'Editar evento', nuevo_evento: 'Nuevo evento financiero', titulo_lbl: 'Título',
+    ph_evento_titulo: 'Alquiler, Netflix...', importe_lbl: 'Importe (€)', fecha_lbl: 'Fecha', tipo_lbl: 'Tipo',
+    recurrencia_lbl: 'Repetición', rec_none: 'No se repite', rec_daily: 'Diaria', rec_weekly: 'Semanal',
+    rec_monthly: 'Mensual', rec_yearly: 'Anual', descripcion_lbl: 'Descripción', opcional: 'opcional', eliminar: 'Eliminar',
+    err_evento_campos: 'Completa título, importe y fecha', toast_evento_guardado: 'Evento guardado ✓',
+    confirm_eliminar_evento: '¿Eliminar este evento financiero? Esto no afecta a ninguna transacción real.',
+    confirm_eliminar_evento_titulo: 'Eliminar evento', toast_evento_eliminado: 'Evento eliminado',
+    event_type_pago: 'Pago', event_type_prestamo: 'Préstamo', event_type_seguro: 'Seguro',
+    event_type_suscripcion: 'Suscripción', event_type_alquiler: 'Alquiler', event_type_aportacion_objetivo: 'Aportación a objetivo',
+    event_type_ingreso_previsto: 'Ingreso previsto', event_type_personalizado: 'Evento personalizado',
     nav_patrimonio: 'Patrimonio', nav_analisis: 'Análisis',
     nav_configuracion: 'Configuración', nav_faq: 'FAQ', nav_sugerencias: 'Sugerencias',
     nav_billing: 'Plan & Facturación',
@@ -903,6 +918,21 @@ const TRANSLATIONS = {
     revision_recordar: 'Remember this decision', categoria_lbl: 'Category', sin_categoria: 'No category',
     toast_categorizado: 'Categorized ✓', cargar_mas: 'Load more', restantes: 'remaining',
     revision_banner_singular: 'item needs', revision_banner_plural: 'items need', revision_banner_atencion: 'your attention', revisar_ahora: 'Review',
+    nav_calendario: 'Calendar', nav_sub_calendario: 'Day-by-day activity',
+    calendario_titulo: 'Calendar', calendario_sub: 'Your financial activity, day by day',
+    anadir_evento: 'Add financial event', mes_anterior: 'Previous month', mes_siguiente: 'Next month', hoy: 'Today',
+    cal_evento_sg: 'event', cal_evento_pl: 'events', eventos_previstos: 'Planned events', previsto: 'planned',
+    sin_actividad_dia: 'No activity this day', balance_dia: 'Daily balance', cerrar: 'Close',
+    editar_evento: 'Edit event', nuevo_evento: 'New financial event', titulo_lbl: 'Title',
+    ph_evento_titulo: 'Rent, Netflix...', importe_lbl: 'Amount (€)', fecha_lbl: 'Date', tipo_lbl: 'Type',
+    recurrencia_lbl: 'Repeat', rec_none: 'Does not repeat', rec_daily: 'Daily', rec_weekly: 'Weekly',
+    rec_monthly: 'Monthly', rec_yearly: 'Yearly', descripcion_lbl: 'Description', opcional: 'optional', eliminar: 'Delete',
+    err_evento_campos: 'Fill in title, amount and date', toast_evento_guardado: 'Event saved ✓',
+    confirm_eliminar_evento: 'Delete this financial event? This does not affect any real transaction.',
+    confirm_eliminar_evento_titulo: 'Delete event', toast_evento_eliminado: 'Event deleted',
+    event_type_pago: 'Payment', event_type_prestamo: 'Loan', event_type_seguro: 'Insurance',
+    event_type_suscripcion: 'Subscription', event_type_alquiler: 'Rent', event_type_aportacion_objetivo: 'Goal contribution',
+    event_type_ingreso_previsto: 'Expected income', event_type_personalizado: 'Custom event',
     nav_patrimonio: 'Net Worth', nav_analisis: 'Analysis',
     nav_configuracion: 'Settings', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Plan & Billing',
@@ -3887,6 +3917,7 @@ function defaultState() {
     proveedores: [],
     devengos: [],
     assets: [],
+    eventosFinancieros: [],
     categorias: {
       ingreso: ['Salario','Freelance','Alquiler','Dividendos','Venta','Bono','Otro'],
       gasto: ['Vivienda','Alimentación','Transporte','Salud','Ocio','Ropa','Educación','Suscripciones','Restaurantes','Tecnología','Seguros','Otro','Tabaco','Efectivo'],
@@ -4052,6 +4083,7 @@ function load() {
     if (!Array.isArray(S.objetivos)) S.objetivos = []
     if (!Array.isArray(S.cuentas) || !S.cuentas.length) S.cuentas = defaultState().cuentas
     if (!Array.isArray(S.assets)) S.assets = []
+    if (!Array.isArray(S.eventosFinancieros)) S.eventosFinancieros = []
     if (!Array.isArray(S.patrimonio_hist)) S.patrimonio_hist = []
     if (!S.presupuestos || typeof S.presupuestos !== 'object') S.presupuestos = {}
     if (!Array.isArray(S.clientes)) S.clientes = []
@@ -4282,7 +4314,7 @@ const _pageKeyMap = {
   inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
   presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
   analisis:'nav_analisis', configuracion:'nav_configuracion', billing:'nav_billing',
-  patrimonio:'nav_patrimonio', revision:'nav_revision'
+  patrimonio:'nav_patrimonio', revision:'nav_revision', calendario:'nav_calendario'
 }
 function goTo(page) {
   currentPage = page
@@ -6745,6 +6777,354 @@ function _updateRevisionBadges() {
     const wrap = el.closest('[data-revision-badge]')
     if (wrap) wrap.style.display = count > 0 ? '' : 'none'
   })
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── CALENDARIO FINANCIERO ───────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// Financial events are planned items that are NEVER auto-converted
+// into real transactions — a completely separate, lightweight model
+// from MNRecurring (which does create real transactions each month).
+// They exist purely as a visual planning layer on top of the
+// calendar; S.ingresos/S.gastos remain the only source of truth for
+// anything that already happened.
+const EVENT_TYPES = {
+  pago:                 { icon: '💳' },
+  prestamo:             { icon: '🏦' },
+  seguro:               { icon: '🛡️' },
+  suscripcion:          { icon: '📱' },
+  alquiler:             { icon: '🏠' },
+  aportacion_objetivo:  { icon: '🎯' },
+  ingreso_previsto:     { icon: '💰' },
+  personalizado:        { icon: '📌' },
+}
+function _eventTypeLabel(tipo) {
+  const fallback = { pago:'Pago', prestamo:'Préstamo', seguro:'Seguro', suscripcion:'Suscripción', alquiler:'Alquiler', aportacion_objetivo:'Aportación a objetivo', ingreso_previsto:'Ingreso previsto', personalizado:'Evento personalizado' }
+  return t('event_type_'+tipo, fallback[tipo] || tipo)
+}
+function _isEventIncome(evento) { return evento.tipo === 'ingreso_previsto' }
+
+function _dISO(d) { return d.toISOString().slice(0,10) } // same UTC-based pattern already used by todayISO() throughout the app
+
+// Returns every ISO date within the given month (0-indexed) where this
+// event occurs, according to its recurrence. A monthly/yearly event
+// whose day doesn't exist in a given month (e.g. day 31 in February)
+// falls back to that month's last day instead of being silently
+// skipped.
+function _eventOccurrencesInMonth(evento, year, month) {
+  const start = new Date(evento.fecha + 'T00:00:00')
+  if (isNaN(start)) return []
+  const monthStart = new Date(year, month, 1)
+  const monthEnd   = new Date(year, month + 1, 0)
+  if (start > monthEnd) return []
+  const rec = evento.recurrencia || 'none'
+
+  if (rec === 'none') {
+    return (start >= monthStart && start <= monthEnd) ? [evento.fecha] : []
+  }
+  if (rec === 'monthly') {
+    const day = Math.min(start.getDate(), monthEnd.getDate())
+    const occ = new Date(year, month, day)
+    return (occ >= start) ? [_dISO(occ)] : []
+  }
+  if (rec === 'yearly') {
+    if (month !== start.getMonth()) return []
+    const daysInThisMonth = new Date(year, month + 1, 0).getDate()
+    const occ = new Date(year, month, Math.min(start.getDate(), daysInThisMonth))
+    return (occ >= start) ? [_dISO(occ)] : []
+  }
+  if (rec === 'weekly') {
+    const results = []
+    let cursor = new Date(start)
+    while (cursor <= monthEnd) {
+      if (cursor >= monthStart) results.push(_dISO(cursor))
+      cursor.setDate(cursor.getDate() + 7)
+    }
+    return results
+  }
+  if (rec === 'daily') {
+    const results = []
+    let cursor = new Date(Math.max(start.getTime(), monthStart.getTime()))
+    while (cursor <= monthEnd) {
+      results.push(_dISO(cursor))
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    return results
+  }
+  return []
+}
+
+// Indexes every event's occurrences for a whole month in one pass
+// (dateISO -> [events]), instead of recomputing per-day when rendering
+// every cell of the calendar grid.
+function _monthEventsIndex(year, month) {
+  const idx = {}
+  ;(S.eventosFinancieros||[]).forEach(ev => {
+    _eventOccurrencesInMonth(ev, year, month).forEach(dateISO => {
+      (idx[dateISO] = idx[dateISO] || []).push(ev)
+    })
+  })
+  return idx
+}
+
+// Real daily activity — reuses S.ingresos/S.gastos directly, never a
+// duplicated total. Pending income and internal goal transfers are
+// excluded, consistent with how the rest of the app treats them.
+function _dailyRealData(dateISO) {
+  const ingresos = (S.ingresos||[]).filter(i => i.fecha === dateISO && i.status !== 'pending' && i.status !== 'pendiente')
+  const gastos   = (S.gastos||[]).filter(g => g.fecha === dateISO && g.tipo !== TX_TYPES.GOAL_TRANSFER)
+  const totalIngresos = ingresos.reduce((a,i)=>a+(Number(i.importe)||0),0)
+  const totalGastos   = gastos.reduce((a,g)=>a+(Number(g.importe)||0),0)
+  return { ingresos, gastos, totalIngresos, totalGastos, balance: totalIngresos - totalGastos }
+}
+
+let _calYear  = new Date().getFullYear()
+let _calMonth = new Date().getMonth() // 0-indexed
+
+function renderCalendario() {
+  const monthEventsIdx = _monthEventsIndex(_calYear, _calMonth)
+  const firstOfMonth = new Date(_calYear, _calMonth, 1)
+  const daysInMonth  = new Date(_calYear, _calMonth + 1, 0).getDate()
+  const startWeekday = (firstOfMonth.getDay() + 6) % 7 // Monday=0 ... Sunday=6
+  const todayIso = todayISO()
+
+  const locale = {'es':'es-ES','en':'en-GB','it':'it-IT','fr':'fr-FR','de':'de-DE','pt':'pt-PT'}[_currentLang]||'es-ES'
+  const monthLabel = firstOfMonth.toLocaleDateString(locale, { month:'long', year:'numeric' })
+  const weekdayLabels = [0,1,2,3,4,5,6].map(i => {
+    const d = new Date(2024, 0, 1 + i) // a known Monday
+    return d.toLocaleDateString(locale, { weekday:'short' }).slice(0,3)
+  })
+
+  let cellsHtml = ''
+  for (let i=0;i<startWeekday;i++) cellsHtml += `<div class="cal-cell cal-cell--empty"></div>`
+  for (let d=1; d<=daysInMonth; d++) {
+    const dateISO = `${_calYear}-${String(_calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    const real = _dailyRealData(dateISO)
+    const events = monthEventsIdx[dateISO] || []
+    const hasActivity = real.ingresos.length > 0 || real.gastos.length > 0
+    const isToday = dateISO === todayIso
+
+    let balanceHtml = ''
+    if (hasActivity) {
+      const dot = real.balance > 0 ? '🟢' : (real.balance < 0 ? '🔴' : '⚪')
+      const color = real.balance > 0 ? 'var(--green)' : (real.balance < 0 ? 'var(--red)' : 'var(--text2)')
+      balanceHtml = `<div class="cal-cell-balance" style="color:${color}">${dot} ${real.balance>=0?'+':''}${eur(real.balance)}</div>`
+    }
+    const eventsHtml = events.length
+      ? `<div class="cal-cell-events">🔵 ${events.length} ${events.length===1?t('cal_evento_sg','evento'):t('cal_evento_pl','eventos')}</div>`
+      : ''
+
+    cellsHtml += `<div class="cal-cell ${isToday?'cal-cell--today':''}" onclick="_openDayDetail('${dateISO}')">
+      <div class="cal-cell-day">${d}</div>
+      ${balanceHtml}
+      ${eventsHtml}
+    </div>`
+  }
+
+  document.getElementById('content').innerHTML = `
+  <div class="section-header">
+    <div>
+      <div class="page-h1">📅 ${t('calendario_titulo','Calendario')}</div>
+      <div class="page-sub">${t('calendario_sub','Tu actividad financiera día a día')}</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="_openEventModal()">➕ ${t('anadir_evento','Añadir evento financiero')}</button>
+  </div>
+  <div class="card" style="padding:14px 16px 18px">
+    <div class="cal-nav">
+      <button class="btn btn-ghost btn-sm" onclick="_calNavigate(-1)" aria-label="${t('mes_anterior','Mes anterior')}">←</button>
+      <div class="cal-nav-center">
+        <div class="cal-nav-label">${monthLabel}</div>
+        <button class="btn btn-ghost btn-xs" onclick="_calGoToday()">${t('hoy','Hoy')}</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="_calNavigate(1)" aria-label="${t('mes_siguiente','Mes siguiente')}">→</button>
+    </div>
+    <div class="cal-grid cal-grid-header">
+      ${weekdayLabels.map(w=>`<div class="cal-weekday">${w}</div>`).join('')}
+    </div>
+    <div class="cal-grid">${cellsHtml}</div>
+  </div>`
+}
+
+function _calNavigate(delta) {
+  _calMonth += delta
+  if (_calMonth < 0)  { _calMonth = 11; _calYear-- }
+  if (_calMonth > 11) { _calMonth = 0;  _calYear++ }
+  renderCalendario()
+}
+function _calGoToday() {
+  const now = new Date()
+  _calYear = now.getFullYear()
+  _calMonth = now.getMonth()
+  renderCalendario()
+}
+
+// ── Day detail modal ─────────────────────────────────────────────
+function _openDayDetail(dateISO) {
+  document.getElementById('calDayDetailOverlay')?.remove()
+  const real = _dailyRealData(dateISO)
+  const [y, m] = dateISO.split('-').map(Number)
+  const events = (_monthEventsIndex(y, m - 1)[dateISO]) || []
+  const locale = {'es':'es-ES','en':'en-GB','it':'it-IT','fr':'fr-FR','de':'de-DE','pt':'pt-PT'}[_currentLang]||'es-ES'
+  const dateLabel = new Date(dateISO + 'T12:00:00').toLocaleDateString(locale, { day:'numeric', month:'long' })
+  const hasAnything = real.ingresos.length || real.gastos.length || events.length
+
+  const rowHtml = (label, amountStr, color, extra='') => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${label}</span>
+      <span style="flex-shrink:0;font-weight:700;color:${color}">${amountStr}${extra}</span>
+    </div>`
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'calDayDetailOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">📅 ${dateLabel}</span>
+        <button class="modal-close" onclick="_closeDayDetail()">✕</button>
+      </div>
+      <div class="modal-body">
+        ${real.ingresos.length ? `
+          <div class="cal-section-label" style="color:var(--green)">${t('ingresos_lbl','Ingresos')}</div>
+          ${real.ingresos.map(i => rowHtml(`${catEmoji(i.categoria)} ${i.concepto||'—'}`, `+${eur(i.importe)}`, 'var(--green)')).join('')}
+        ` : ''}
+        ${real.gastos.length ? `
+          <div class="cal-section-label" style="color:var(--red);margin-top:${real.ingresos.length?'14px':'0'}">${t('gastos_lbl','Gastos')}</div>
+          ${real.gastos.map(g => rowHtml(`${catEmoji(g.categoria)} ${g.concepto||'—'}`, `−${eur(g.importe)}`, 'var(--red)')).join('')}
+        ` : ''}
+        ${events.length ? `
+          <div class="cal-section-label" style="color:var(--blue,#4A9EFF);margin-top:${(real.ingresos.length||real.gastos.length)?'14px':'0'}">🔵 ${t('eventos_previstos','Eventos previstos')}</div>
+          ${events.map(ev => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${EVENT_TYPES[ev.tipo]?.icon||'📌'} ${ev.titulo} <span style="color:var(--text3);font-size:.72rem">· ${t('previsto','previsto')}</span></span>
+              <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+                <span style="font-weight:700;color:var(--blue,#4A9EFF)">${_isEventIncome(ev)?'+':'−'}${eur(ev.importe)}</span>
+                <button class="btn btn-ghost btn-xs" onclick="_closeDayDetail();_openEventModal('${ev.id}')" title="${t('btn_editar','Editar')}">✏️</button>
+              </div>
+            </div>`).join('')}
+        ` : ''}
+        ${!hasAnything ? `<div style="text-align:center;padding:30px 10px;color:var(--text2);font-size:.88rem">${t('sin_actividad_dia','Sin actividad este día')}</div>` : ''}
+        ${(real.ingresos.length || real.gastos.length) ? `
+          <div style="margin-top:16px;padding-top:14px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:800;color:var(--text)">${t('balance_dia','Balance del día')}</span>
+            <span style="font-weight:800;font-size:1.1rem;color:${real.balance>=0?'var(--green)':'var(--red)'}">${real.balance>=0?'+':''}${eur(real.balance)}</span>
+          </div>` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="_closeDayDetail()">${t('cerrar','Cerrar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="_closeDayDetail();_openEventModal(null,'${dateISO}')">➕ ${t('anadir_evento','Añadir evento')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) _closeDayDetail() })
+  setTimeout(() => overlay.classList.add('open'), 10)
+}
+function _closeDayDetail() { document.getElementById('calDayDetailOverlay')?.remove() }
+
+// ── Create/edit event modal ──────────────────────────────────────
+function _openEventModal(eventId, defaultDate) {
+  document.getElementById('eventModalOverlay')?.remove()
+  const ev = eventId ? (S.eventosFinancieros||[]).find(e => e.id === eventId) : null
+  const esc = (s) => (s||'').replace(/"/g,'&quot;')
+
+  const recOptions = [
+    ['none', t('rec_none','No se repite')], ['daily', t('rec_daily','Diaria')],
+    ['weekly', t('rec_weekly','Semanal')], ['monthly', t('rec_monthly','Mensual')],
+    ['yearly', t('rec_yearly','Anual')],
+  ]
+
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay mn-modal-inline-top'
+  overlay.id = 'eventModalOverlay'
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">📅 ${ev ? t('editar_evento','Editar evento') : t('nuevo_evento','Nuevo evento financiero')}</span>
+        <button class="modal-close" onclick="_closeEventModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eventId" value="${ev ? ev.id : ''}">
+        <div class="form-group">
+          <label>${t('titulo_lbl','Título')} *</label>
+          <input type="text" id="eventTitulo" value="${ev?esc(ev.titulo):''}" placeholder="${t('ph_evento_titulo','Alquiler, Netflix...')}">
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label>${t('importe_lbl','Importe (€)')} *</label>
+            <input type="number" id="eventImporte" value="${ev?ev.importe:''}" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>${t('fecha_lbl','Fecha')} *</label>
+            <input type="date" id="eventFecha" value="${ev?ev.fecha:(defaultDate||todayISO())}">
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group">
+            <label>${t('tipo_lbl','Tipo')}</label>
+            <select id="eventTipo">
+              ${Object.keys(EVENT_TYPES).map(k => `<option value="${k}" ${ev&&ev.tipo===k?'selected':''}>${EVENT_TYPES[k].icon} ${_eventTypeLabel(k)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>${t('recurrencia_lbl','Repetición')}</label>
+            <select id="eventRecurrencia">
+              ${recOptions.map(([k,label]) => `<option value="${k}" ${ev&&ev.recurrencia===k?'selected':(!ev&&k==='none'?'selected':'')}>${label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>${t('descripcion_lbl','Descripción')} <span style="color:var(--text3);font-weight:400">(${t('opcional','opcional')})</span></label>
+          <input type="text" id="eventDescripcion" value="${ev?esc(ev.descripcion):''}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        ${ev ? `<button class="btn btn-ghost btn-sm" style="color:var(--red);margin-right:auto" onclick="_deleteEvent('${ev.id}')">🗑️ ${t('eliminar','Eliminar')}</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="_closeEventModal()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="_saveEvent()">${t('btn_guardar','Guardar')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) _closeEventModal() })
+  setTimeout(() => overlay.classList.add('open'), 10)
+  setTimeout(() => document.getElementById('eventTitulo')?.focus(), 60)
+}
+function _closeEventModal() { document.getElementById('eventModalOverlay')?.remove() }
+
+function _saveEvent() {
+  const titulo   = document.getElementById('eventTitulo').value.trim()
+  const importe  = parseFloat(document.getElementById('eventImporte').value)
+  const fecha    = document.getElementById('eventFecha').value
+  if (!titulo || !importe || importe <= 0 || !fecha) { toast(t('err_evento_campos','Completa título, importe y fecha'),'error'); return }
+  const tipo         = document.getElementById('eventTipo').value
+  const recurrencia  = document.getElementById('eventRecurrencia').value
+  const descripcion  = document.getElementById('eventDescripcion').value.trim()
+  const id = document.getElementById('eventId').value
+
+  S.eventosFinancieros = S.eventosFinancieros || []
+  if (id) {
+    const idx = S.eventosFinancieros.findIndex(e => e.id === id)
+    if (idx >= 0) S.eventosFinancieros[idx] = { ...S.eventosFinancieros[idx], titulo, importe, fecha, tipo, recurrencia, descripcion }
+  } else {
+    S.eventosFinancieros.push({ id: uid(), titulo, importe, fecha, tipo, recurrencia, descripcion })
+  }
+  save()
+  _closeEventModal()
+  if (currentPage === 'calendario') renderCalendario()
+  toast(t('toast_evento_guardado','Evento guardado ✓'))
+}
+
+function _deleteEvent(id) {
+  // Close the event edit modal first — it uses a higher z-index than
+  // the generic confirm modal, so leaving both open would visually
+  // bury the confirmation behind it and make it unreachable.
+  _closeEventModal()
+  confirmar(t('confirm_eliminar_evento','¿Eliminar este evento financiero? Esto no afecta a ninguna transacción real.'), () => {
+    S.eventosFinancieros = (S.eventosFinancieros||[]).filter(e => e.id !== id)
+    save()
+    _closeDayDetail()
+    if (currentPage === 'calendario') renderCalendario()
+    toast(t('toast_evento_eliminado','Evento eliminado'))
+  }, { titulo: t('confirm_eliminar_evento_titulo','Eliminar evento'), icono: '🗑️' })
 }
 
 function renderCategorias() {
@@ -14629,6 +15009,7 @@ function render() {
     cuentas:      renderCuentas,
     categorias:   renderCategorias,
     revision:     renderRevision,
+    calendario:   renderCalendario,
     analisis:     renderAnalisis,
     configuracion:renderConfiguracion,
     // billing: removed
@@ -14641,7 +15022,7 @@ function render() {
     dashboard:'nav_dashboard', ingresos:'nav_ingresos', gastos:'nav_gastos',
     inversiones:'nav_inversiones', deudas:'nav_deudas', objetivos:'nav_objetivos',
     presupuestos:'nav_presupuestos', cuentas:'nav_cuentas', categorias:'nav_categorias',
-    revision:'nav_revision',
+    revision:'nav_revision', calendario:'nav_calendario',
     analisis:'nav_analisis', configuracion:'nav_configuracion',
     patrimonio:'nav_patrimonio', faq:'nav_faq', sugerencias:'nav_sugerencias', billing:'nav_billing',
     logros:'nav_logros',

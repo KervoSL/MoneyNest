@@ -3797,6 +3797,29 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
 .kpi-card, .card, .inv-card, .debt-card, .goal-card {
   will-change: transform;
 }
-.progress-bar, .mn-auth-progress-bar, .mn-pro-trial-bar__fill {
-  will-change: width;
+/* ── CALENDARIO FINANCIERO ────────────────────────────────────── */
+.cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.cal-nav-center { display:flex; align-items:center; gap:10px; }
+.cal-nav-label { font-weight:800; font-size:1.05rem; text-transform:capitalize; color:var(--text); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.cal-grid-header { margin-bottom:6px; }
+.cal-weekday { text-align:center; font-size:.68rem; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.03em; padding:4px 0; }
+.cal-cell { min-height:74px; border-radius:10px; background:var(--bg2); border:1px solid var(--border); padding:6px 5px; cursor:pointer; transition:background .15s, border-color .15s; display:flex; flex-direction:column; gap:2px; overflow:hidden; }
+.cal-cell:hover { background:var(--card); border-color:var(--border2); }
+.cal-cell--empty { background:transparent; border-color:transparent; cursor:default; }
+.cal-cell--today { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.cal-cell-day { font-size:.78rem; font-weight:700; color:var(--text); }
+.cal-cell--today .cal-cell-day { color:var(--accent); }
+.cal-cell-balance { font-size:.64rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-cell-events { font-size:.58rem; color:var(--blue,#4A9EFF); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-section-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+
+@media (max-width: 640px) {
+  .cal-cell { min-height:56px; padding:4px 3px; border-radius:8px; }
+  .cal-cell-day { font-size:.7rem; }
+  .cal-cell-balance { font-size:.55rem; }
+  .cal-cell-events { font-size:.5rem; }
+  .cal-grid { gap:3px; }
+  .cal-nav-label { font-size:.9rem; }
+  .cal-weekday { font-size:.6rem; }
 }
