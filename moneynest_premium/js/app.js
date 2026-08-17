@@ -13853,38 +13853,68 @@ function renderPatrimonio() {
       : assetCurrentVal(a)
     const gainLoss = displayVal - vc
     const icon = getAssetIcon(a.tipo)
-    const bg   = isSold ? 'var(--border)' : getAssetBg(a.tipo)
     const label = getAssetLabel(a.tipo, a.tipoCustom)
-    return `<div style="padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0">
-          <div style="width:36px;height:36px;border-radius:9px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${icon}</div>
-          <div style="min-width:0">
-            <div style="font-size:.9rem;font-weight:700;color:${isSold?'var(--text2)':'var(--text)'}">${a.nombre}</div>
-            <div style="font-size:.7rem;color:var(--text2)">${label}${a.fecha?' · Compra: '+fmtDate(a.fecha):''}${a.fechaVenta?' · Venta: '+fmtDate(a.fechaVenta):''}</div>
+
+    // Same visual language as goal-card: optional background image with
+    // a gradient overlay for legibility, falling back to the emoji/icon
+    // avatar when no image was uploaded — reusing the exact same image
+    // infrastructure already built for Objetivos (data: URL avatars),
+    // not a second parallel system.
+    const hasBgImg = a.avatar && a.avatar.startsWith('data:')
+    const bgStyle = hasBgImg
+      ? `background-image:url(${a.avatar});background-size:cover;background-position:center;`
+      : `background:var(--card);`
+    const overlayStyle = hasBgImg
+      ? `position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.78) 100%);border-radius:var(--radius);z-index:0;`
+      : `display:none;`
+    const textColor  = hasBgImg ? '#fff' : (isSold ? 'var(--text2)' : 'var(--text)')
+    const textColor2 = hasBgImg ? 'rgba(255,255,255,0.8)' : 'var(--text2)'
+    const gainColor  = gainLoss>=0 ? (hasBgImg?'#6EE7B7':'var(--green)') : (hasBgImg?'#FCA5A5':'var(--red)')
+    const borderTopStyle = hasBgImg ? '' : `border-top:3px solid ${isSold?'var(--border)':'var(--gold,#F5A623)'};`
+
+    return `
+    <div class="goal-card asset-card ${hasBgImg?'has-img':''}" style="${borderTopStyle}position:relative;${bgStyle}overflow:hidden${isSold?';opacity:.85':''}">
+      <div style="${overlayStyle}"></div>
+      <div style="position:relative;z-index:1">
+      ${!hasBgImg ? `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+        <div class="obj-avatar" style="background:var(--gold-dim,rgba(245,166,35,.14));border-color:var(--gold,#F5A623)44">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+            <div class="goal-name" style="color:${textColor}">${a.nombre||'—'}</div>
+            <span class="badge" style="background:var(--gold-dim,rgba(245,166,35,.14));color:var(--gold,#F5A623);flex-shrink:0">${label}</span>
           </div>
+          <div class="goal-meta" style="color:${textColor2};margin-bottom:0">${a.fecha?'📅 '+t('compra_lbl','Compra')+': '+fmtDate(a.fecha):''}${a.fechaVenta?' · '+t('venta_lbl','Venta')+': '+fmtDate(a.fechaVenta):''}</div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          ${isSold?`<div style="font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">${t('precio_venta','Precio de venta')}</div>`:''}
-          <div style="font-size:.95rem;font-weight:700;color:${isSold?'var(--text2)':'var(--text)'}">${eur(displayVal)}</div>
-          ${isSold
-            ? (vc?`<div style="font-size:.68rem;font-weight:700;color:${gainLoss>=0?'var(--green)':'var(--red)'}">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} ${t('resultado','resultado')}</div>`:'')
-            : (vc&&vc!==displayVal?`<div style="font-size:.68rem;color:${gainLoss>=0?'var(--green)':'var(--red)'}">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} vs compra</div>`:'')}
-          ${a.valorCompra?`<div style="font-size:.65rem;color:var(--text3)">Compra: ${eur(a.valorCompra)}</div>`:''}
+      </div>` : `
+      <div style="margin-bottom:10px;padding-top:4px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px">
+          <div class="goal-name" style="color:${textColor};text-shadow:0 1px 3px rgba(0,0,0,0.5)">${a.nombre||'—'}</div>
+          <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff;flex-shrink:0;backdrop-filter:blur(4px)">${label}</span>
         </div>
+        <div class="goal-meta" style="color:${textColor2}">${a.fecha?'📅 '+t('compra_lbl','Compra')+': '+fmtDate(a.fecha):''}${a.fechaVenta?' · '+t('venta_lbl','Venta')+': '+fmtDate(a.fechaVenta):''}</div>
+      </div>`}
+
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:${textColor2};margin-bottom:2px">${isSold?t('precio_venta','Precio de venta'):t('valor_actual','Valor actual')}</div>
+      <div style="font-size:1.35rem;font-weight:800;color:${textColor};margin-bottom:4px${hasBgImg?';text-shadow:0 1px 3px rgba(0,0,0,.5)':''}">${eur(displayVal)}</div>
+      ${vc?`<div style="font-size:.78rem;font-weight:700;color:${gainColor};margin-bottom:10px">${gainLoss>=0?'▲':'▼'} ${eur(Math.abs(gainLoss))} ${isSold?t('resultado','resultado'):t('vs_compra','vs compra')}</div>`:'<div style="margin-bottom:10px"></div>'}
+
+      <div style="font-size:.78rem;${hasBgImg?'color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,.6)':'color:var(--text2)'};margin-bottom:10px">
+        ${t('precio_compra','Precio de compra')}: <strong style="${hasBgImg?'color:#fff':'color:var(--text)'}">${eur(a.valorCompra||0)}</strong>
       </div>
-      ${!isSold?`<div style="display:flex;gap:6px;margin-top:10px;align-items:center">
-        <button class="btn-edit" onclick="editarAsset('${a.id}')" style="font-size:.72rem">${t('btn_editar','Editar')}</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:.72rem;padding:3px 10px" onclick="quickUpdateAssetValue('${a.id}')">💰 ${t('actualizar_valor','Actualizar valor')}</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:.72rem;padding:3px 10px" onclick="marcarAssetVendido('${a.id}')">🔴 ${t('vender','Vender')}</button>
-        <button class="btn-del" onclick="borrarAsset('${a.id}')" style="font-size:.72rem;margin-left:auto"></button>
-      </div>`:`<div style="margin-top:6px"><button class="btn-del" onclick="borrarAsset('${a.id}')" style="font-size:.72rem">Eliminar</button></div>`}
+
+      <div class="action-row" style="${hasBgImg?'background:rgba(0,0,0,0.3);border-radius:var(--radius-sm);padding:4px 6px;':''}">
+        ${!isSold?`
+          <button class="btn-edit" onclick="editarAsset('${a.id}')" style="${hasBgImg?'background:rgba(255,255,255,0.15);color:#fff;':''}">${t('btn_editar','Editar')}</button>
+          <button class="btn btn-ghost btn-xs" onclick="quickUpdateAssetValue('${a.id}')" style="${hasBgImg?'background:rgba(255,255,255,0.15);color:#fff;':''}">💰 ${t('actualizar_valor','Revalorizar')}</button>
+          <button class="btn btn-ghost btn-xs" onclick="marcarAssetVendido('${a.id}')" style="${hasBgImg?'background:rgba(255,80,80,0.25);color:#fca5a5;':'color:var(--red)'}">🔴 ${t('vender','Vender')}</button>
+          <button class="btn-del" onclick="borrarAsset('${a.id}')" style="${hasBgImg?'background:rgba(255,80,80,0.25);color:#fca5a5;':''}"></button>
+        `:`
+          <button class="btn-del" onclick="borrarAsset('${a.id}')" style="${hasBgImg?'background:rgba(255,80,80,0.25);color:#fca5a5;':''};margin-left:auto">${t('eliminar','Eliminar')}</button>
+        `}
+      </div>
+      </div>
     </div>`
   }
-
-  const assetsListHtml = activeAssets.length
-    ? activeAssets.map(a=>renderAssetCard(a,false)).join('')
-    : (window.mnEmptyStates ? window.mnEmptyStates.activos() : '<div class="empty"><div class="empty-icon">🏠</div><div class="empty-title">Sin activos físicos</div></div>')
 
   document.getElementById('content').innerHTML = `
   <div class="section-header" style="margin-bottom:16px">
@@ -13921,8 +13951,8 @@ function renderPatrimonio() {
     </div>
   </div>
 
-  <!-- SPLIT VIEW: LEFT = Accounts + Investments | RIGHT = Physical Assets -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="pat-split-grid">
+  <!-- SPLIT VIEW: LEFT = Accounts + Investments + Evolution (Physical Assets now full-width below) -->
+  <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px" class="pat-split-grid">
 
     <!-- LEFT PANEL -->
     <div style="display:flex;flex-direction:column;gap:16px">
@@ -13978,28 +14008,26 @@ function renderPatrimonio() {
           :(window.mnEmptyStates ? window.mnEmptyStates.pocoDatos() : `<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">Pocos datos</div></div>`)}
       </div>
     </div>
+  </div>
 
-    <!-- RIGHT PANEL: Physical Assets -->
-    <div class="card" style="display:flex;flex-direction:column">
-      <div class="card-header" style="flex-shrink:0">
-        <div>
-          <div class="card-title">🏠 ${t('activos_fisicos','Activos Físicos')}</div>
-          <div class="card-subtitle">${activeAssets.length} ${t('activos','activos')} · ${eur(assetsVal)}</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('assetModal');resetAssetForm()">${t('btn_nuevo_activo','+ Añadir activo')}</button>
-      </div>
-      <div style="flex:1;overflow-y:auto">
-        ${assetsListHtml}
-        ${soldAssets.length?`
-        <details style="margin-top:8px">
-          <summary style="font-size:.75rem;color:var(--text2);cursor:pointer;padding:8px 0;border-top:1px solid var(--border)">
-            📦 Ver ${soldAssets.length} activo${soldAssets.length!==1?'s':''} vendido${soldAssets.length!==1?'s':''}
-          </summary>
-          <div style="opacity:.6">${soldAssets.map(a=>renderAssetCard(a,true)).join('')}</div>
-        </details>`:''}
-      </div>
+  <!-- PHYSICAL ASSETS — full-width section, visual grid like Objetivos -->
+  <div class="section-header" style="margin-bottom:16px;margin-top:8px">
+    <div>
+      <div class="card-title" style="font-size:1.05rem">🏠 ${t('activos_fisicos','Activos Físicos')}</div>
+      <div class="card-subtitle">${activeAssets.length} ${t('activos','activos')} · ${eur(assetsVal)}</div>
     </div>
-  </div>`
+    <button class="btn btn-primary btn-sm" onclick="openModal('assetModal');resetAssetForm()">${t('btn_nuevo_activo','+ Añadir activo')}</button>
+  </div>
+  ${activeAssets.length
+    ? `<div class="grid-3">${activeAssets.map(a=>renderAssetCard(a,false)).join('')}</div>`
+    : (window.mnEmptyStates ? window.mnEmptyStates.activos() : '<div class="empty"><div class="empty-icon">🏠</div><div class="empty-title">Sin activos físicos</div></div>')}
+  ${soldAssets.length?`
+  <details style="margin-top:16px">
+    <summary style="font-size:.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:10px 2px;border-top:1px solid var(--border)">
+      📦 ${t('ver_vendidos','Ver')} ${soldAssets.length} ${soldAssets.length!==1?t('activos_vendidos_pl','activos vendidos'):t('activo_vendido_sg','activo vendido')}
+    </summary>
+    <div class="grid-3" style="opacity:.75;margin-top:10px">${soldAssets.map(a=>renderAssetCard(a,true)).join('')}</div>
+  </details>`:''}`
 
   if (S.patrimonio_hist.length >= 2) {
     setTimeout(renderChartPatrimonioPage, 80)
@@ -14073,6 +14101,26 @@ function renderChartPatrimonioPage() {
 }
 
 // ─── ASSET CRUD ────────────────────────────────────────────────
+function previewAssetModalAvatar(input) {
+  const file = input.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    if (!checkImageSize(e.target.result)) { input.value = ''; return }
+    document.getElementById('assetAvatarData').value = e.target.result
+    const prev = document.getElementById('assetModalAvatarPreview')
+    if (prev) prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`
+  }
+  reader.readAsDataURL(file)
+}
+function limpiarAssetModalAvatar() {
+  document.getElementById('assetAvatarData').value = ''
+  const prev = document.getElementById('assetModalAvatarPreview')
+  if (prev) prev.innerHTML = '📦'
+  const fi = document.getElementById('assetModalAvatarFile')
+  if (fi) fi.value = ''
+}
+
 function checkAssetCustomCat() {
   const sel = document.getElementById('assetTipo')
   const box = document.getElementById('assetTipoCustom')
@@ -14095,6 +14143,9 @@ function resetAssetForm() {
   document.getElementById('assetNotas').value = ''
   document.getElementById('assetDepPct').value = ''
   document.getElementById('assetDepPct').disabled = true
+  document.getElementById('assetAvatarData').value = ''
+  const avPrev = document.getElementById('assetModalAvatarPreview')
+  if (avPrev) avPrev.innerHTML = '📦'
   const sw = document.getElementById('depToggleSwitch')
   if (sw) sw.classList.remove('on')
 }
@@ -14129,6 +14180,11 @@ function editarAsset(id) {
   document.getElementById('assetFechaVenta').value = a.fechaVenta||''
   document.getElementById('assetEstado').value = a.status||'active'
   document.getElementById('assetNotas').value  = a.notas||''
+  if (a.avatar && a.avatar.startsWith('data:')) {
+    document.getElementById('assetAvatarData').value = a.avatar
+    const prev = document.getElementById('assetModalAvatarPreview')
+    if (prev) prev.innerHTML = `<img src="${a.avatar}" style="width:100%;height:100%;object-fit:cover">`
+  }
   if (a.depreciacion) {
     const sw = document.getElementById('depToggleSwitch')
     if (sw) sw.classList.add('on')
@@ -14150,6 +14206,7 @@ function guardarAsset() {
   const tipoFinal = tipoSel === '__custom__' ? 'other' : tipoSel
   const tipoCustom = tipoSel === '__custom__' ? document.getElementById('assetTipoCustomInput').value.trim() : null
   const valorCompra = parseFloat(document.getElementById('assetValorCompra').value) || valor
+  const avatarData = document.getElementById('assetAvatarData').value || null
   const data = {
     nombre,
     tipo:       tipoFinal,
@@ -14161,7 +14218,8 @@ function guardarAsset() {
     status:     document.getElementById('assetEstado').value,
     notas:      document.getElementById('assetNotas').value.trim(),
     depreciacion: depOn,
-    depPct: depOn ? parseFloat(document.getElementById('assetDepPct').value)||0 : 0
+    depPct: depOn ? parseFloat(document.getElementById('assetDepPct').value)||0 : 0,
+    avatar: avatarData
   }
   if (id) {
     const idx = S.assets.findIndex(x=>x.id===id)
