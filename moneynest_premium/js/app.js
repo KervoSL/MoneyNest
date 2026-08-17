@@ -13556,11 +13556,21 @@ function _showPaymentPrompt(email) {
   `
   document.body.appendChild(overlay)
   if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+  // Clicking outside must release the SAME scroll-lock push this overlay
+  // made when it opened — previously it only removed the element,
+  // leaving the shared scroll-lock counter permanently off by one and
+  // the background scroll stuck after closing (root cause of the
+  // reported bug).
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); if (typeof window._popScrollLock === 'function') window._popScrollLock() } })
 
   window._startStripeCheckout = function(type) {
     const pid = window.MNStripeConfig?.prices?.[type === 'bundle' ? 'pro' : 'local'] || priceId
     overlay.remove()
+    // Release THIS overlay's own scroll-lock push before MNPayment.open()
+    // makes its own — otherwise the counter ends up one push ahead with
+    // no matching pop, so closing the payment modal afterward never
+    // fully releases the scroll lock.
+    if (typeof window._popScrollLock === 'function') window._popScrollLock()
     if (window.MNPayment) MNPayment.open(pid, email)
   }
 }

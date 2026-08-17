@@ -97,6 +97,12 @@ window.MNPayment = (() => {
     el.querySelector('.mnpo-backdrop').addEventListener('click', close);
     document.getElementById('mnPoPayBtn').addEventListener('click', _handlePay);
     document.getElementById('mnPoSuccessBtn').addEventListener('click', close);
+    // Escape closes the payment modal too — the app's global Escape
+    // handler (closeAllModals) only targets .modal-overlay.open, which
+    // this overlay doesn't use, so it needs its own listener.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && _overlay && _overlay.classList.contains('mnpo--open')) close();
+    });
 
     // Discount code toggle + apply
     const promoToggle = document.getElementById('mnPoPromoToggle');
