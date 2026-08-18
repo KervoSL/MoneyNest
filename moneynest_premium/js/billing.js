@@ -380,6 +380,22 @@ function cancelPro() {
 // ════════════════════════════════════════════════════════════════
 
 function canUseFeature(feature) {
+  // MNEntitlements (Fase 4) is the real, Supabase/Stripe-backed source
+  // of truth — delegate to it whenever it's available, so every
+  // existing call site (e.g. MNAuthUI.requireCloud) is now governed by
+  // server-confirmed state without needing to change. Only falls back
+  // to the local mock below if that module hasn't loaded for some
+  // reason, so this never hard-fails.
+  if (window.MNEntitlements) {
+    const e = window.MNEntitlements;
+    if (feature === 'cloud_sync') return e.hasCloudAccess();
+    if (feature === 'export_pdf' || feature === 'export_excel') return e.hasExportAccess();
+    if (feature === 'import') return e.hasImportAccess();
+    // Fall through to the mock plan-definition check below for any
+    // feature this phase doesn't explicitly centralize (e.g.
+    // 'priority_support', 'ai_insights') — unrelated to entitlements
+    // and out of scope here.
+  }
   const sub = getSub();
   if (!sub) return false;
   const plan = BILLING_PLANS[sub.plan?.toUpperCase().replace('-', '_')] ||

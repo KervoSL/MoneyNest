@@ -22,7 +22,7 @@
   let _session      = null;
   let _profile      = null;
   let _initialized  = false;
-  let _onAuthChange = null;
+  let _onAuthChangeListeners = [];
 
   // ─── Client-side rate limiting ───────────────────────────────────
   // Prevents brute force and spam from the browser.
@@ -80,7 +80,7 @@
         _triggerPasswordRecoveryUI();
       }
 
-      if (_onAuthChange) _onAuthChange(event, session);
+      if (_onAuthChangeListeners.length) _onAuthChangeListeners.forEach(cb => { try { cb(event, session) } catch (_) {} });
     });
 
     // Start single-session watchdog (every 90s)
@@ -412,7 +412,7 @@
     );
   }
 
-  function onAuthChange(cb) { _onAuthChange = cb; }
+  function onAuthChange(cb) { _onAuthChangeListeners.push(cb); }
 
 
   // ════════════════════════════════════════════════════════════════

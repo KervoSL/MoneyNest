@@ -306,15 +306,23 @@ function _openRestoreAccessModal(user) {
       if (!res.ok) throw new Error(data?.error || 'lookup_failed')
 
       if (data.found) {
-        // Reutiliza la misma logica que ya activa el Plan Local tras una
-        // compra (buyLocal), sin inventar un flujo de licencias nuevo.
-        if (data.plan === 'pro') {
-          patchUser({ plan: 'local', trialEndsAt: null, cloudEnabled: false, upgradedAt: Date.now(), email })
-        } else {
-          buyLocal(email)
-        }
-        _setMsg('✅ Licencia encontrada. Restaurando acceso…', 'success')
-        setTimeout(() => location.reload(), 900)
+        // Security: check-license only confirms *something* exists for
+        // this email — it never grants access itself (anyone could type
+        // any email otherwise). Before restoring anything, we require
+        // real proof of ownership via a Supabase magic link; the actual
+        // Stripe↔Supabase reconciliation happens server-side in
+        // restore-access, only once that proof exists.
+        if (!window.MNSupabaseAuth) throw new Error('auth_unavailable')
+        const { error: otpError } = await window.MNSupabaseAuth._sb.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: location.origin + location.pathname },
+        })
+        if (otpError) throw otpError
+        _setMsg('✅ Licencia encontrada. Te hemos enviado un enlace a tu email — ábrelo en este dispositivo para restaurar tu acceso.', 'success')
+        submitBtn.style.display = 'none'
+        cancelBtn.textContent = 'Cerrar'
+        submitting = false
+        emailInput.disabled = true
       } else {
         _setMsg('No hemos encontrado una licencia asociada a este email.', 'error')
         submitting = false
@@ -7411,8 +7419,10 @@ function renderConfiguracion() {
                 <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
               </ul>
               <div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">☁️ ${_aut('cfg_cloud_lbl','Cloud')}: <strong style="color:var(--text3)">${_aut('cfg_no_incluido','No incluido')}</strong></div>
+              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px">${_aut('cfg_cargando_estado','Cargando estado de suscripción…')}</div>
               <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_pasar_pro','Pasar a Pro')}</button>
               <div style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px">${_aut('cfg_local_upsell','Actualiza a Pro para sincronizar tus datos entre dispositivos.')}</div>
+              <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
             </div>`
           }
 
@@ -7436,7 +7446,8 @@ function renderConfiguracion() {
                 <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
                 <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
               </ul>
-              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_showManagePlanPlaceholder()">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
+              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px">${_aut('cfg_cargando_estado','Cargando estado de suscripción…')}</div>
+              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
             </div>`
           }
 
@@ -7545,6 +7556,11 @@ function renderConfiguracion() {
       nc.innerHTML = '<p style="font-size:.8rem;color:var(--text2)">Las notificaciones push no están disponibles en este dispositivo.</p>'
     }
   }
+
+  // Real subscription status (Fase 5) — fetched from Supabase directly
+  // (RLS already scopes this to the caller's own row), never from the
+  // local mock cache.
+  if (document.getElementById('mn-sub-status-info')) _loadRealSubscriptionStatus()
 }
 function renderLogros() {
   const el = document.getElementById('content')
@@ -13558,6 +13574,75 @@ window._openStripePortal = async function() {
     toast('No se pudo abrir el panel de facturación. Inténtalo más tarde.', 'error')
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💳 Gestionar facturación en Stripe' }
+  }
+}
+
+async function _openStripeCustomerPortal(btn) {
+  if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
+    if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión o usa "Restaurar acceso" primero.'), 'warning')
+    return
+  }
+  const originalLabel = btn ? btn.textContent : null
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…') }
+  try {
+    const token = window.MNSupabaseAuth.getSession()?.access_token
+    const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || !data.url) {
+      if (data.error === 'no_customer') {
+        _showManagePlanPlaceholder()
+      } else {
+        if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación. Inténtalo de nuevo.'), 'error')
+      }
+      return
+    }
+    location.href = data.url
+  } catch (err) {
+    console.error('[_openStripeCustomerPortal] error:', err)
+    if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación. Inténtalo de nuevo.'), 'error')
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalLabel }
+  }
+}
+
+async function _loadRealSubscriptionStatus() {
+  const el = document.getElementById('mn-sub-status-info')
+  if (!el) return
+  if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
+    el.textContent = _aut('cfg_sin_sesion_vinculada', 'Aún no tienes una sesión vinculada a este plan en este dispositivo.')
+    return
+  }
+  try {
+    const sb = window.MNSupabaseAuth._sb
+    const userId = window.MNSupabaseAuth.getUserId()
+    const { data, error } = await sb
+      .from('subscriptions')
+      .select('status, current_period_end, cancel_at_period_end')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!document.getElementById('mn-sub-status-info')) return // page changed while awaiting
+    if (error || !data) {
+      el.textContent = _aut('cfg_sin_suscripcion_stripe', 'No se encontró ninguna suscripción de Stripe asociada todavía.')
+      return
+    }
+    const dateStr = data.current_period_end ? fmtDate(data.current_period_end.slice(0, 10)) : '—'
+    if (data.status === 'past_due') {
+      el.innerHTML = `<span style="color:var(--red);font-weight:700">⚠️ ${_aut('cfg_pago_fallido', 'Hubo un problema con tu último pago. Actualiza tu método de pago para no perder el acceso.')}</span>`
+    } else if (data.cancel_at_period_end) {
+      el.textContent = `⏳ ${_aut('cfg_finaliza_el', 'Tu plan finaliza el')} ${dateStr} ${_aut('cfg_no_se_renovara', '(no se renovará automáticamente)')}`
+    } else if (data.status === 'active' || data.status === 'trialing') {
+      el.textContent = `🔄 ${_aut('cfg_se_renueva_el', 'Se renueva automáticamente el')} ${dateStr}`
+    } else {
+      el.textContent = `${_aut('cfg_estado_lbl', 'Estado')}: ${data.status}`
+    }
+  } catch (err) {
+    console.warn('[_loadRealSubscriptionStatus] error:', err)
+    el.textContent = _aut('cfg_sin_suscripcion_stripe', 'No se encontró ninguna suscripción de Stripe asociada todavía.')
   }
 }
 

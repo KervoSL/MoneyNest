@@ -743,10 +743,11 @@ function _startCountdownTimer() {
 // ════════════════════════════════════════════════════════════════
 
 function _applyExportGating(scenario) {
-  scenario = scenario || _getScenario();
-  // Export is available during the trial, Local and Pro alike — only
-  // gated once the trial has actually EXPIRED (no active plan at all).
-  const isLocked = scenario === 'EXPIRED';
+  // MNEntitlements (Fase 4) is the real source of truth; only fall
+  // back to the local scenario/mock check if it hasn't loaded.
+  const isLocked = window.MNEntitlements
+    ? !window.MNEntitlements.hasExportAccess()
+    : (scenario || _getScenario()) === 'EXPIRED';
 
   document.querySelectorAll(
     '[onclick*="exportarGastos"], [onclick*="exportarPDF"], [onclick*="exportarIngresos"]'
