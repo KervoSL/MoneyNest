@@ -120,7 +120,15 @@
   // as Local/Pro. Import and export are explicitly NEVER Pro-gated.
   function hasImportAccess() { return isTrial() || isLocal() || isPro(); }
   function hasExportAccess() { return isTrial() || isLocal() || isPro(); }
-  function hasCloudAccess()  { return isPro() || isTrial(); }
+  // hasCloudAccess trusts cloud_enabled — the single authoritative flag
+  // the backend already computes (via trg_sync_cloud_enabled, which only
+  // fires off a webhook-verified plan change) — rather than re-deriving
+  // its own opinion from isPro(). This is the exact flag a future Cloud
+  // Sync feature would check before syncing, so there's no risk of the
+  // entitlement and the real gate ever disagreeing. Trial keeps its
+  // "full access" preview on top, since the backend deliberately never
+  // marks cloud_enabled for trial (that flag is reserved for Pro).
+  function hasCloudAccess()  { return _serverState?.cloud_enabled === true || isTrial(); }
 
   function getServerState()  { return _serverState; }
   function getLastRefresh()  { return _lastRefresh; }

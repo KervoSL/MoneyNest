@@ -56,11 +56,19 @@
   }
 
   // ─── Pro plan guard ───────────────────────────────────────────────
+  // Aligned with MNEntitlements.hasCloudAccess() (Fase 4/8) — the
+  // single real source of truth, backed by Supabase/Stripe — instead
+  // of reading MNAuth/localStorage directly, which is client-editable.
+  // Supabase RLS on cloud_data already rejects any write from a
+  // non-Pro user regardless of what this check returns (verified in
+  // Fase 6), so this was never an exploitable billing gap — but it was
+  // a second, weaker, duplicated gate that's now consistent with the
+  // one everything else in the app uses. Falls back to the previous
+  // local check only if MNEntitlements hasn't loaded for some reason.
   function _isPro() {
+    if (window.MNEntitlements) return window.MNEntitlements.hasCloudAccess();
     try {
-      // Check MNAuth (local plan state)
       if (window.MNAuth && typeof MNAuth.isPro === 'function') return MNAuth.isPro();
-      // Fallback: read localStorage directly
       const raw = localStorage.getItem('mn_user') || localStorage.getItem('mn_auth');
       if (!raw) return false;
       const u = JSON.parse(raw);
