@@ -10,12 +10,10 @@
 import Stripe from 'npm:stripe@14';
 import { validatePromoCode, computeDiscount } from '../_shared/stripe-promo.ts';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-  apiVersion: '2024-04-10',
-});
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') || Deno.env.get('STRIPE_SECRET_KEY') || '', {});
 
-const PRICE_LOCAL = 'price_1TTJCBFWll222Kpazyvo4A4W';
-const PRICE_PRO   = 'price_1TTJD3FWll222KpaJ1T6OG6C';
+const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3';
+const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j';
 const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
 
 const CORS = {
