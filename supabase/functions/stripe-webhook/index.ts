@@ -1,16 +1,29 @@
 import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-  apiVersion: '2025-04-30',
-});
+// API version: intentionally NOT pinned. The old code hardcoded
+// apiVersion: '2025-04-30', which went stale and made the Stripe SDK
+// reject ~120 real events outright ('Invalid Stripe API version').
+// Omitting it makes every request use the account's own
+// Dashboard-configured default version, which Stripe recommends
+// specifically to avoid this failure class recurring.
+const stripeLive = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {});
+const stripeTest = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') ?? '', {});
 
-const WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
+const WEBHOOK_SECRET_LIVE = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
+const WEBHOOK_SECRET_TEST = Deno.env.get('STRIPE_WEBHOOK_SECRET_TEST') ?? '';
 
 const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')              ?? '',
+  Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
+
+// Same price→plan mapping as create-checkout (test-mode defaults from
+// Fase 2; overridable via secrets once live prices are ready).
+const PRICE_TO_PLAN: Record<string, string> = {
+  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
+  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
+};
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,267 +32,189 @@ const CORS = {
 };
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
 
-async function logEvent(
-  stripeEventId: string,
-  eventType: string,
-  payload: unknown,
-  userId: string | null,
-  error?: string,
-) {
+// Subscription period dates live on the subscription ITEM in current
+// API versions, not on the subscription object root — reading
+// sub.current_period_start directly (the old bug) is always undefined
+// and produces 'Invalid time value' when passed to `new Date()`.
+function periodDates(sub: Stripe.Subscription): { start: string | null; end: string | null } {
+  const item = sub.items?.data?.[0];
+  const start = item?.current_period_start ?? (sub as unknown as Record<string, number>).current_period_start;
+  const end   = item?.current_period_end   ?? (sub as unknown as Record<string, number>).current_period_end;
+  return {
+    start: typeof start === 'number' ? new Date(start * 1000).toISOString() : null,
+    end:   typeof end   === 'number' ? new Date(end   * 1000).toISOString() : null,
+  };
+}
+
+function resolvePlan(sub: Stripe.Subscription): string | null {
+  const metaPlan = sub.metadata?.plan;
+  if (metaPlan === 'local' || metaPlan === 'pro') return metaPlan;
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  return priceId ? PRICE_TO_PLAN[priceId] ?? null : null;
+}
+
+async function logEvent(stripeEventId: string, eventType: string, payload: unknown, userId: string | null, error?: string) {
   await supabase.from('billing_events').insert({
-    stripe_event_id: stripeEventId,
-    event_type:      eventType,
-    payload,
-    user_id:         userId,
-    processed:       !error,
-    error:           error ?? null,
+    stripe_event_id: stripeEventId, event_type: eventType, payload,
+    user_id: userId, processed: !error, error: error ?? null,
   });
 }
 
-async function resolveEmail(customer: string | Stripe.Customer | null): Promise<string> {
-  if (!customer) return '';
-  if (typeof customer !== 'string') return customer.email ?? '';
-  const c = await stripe.customers.retrieve(customer);
-  return (c as Stripe.Customer).email ?? '';
+// ── Activation / cancellation ──────────────────────────────────
+
+async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe) {
+  const userId = sub.metadata?.user_id || null;
+  const plan = resolvePlan(sub);
+  if (!userId || !plan) {
+    // Identity/plan MUST be established at Checkout-creation time by
+    // our own backend. We deliberately do not guess via email lookup
+    // here — that fragility (mismatched/duplicate emails) was the
+    // original design's main weak point.
+    throw new Error(`cannot resolve user_id/plan for subscription ${sub.id} (metadata: ${JSON.stringify(sub.metadata)})`);
+  }
+  const { start, end } = periodDates(sub);
+  const custId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id ?? '';
+
+  const { error } = await supabase.rpc('activate_subscription_plan', {
+    p_user_id: userId,
+    p_plan: plan,
+    p_stripe_customer_id: custId,
+    p_stripe_subscription_id: sub.id,
+    p_stripe_price_id: sub.items?.data?.[0]?.price?.id ?? '',
+    p_status: sub.status,
+    p_current_period_start: start,
+    p_current_period_end: end,
+    p_cancel_at_period_end: sub.cancel_at_period_end,
+  });
+  if (error) throw error;
+
+  if (sub.status === 'canceled' || sub.status === 'unpaid' || sub.status === 'incomplete_expired') {
+    await reevaluateAfterLoss(userId, sub.id);
+  }
 }
 
-// ── handlers ────────────────────────────────────────────────────
+// After a subscription is no longer active, check whether the user
+// still holds a DIFFERENT active/trialing subscription (e.g. they had
+// both Local and Pro, or switched plans) before downgrading — avoids
+// blindly downgrading someone who is still legitimately entitled.
+async function reevaluateAfterLoss(userId: string, endedSubscriptionId: string) {
+  const { data: others } = await supabase
+    .from('subscriptions')
+    .select('stripe_price_id, status')
+    .eq('user_id', userId)
+    .neq('stripe_subscription_id', endedSubscriptionId)
+    .in('status', ['active', 'trialing']);
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const email  = session.customer_email ?? session.customer_details?.email ?? '';
-  const custId = typeof session.customer === 'string' ? session.customer : '';
-  const plan   = session.metadata?.plan;
+  const stillActivePlan = others?.map(o => PRICE_TO_PLAN[o.stripe_price_id]).find(Boolean);
 
-  const { data: profileId, error: profileErr } = await supabase
-    .rpc('get_or_create_profile', { user_email: email });
-  if (profileErr) throw profileErr;
+  await supabase.from('profiles')
+    .update({ plan: stillActivePlan ?? 'locked_local', updated_at: new Date().toISOString() })
+    .eq('id', userId);
+}
 
-  if (plan === 'local_lifetime') {
-    const { error } = await supabase
-      .rpc('activate_local_plan', { user_email: email, customer_id: custId });
-    if (error) throw error;
+// ── Handlers ────────────────────────────────────────────────────
 
-    await supabase.from('purchases').insert({
-      user_id:                    profileId,
-      stripe_checkout_session_id: session.id,
-      stripe_payment_intent_id:   typeof session.payment_intent === 'string'
-                                    ? session.payment_intent : null,
-      stripe_customer_id:         custId,
-      stripe_price_id:            session.metadata?.priceId ?? '',
-      amount:                     session.amount_total ?? 699,
-      currency:                   session.currency ?? 'eur',
-      status:                     'completed',
-      product_type:               'local_lifetime',
-    });
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
+  if (session.mode !== 'subscription' || !session.subscription) return;
+  const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+  const sub = await stripe.subscriptions.retrieve(subId);
+  await activateFromSubscription(sub, stripe);
 
-  } else if (plan === 'pro_annual') {
-    const subId = typeof session.subscription === 'string' ? session.subscription : '';
-
-    const { error } = await supabase
-      .rpc('activate_pro_plan', { user_email: email, subscription_id: subId });
-    if (error) throw error;
-
-    if (subId) {
-      const sub = await stripe.subscriptions.retrieve(subId);
-      await supabase.from('subscriptions').upsert({
-        user_id:                profileId,
-        stripe_subscription_id: sub.id,
-        stripe_customer_id:     custId,
-        stripe_price_id:        sub.items.data[0]?.price.id ?? '',
-        status:                 sub.status,
-        current_period_start:   new Date(sub.current_period_start * 1000).toISOString(),
-        current_period_end:     new Date(sub.current_period_end   * 1000).toISOString(),
-        cancel_at_period_end:   sub.cancel_at_period_end,
-      }, { onConflict: 'stripe_subscription_id' });
-    }
-  }
-
-  // ── Enviar email de confirmación ──────────────────────────────
+  const email = session.customer_email ?? session.customer_details?.email ?? '';
   if (email) {
     await supabase.functions.invoke('send-email', {
-      body: {
-        to: email,
-        type: plan === 'local_lifetime' ? 'purchase_local' : 'purchase_pro',
-        plan: plan,
-      },
+      body: { to: email, type: session.metadata?.plan === 'pro' ? 'purchase_pro' : 'purchase_local', plan: session.metadata?.plan },
     });
   }
 }
 
-async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
-  const email  = await resolveEmail(sub.customer);
-  const custId = typeof sub.customer === 'string' ? sub.customer : '';
-
-  // ── Resolver user_id desde profiles ──────────────────────────
-  let userId: string | null = null;
-  if (email) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
-    userId = profile?.id ?? null;
-  }
-  // ──────────────────────────────────────────────────────────────
-
-  await supabase.from('subscriptions').upsert({
-    user_id:                userId,
-    stripe_subscription_id: sub.id,
-    stripe_customer_id:     custId,
-    stripe_price_id:        sub.items.data[0]?.price.id ?? '',
-    status:                 sub.status,
-    current_period_start:   new Date(sub.current_period_start * 1000).toISOString(),
-    current_period_end:     new Date(sub.current_period_end   * 1000).toISOString(),
-    cancel_at_period_end:   sub.cancel_at_period_end,
-    canceled_at:            sub.canceled_at
-                              ? new Date(sub.canceled_at * 1000).toISOString()
-                              : null,
-  }, { onConflict: 'stripe_subscription_id' });
-
-  if (sub.status === 'canceled' || sub.status === 'unpaid') {
-    await supabase.rpc('cancel_pro_plan', { user_email: email });
-  }
-
-  // Re-activate if subscription becomes active again after past_due
-  if (sub.status === 'active') {
-    await supabase.rpc('activate_pro_plan', {
-      user_email:      email,
-      subscription_id: sub.id,
-    });
-  }
+async function handleSubscriptionUpsert(sub: Stripe.Subscription, stripe: Stripe) {
+  await activateFromSubscription(sub, stripe);
 }
 
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  const subId = typeof invoice.subscription === 'string' ? invoice.subscription : null;
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, stripe: Stripe) {
+  const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
   if (!subId) return;
-
-  // Mark subscription active (handles renewal after past_due)
-  await supabase.from('subscriptions')
-    .update({ status: 'active' })
-    .eq('stripe_subscription_id', subId);
-
-  // Ensure profile plan is still pro (renewal case)
-  const email = await resolveEmail(invoice.customer);
-  if (email) {
-    await supabase.rpc('activate_pro_plan', {
-      user_email:      email,
-      subscription_id: subId,
-    });
-  }
+  const sub = await stripe.subscriptions.retrieve(subId);
+  await activateFromSubscription(sub, stripe); // covers renewals — refreshes period dates + reconfirms active status
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  const subId = typeof invoice.subscription === 'string' ? invoice.subscription : null;
+  const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
   if (subId) {
-    await supabase.from('subscriptions')
-      .update({ status: 'past_due' })
-      .eq('stripe_subscription_id', subId);
+    await supabase.from('subscriptions').update({ status: 'past_due', updated_at: new Date().toISOString() }).eq('stripe_subscription_id', subId);
   }
 }
 
-async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
-  // Used as a fallback confirmation for local_lifetime one-time payments.
-  // The checkout.session.completed event is the primary handler — this
-  // ensures the purchase row is marked completed if the session event
-  // was missed or arrived out of order.
-  await supabase.from('purchases')
-    .update({ status: 'completed' })
-    .eq('stripe_payment_intent_id', pi.id)
-    .eq('status', 'pending');
-}
-
-// ── Handler: aviso fin de trial (3 días antes) ────────────────
 async function handleTrialWillEnd(sub: Stripe.Subscription) {
-  const email = await resolveEmail(sub.customer);
-  if (!email) return;
-
-  // Llama a tu función send-email con tipo 'trial_ending'
-  await supabase.functions.invoke('send-email', {
-    body: {
-      to: email,
-      type: 'trial_ending',
-      trialEnd: new Date(sub.trial_end! * 1000).toISOString(),
-    },
-  });
-}
-
-// ── Handler: reembolso → downgrade ───────────────────────────
-async function handleChargeRefunded(charge: Stripe.Charge) {
-  if (!charge.payment_intent) return;
-
-  // Buscar la compra en purchases y marcarla como refunded
-  await supabase
-    .from('purchases')
-    .update({ status: 'refunded' })
-    .eq('stripe_payment_intent_id', charge.payment_intent as string);
-
-  // Si era un plan local, hacer downgrade a trial bloqueado
-  const email = await resolveEmail(charge.customer);
-  if (email) {
-    await supabase
-      .from('profiles')
-      .update({ plan: 'locked_local', updated_at: new Date().toISOString() })
-      .eq('email', email);
+  const custId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id;
+  const { data: profile } = await supabase.from('profiles').select('email').eq('stripe_customer_id', custId).maybeSingle();
+  if (profile?.email) {
+    await supabase.functions.invoke('send-email', { body: { to: profile.email, type: 'trial_ending', trialEnd: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null } });
   }
 }
 
-// ── main ─────────────────────────────────────────────────────────
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const custId = typeof charge.customer === 'string' ? charge.customer : charge.customer?.id;
+  if (!custId) return;
+  await supabase.from('profiles').update({ plan: 'locked_local', updated_at: new Date().toISOString() }).eq('stripe_customer_id', custId);
+}
+
+// ── Main ────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
+  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   const sig = req.headers.get('stripe-signature');
   if (!sig) return json({ error: 'missing_signature' }, 400);
 
+  const rawBody = await req.text();
+
+  // This endpoint receives both live and test-mode events (each Stripe
+  // mode has its own signing secret). Try live first, then test —
+  // whichever matches determines which Stripe client (and therefore
+  // which mode's data) subsequent API calls use.
   let event: Stripe.Event;
-  let rawBody: string;
-
+  let stripeForThisEvent: Stripe;
   try {
-    rawBody = await req.text();
-    event   = await stripe.webhooks.constructEventAsync(rawBody, sig, WEBHOOK_SECRET);
-  } catch (err) {
-    return json({ error: err instanceof Error ? err.message : 'invalid_signature' }, 400);
+    event = await stripeLive.webhooks.constructEventAsync(rawBody, sig, WEBHOOK_SECRET_LIVE);
+    stripeForThisEvent = stripeLive;
+  } catch {
+    try {
+      event = await stripeTest.webhooks.constructEventAsync(rawBody, sig, WEBHOOK_SECRET_TEST);
+      stripeForThisEvent = stripeTest;
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : 'invalid_signature' }, 400);
+    }
   }
 
-  // ── Idempotency check ─────────────────────────────────────────
-  const { data: existingEvent } = await supabase
-    .from('billing_events')
-    .select('id')
-    .eq('stripe_event_id', event.id)
-    .maybeSingle();
-
-  if (existingEvent) {
-    return json({ received: true, skipped: 'duplicate' });
-  }
-  // ─────────────────────────────────────────────────────────────
+  // ── Idempotency: a stripe_event_id can only ever be logged once
+  // (billing_events.stripe_event_id has a UNIQUE constraint) — this
+  // check plus that constraint together guarantee no event is
+  // processed twice, even under concurrent delivery/retries.
+  const { data: existingEvent } = await supabase.from('billing_events').select('id').eq('stripe_event_id', event.id).maybeSingle();
+  if (existingEvent) return json({ received: true, skipped: 'duplicate' });
 
   let handlerError: string | undefined;
-
   try {
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, stripeForThisEvent);
         break;
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
-        await handleSubscriptionUpsert(event.data.object as Stripe.Subscription);
+        await handleSubscriptionUpsert(event.data.object as Stripe.Subscription, stripeForThisEvent);
         break;
       case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice, stripeForThisEvent);
         break;
       case 'invoice.payment_failed':
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
       case 'customer.subscription.trial_will_end':
         await handleTrialWillEnd(event.data.object as Stripe.Subscription);
@@ -294,20 +229,11 @@ Deno.serve(async (req) => {
     handlerError = err instanceof Error ? err.message : 'handler_error';
   }
 
-  // Try to resolve user_id from customer email for audit log
   let auditUserId: string | null = null;
   try {
     const obj = event.data.object as Record<string, unknown>;
-    const custEmail =
-      (obj.customer_email as string) ||
-      ((obj.customer_details as Record<string, string>)?.email) ||
-      (obj.email as string) || '';
-    if (custEmail) {
-      const { data: p } = await supabase
-        .from('profiles').select('id').eq('email', custEmail).maybeSingle();
-      auditUserId = p?.id ?? null;
-    }
-  } catch (_) {}
+    auditUserId = (obj.metadata as Record<string, string>)?.user_id ?? null;
+  } catch { /* best-effort only */ }
 
   await logEvent(event.id, event.type, event.data.object, auditUserId, handlerError);
 

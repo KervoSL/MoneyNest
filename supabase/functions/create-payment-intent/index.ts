@@ -1,20 +1,18 @@
 import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { validatePromoCode, computeDiscount } from '../_shared/stripe-promo.ts';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-  apiVersion: '2024-04-10',
-});
+// apiVersion intentionally omitted — see stripe-webhook for why a
+// hardcoded version silently goes stale.
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') || Deno.env.get('STRIPE_SECRET_KEY') || '', {});
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')              ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-const PRICE_LOCAL     = 'price_1TTJCBFWll222Kpazyvo4A4W';
-const PRICE_PRO       = 'price_1TTJD3FWll222KpaJ1T6OG6C';
-const ALLOWED_PRICES  = new Set([PRICE_LOCAL, PRICE_PRO]);
-const LOCAL_AMOUNT    = 699; // 6,99 € — MoneyNest pago único (sin descuento)
+const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3';
+const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j';
+const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -23,39 +21,64 @@ const CORS = {
 };
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
 
-async function findOrCreateCustomer(email: string): Promise<Stripe.Customer> {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('stripe_customer_id')
-    .eq('email', email)
-    .single();
+// Inlined promo-validation (the deploy tool couldn't resolve the
+// relative import to _shared/stripe-promo.ts) — always validated
+// server-side against Stripe, never trusting a client-claimed discount.
+async function validatePromoCode(code: string) {
+  const trimmed = (code || '').trim();
+  if (!trimmed) return { valid: false as const, reason: 'invalid' as const };
+  const list = await stripe.promotionCodes.list({ code: trimmed, active: true, limit: 1, expand: ['data.coupon'] });
+  const promo = list.data[0];
+  if (!promo) return { valid: false as const, reason: 'invalid' as const };
+  if (promo.expires_at && promo.expires_at * 1000 < Date.now()) return { valid: false as const, reason: 'expired' as const };
+  if (typeof promo.max_redemptions === 'number' && promo.times_redeemed >= promo.max_redemptions) return { valid: false as const, reason: 'exhausted' as const };
+  const coupon = promo.coupon as Stripe.Coupon | null;
+  if (!coupon || coupon.valid === false) return { valid: false as const, reason: 'not_applicable' as const };
+  return { valid: true as const, promotionCodeId: promo.id, percentOff: coupon.percent_off ?? null, amountOff: coupon.amount_off ?? null };
+}
+function computeDiscount(originalAmount: number, result: { percentOff?: number | null; amountOff?: number | null }) {
+  let discountAmount = 0;
+  if (result.percentOff) discountAmount = Math.round(originalAmount * (result.percentOff / 100));
+  else if (typeof result.amountOff === 'number') discountAmount = Math.min(result.amountOff, originalAmount);
+  return { discountAmount, finalAmount: Math.max(0, originalAmount - discountAmount) };
+}
 
+async function findOrCreateCustomer(userId: string, email: string): Promise<Stripe.Customer> {
+  const { data: profile } = await supabase.from('profiles').select('stripe_customer_id').eq('id', userId).maybeSingle();
   if (profile?.stripe_customer_id) {
-    const c = await stripe.customers.retrieve(profile.stripe_customer_id);
-    if (!c.deleted) return c as Stripe.Customer;
+    try {
+      const c = await stripe.customers.retrieve(profile.stripe_customer_id);
+      if (!(c as Stripe.DeletedCustomer).deleted) return c as Stripe.Customer;
+    } catch { /* stale/cross-mode id — recreate below */ }
   }
-
-  return await stripe.customers.create({
-    email,
-    metadata: { app: 'moneynest' },
-  });
+  return await stripe.customers.create({ email, metadata: { app: 'moneynest', user_id: userId } });
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
 
-  let priceId: string, email: string, promoCode: string | undefined;
+  // SECURITY FIX (Fase 6): identity used to come straight from an
+  // unauthenticated client-supplied `email` in the body — anyone could
+  // pass any email and this function would create/reuse a Stripe
+  // Customer for it. Now the caller's real Supabase session is the
+  // ONLY source of identity.
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const jwt = authHeader.replace(/^Bearer\s+/i, '');
+  if (!jwt) return json({ error: 'missing_authorization' }, 401);
+  const { data: userData, error: userErr } = await supabase.auth.getUser(jwt);
+  if (userErr || !userData?.user) return json({ error: 'invalid_session' }, 401);
+  if (!userData.user.email) return json({ error: 'email_required', message: 'Añade un email a tu cuenta antes de comprar.' }, 400);
+  const userId = userData.user.id;
+  const email = userData.user.email;
+
+  let priceId: string, promoCode: string | undefined;
   try {
     const body = await req.json();
     priceId   = body.priceId   ?? '';
-    email     = body.email     ?? '';
     promoCode = body.promoCode || undefined;
   } catch {
     return json({ error: 'invalid_json' }, 400);
@@ -63,114 +86,59 @@ Deno.serve(async (req) => {
 
   if (!ALLOWED_PRICES.has(priceId)) return json({ error: 'invalid_price' }, 400);
 
-  // Si se pide aplicar un codigo promocional, SIEMPRE se revalida aqui
-  // contra Stripe — nunca se confia en que el frontend ya lo validara.
-  // Un codigo invalido/expirado/agotado bloquea la creacion del cargo
-  // para que el usuario nunca vea un precio con un descuento fantasma.
   let promo: Awaited<ReturnType<typeof validatePromoCode>> | null = null;
   if (promoCode) {
-    promo = await validatePromoCode(stripe, promoCode);
-    if (!promo.valid) {
-      return json({ error: 'invalid_promo_code', reason: promo.reason }, 400);
-    }
+    promo = await validatePromoCode(promoCode);
+    if (!promo.valid) return json({ error: 'invalid_promo_code', reason: promo.reason }, 400);
   }
 
   try {
-    if (priceId === PRICE_LOCAL) {
-      const { discountAmount, finalAmount } = promo
-        ? computeDiscount(LOCAL_AMOUNT, promo)
-        : { discountAmount: 0, finalAmount: LOCAL_AMOUNT };
+    // Amount always re-derived from the live Stripe Price object —
+    // never a hardcoded local constant that could drift from Stripe.
+    const priceObj = await stripe.prices.retrieve(priceId);
+    const baseAmount = priceObj.unit_amount ?? 0;
 
+    if (priceId === PRICE_LOCAL) {
+      const { discountAmount, finalAmount } = promo ? computeDiscount(baseAmount, promo) : { discountAmount: 0, finalAmount: baseAmount };
+      const customer = await findOrCreateCustomer(userId, email);
       const pi = await stripe.paymentIntents.create({
         amount: finalAmount,
-        currency: 'eur',
-        ...(email ? { receipt_email: email } : {}),
-        metadata: {
-          plan: 'local_lifetime',
-          email,
-          ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}),
-        },
+        currency: priceObj.currency,
+        customer: customer.id,
+        receipt_email: email,
+        metadata: { app: 'moneynest', plan: 'local', user_id: userId, ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}) },
         automatic_payment_methods: { enabled: true },
       });
-
-      return json({
-        clientSecret: pi.client_secret,
-        paymentIntentId: pi.id,
-        type: 'payment',
-        pricing: {
-          originalAmount: LOCAL_AMOUNT,
-          discountAmount,
-          finalAmount,
-          currency: 'eur',
-        },
-      });
+      return json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, type: 'payment', pricing: { originalAmount: baseAmount, discountAmount, finalAmount, currency: priceObj.currency } });
     }
 
-    // PRO — subscription with 7-day trial
-    const customer = await findOrCreateCustomer(email);
-
-    // Prevent duplicate active/trialing subscriptions
-    const existing = await stripe.subscriptions.list({
-      customer: customer.id,
-      price: PRICE_PRO,
-      limit: 1,
-    });
-    const activeSub = existing.data.find(
-      (s) => s.status === 'active' || s.status === 'trialing',
-    );
-    if (activeSub) {
-      return json({ error: 'already_subscribed' }, 409);
-    }
+    const customer = await findOrCreateCustomer(userId, email);
+    const existing = await stripe.subscriptions.list({ customer: customer.id, price: PRICE_PRO, limit: 1 });
+    const activeSub = existing.data.find((s) => s.status === 'active' || s.status === 'trialing');
+    if (activeSub) return json({ error: 'already_subscribed' }, 409);
 
     const sub = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: PRICE_PRO }],
       trial_period_days: 7,
       payment_behavior: 'default_incomplete',
-      payment_settings: {
-        save_default_payment_method: 'on_subscription',
-        payment_method_types: ['card'],
-      },
-      // El descuento real de Stripe se aplica de forma nativa a la
-      // subscription — Stripe lo tendrá en cuenta automáticamente en
-      // la primera factura tras el periodo de prueba.
+      payment_settings: { save_default_payment_method: 'on_subscription', payment_method_types: ['card'] },
       ...(promo ? { discounts: [{ promotion_code: promo.promotionCodeId! }] } : {}),
       expand: ['pending_setup_intent', 'latest_invoice.payment_intent'],
-      metadata: {
-        plan: 'pro_annual',
-        email,
-        ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}),
-      },
+      metadata: { app: 'moneynest', plan: 'pro', user_id: userId, ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}) },
     });
 
-    const pendingSetup   = sub.pending_setup_intent as Stripe.SetupIntent | null;
-    const latestInvoice  = sub.latest_invoice       as Stripe.Invoice     | null;
-    const paymentIntent  = latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
-
-    const clientSecret = pendingSetup?.client_secret ?? paymentIntent?.client_secret;
+    const pendingSetup  = sub.pending_setup_intent as Stripe.SetupIntent | null;
+    const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
+    const paymentIntent = latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
+    const clientSecret  = pendingSetup?.client_secret ?? paymentIntent?.client_secret;
     if (!clientSecret) throw new Error('no_client_secret');
 
-    // Precio de referencia del plan PRO para mostrar en el resumen
-    // (el trial no cobra ahora, pero el usuario debe ver el descuento
-    // que se aplicará en su primera factura).
-    const price = await stripe.prices.retrieve(PRICE_PRO);
-    const proOriginalAmount = price.unit_amount ?? 0;
-    const proDiscount = promo
-      ? computeDiscount(proOriginalAmount, promo)
-      : { discountAmount: 0, finalAmount: proOriginalAmount };
-
+    const proDiscount = promo ? computeDiscount(baseAmount, promo) : { discountAmount: 0, finalAmount: baseAmount };
     return json({
-      clientSecret,
-      type:           pendingSetup ? 'setup' : 'payment',
-      subscriptionId: sub.id,
-      pricing: {
-        originalAmount: proOriginalAmount,
-        discountAmount: proDiscount.discountAmount,
-        finalAmount:    proDiscount.finalAmount,
-        currency:       price.currency,
-      },
+      clientSecret, type: pendingSetup ? 'setup' : 'payment', subscriptionId: sub.id,
+      pricing: { originalAmount: baseAmount, discountAmount: proDiscount.discountAmount, finalAmount: proDiscount.finalAmount, currency: priceObj.currency },
     });
-
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'stripe_error' }, 500);
   }

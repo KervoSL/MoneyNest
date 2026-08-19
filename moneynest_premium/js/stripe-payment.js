@@ -574,10 +574,12 @@ window.MNPayment = (() => {
       // fallback — exactly the right behavior here.
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const authToken = window.MNSupabaseAuth?.getSession?.()?.access_token;
+      if (!authToken) throw new Error('missing_authorization');
       const res = await fetch(ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ priceId, promoCode: promoCode || undefined }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -701,10 +703,17 @@ window.MNPayment = (() => {
       try {
         const fbController = new AbortController();
         const fbTimeoutId = setTimeout(() => fbController.abort(), 15000);
+        const fbAuthToken = window.MNSupabaseAuth?.getSession?.()?.access_token;
+        if (!fbAuthToken) throw new Error('missing_authorization');
+        // create-checkout (Fase 3) resolves its own server-side price
+        // from a plan key — never from a client-supplied priceId — so
+        // this only needs to tell it WHICH plan, derived from the
+        // known priceId this sheet was opened with.
+        const plan = (priceId === window.MNStripeConfig?.prices?.pro) ? 'pro' : 'local';
         const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, email, promoCode: promoCode || undefined }),
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${fbAuthToken}` },
+          body: JSON.stringify({ plan }),
           signal: fbController.signal,
         });
         clearTimeout(fbTimeoutId);
