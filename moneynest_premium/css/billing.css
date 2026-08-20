@@ -2130,6 +2130,14 @@
   padding: 3px 8px; border-radius: 6px;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
 }
+.mnpo-restore-row {
+  text-align: center; font-size: .74rem; color: rgba(255,255,255,0.4);
+  margin-top: 14px;
+}
+.mnpo-restore-row a {
+  color: #00D4AA; font-weight: 700; text-decoration: none; margin-left: 4px;
+}
+.mnpo-restore-row a:hover { text-decoration: underline; }
 
 /* SUCCESS */
 .mnpo-success {

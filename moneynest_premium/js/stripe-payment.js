@@ -74,6 +74,10 @@ window.MNPayment = (() => {
               <span class="mnpo-badge">VISA</span>
               <span class="mnpo-badge">Mastercard</span>
             </div>
+            <div class="mnpo-restore-row">
+              ${_spt('payment_restore_q','¿Ya tienes licencia?')}
+              <a href="#" id="mnPoRestoreLink">${_spt('payment_restore_link','Restaurar acceso')}</a>
+            </div>
           </div>
 
         </div>
@@ -97,6 +101,11 @@ window.MNPayment = (() => {
     el.querySelector('.mnpo-backdrop').addEventListener('click', close);
     document.getElementById('mnPoPayBtn').addEventListener('click', _handlePay);
     document.getElementById('mnPoSuccessBtn').addEventListener('click', close);
+    document.getElementById('mnPoRestoreLink')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      close();
+      if (typeof window._openRestoreAccessModal === 'function') window._openRestoreAccessModal(window.MNAuth?.getUser?.() ?? null);
+    });
     // Escape closes the payment modal too — the app's global Escape
     // handler (closeAllModals) only targets .modal-overlay.open, which
     // this overlay doesn't use, so it needs its own listener.
@@ -262,13 +271,13 @@ window.MNPayment = (() => {
     const isLocal = priceId === MNStripeConfig.prices.local;
     const titleEl = document.getElementById('mnPoTitle');
     if (titleEl) titleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'Activar MoneyNest — 6,99€')
-      : _spt('payment_pro_plan_title',   'Activar Sync — 3€/año');
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€')
+      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 14,99€/año');
 
     const rightTitleEl = document.getElementById('mnPoRightTitle');
     if (rightTitleEl) rightTitleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'Activar MoneyNest — 6,99€')
-      : _spt('payment_pro_plan_title',   'Activar Sync — 3€/año');
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€')
+      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 14,99€/año');
 
     document.getElementById('mnPoPlanSummary').innerHTML = isLocal ? `
       <div class="mnpo-left-inner mnpo-left-inner--local">
@@ -277,16 +286,15 @@ window.MNPayment = (() => {
           <span>MoneyNest</span>
         </div>
         <div class="mnpo-left-emoji">💾</div>
-        <div class="mnpo-left-plan-name">MoneyNest</div>
+        <div class="mnpo-left-plan-name">MoneyNest Local</div>
         <div class="mnpo-left-price">6<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
         <div class="mnpo-left-period">pago único · tuyo para siempre</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Acceso ilimitado a todo</li>
           <li>Datos en tu dispositivo</li>
-          <li>Sin suscripción anual</li>
+          <li>Sin suscripción</li>
           <li>Exportación PDF y Excel</li>
-          <li>Sin conexión (offline)</li>
         </ul>
         <div class="mnpo-left-guarantee">✓ Sin riesgo · Reembolso 14 días</div>
       </div>` : `
@@ -295,29 +303,18 @@ window.MNPayment = (() => {
           <div class="mnpo-left-logo"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M4 16L8 9l3 4 4-6 4 4" stroke="#00D4AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <span>MoneyNest</span>
         </div>
-        <div class="mnpo-left-emoji">⚡</div>
-        <div class="mnpo-left-plan-name">MoneyNest + Sync</div>
-        <div class="mnpo-left-price-stack">
-          <div class="mnpo-left-price-row">
-            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--local">MoneyNest</span>
-            <span class="mnpo-left-price-val">6,99€</span>
-            <span class="mnpo-left-price-sub">único</span>
-          </div>
-          <div class="mnpo-left-price-plus">+</div>
-          <div class="mnpo-left-price-row">
-            <span class="mnpo-left-price-lbl mnpo-left-price-lbl--pro">Sync</span>
-            <span class="mnpo-left-price-val">3€</span>
-            <span class="mnpo-left-price-sub">/año</span>
-          </div>
-        </div>
-        <div class="mnpo-left-period">Sync en la nube · anual</div>
+        <div class="mnpo-left-emoji">☁️</div>
+        <div class="mnpo-left-plan-name">MoneyNest Pro</div>
+        <div class="mnpo-left-price">14<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
+        <div class="mnpo-left-period">al año</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
-          <li>Todo lo del Plan Local</li>
+          <li>Todo lo de Local</li>
           <li>Sincronización en la nube</li>
-          <li>Acceso multidevice</li>
-          <li>Backups automáticos</li>
-          <li>7 días sin cargo</li>
+          <li>Acceso multidispositivo</li>
+          <li>Backup automático</li>
+          <li>Restauración</li>
+          <li>7 días de prueba sin cargo</li>
         </ul>
         <div class="mnpo-left-guarantee">✓ Cancela cuando quieras</div>
       </div>`;
@@ -427,27 +424,40 @@ window.MNPayment = (() => {
 
   function _onPaymentSuccess(priceId, email) {
     const isLocal = priceId === MNStripeConfig.prices.local;
-    // Sync MNAuth (source of truth for plan state)
-    if (isLocal) {
-      if (window.MNAuth?.buyLocal) MNAuth.buyLocal(email);
-    } else {
-      if (window.MNAuth?.activatePro) MNAuth.activatePro(email);
-    }
-    // Sync MNBilling (source of truth for billing-ui)
-    if (window.MNBilling) {
-      if (isLocal) {
-        window.MNBilling.activateLocal(email);
-      } else {
-        window.MNBilling.activatePro(email);
-      }
-    }
-    // Refresh billing UI badges immediately
-    if (window.MNBillingUI?.refreshAll) window.MNBillingUI.refreshAll();
-    if (typeof updateSidebarLogo === 'function') updateSidebarLogo();
+    // CRITICAL RULE: never grant the plan from the client. The card
+    // payment succeeding here only means Stripe accepted the charge —
+    // entitlement is granted exclusively by stripe-webhook once it
+    // processes the event and writes to Supabase. We only show a
+    // "processing" success state and poll MNEntitlements (the real,
+    // server-backed source of truth) until it reflects the new plan.
     _showSuccess(priceId);
+    _pollEntitlementAfterPayment(isLocal ? 'local' : 'pro');
     document.dispatchEvent(new CustomEvent('mn:paymentSuccess', {
-      detail: { plan: isLocal ? 'local_lifetime' : 'pro_annual', email },
+      detail: { plan: isLocal ? 'local' : 'pro', email },
     }));
+  }
+
+  // Polls MNEntitlements (which itself calls get_my_plan() against
+  // Supabase) until the webhook has processed the event and the real
+  // plan is confirmed — never assumes success locally in the meantime.
+  async function _pollEntitlementAfterPayment(expectedPlan, retries = 8, delayMs = 2000) {
+    if (!window.MNEntitlements) return;
+    for (let i = 0; i < retries; i++) {
+      await new Promise(r => setTimeout(r, i === 0 ? 1500 : delayMs));
+      try {
+        await window.MNEntitlements.refresh();
+        const state = window.MNEntitlements.getServerState();
+        if (state?.plan === expectedPlan) {
+          if (window.MNAuthUI) {
+            window.MNAuthUI.renderAuthBadge('authPlanBadge');
+            window.MNAuthUI.renderTrialPill('trialPillContainer');
+          }
+          if (typeof updateSidebarLogo === 'function') updateSidebarLogo();
+          if (typeof window.render === 'function') window.render();
+          break;
+        }
+      } catch (_) {}
+    }
   }
 
   // ── Handle return from 3DS redirect ───────────────────────────
@@ -490,42 +500,7 @@ window.MNPayment = (() => {
 
   async function _syncPlanFromServer(plan, retries = 4, delayMs = 2000) {
     if (!window.MNSupabaseAuth?.isLoggedIn()) return;
-    for (let i = 0; i < retries; i++) {
-      await new Promise(r => setTimeout(r, i === 0 ? 1000 : delayMs));
-      try {
-        const profile = await window.MNSupabaseAuth.getProfile(true);
-        if (!profile) continue;
-        const expectedPlan = plan === 'local' ? 'local' : 'pro';
-        if (profile.plan === expectedPlan || profile.plan === 'local_lifetime' || profile.plan === 'pro_annual' || profile.plan === 'pro') {
-          // Server confirmed — re-sync to localStorage
-          await window.MNSupabaseAuth._sb.auth.getSession(); // refresh session
-          // Trigger the sync path in supabase-auth.js
-          const { data: { session } } = await window.MNSupabaseAuth._sb.auth.getSession();
-          if (session?.user) {
-            // Force profile re-sync
-            if (window.MNAuthUI) {
-              window.MNAuthUI.renderAuthBadge('authPlanBadge');
-              window.MNAuthUI.renderTrialPill('trialPillContainer');
-            }
-            // Sync MNBilling with confirmed server plan
-            if (window.MNBilling) {
-              const targetBillingPlan = plan === 'local' ? 'local_lifetime' : 'pro_annual';
-              const currentSub = window.MNBilling.getSub();
-              if (!currentSub || currentSub.plan !== targetBillingPlan) {
-                if (plan === 'local') {
-                  window.MNBilling.activateLocal();
-                } else {
-                  window.MNBilling.activatePro();
-                }
-              }
-            }
-            // Refresh billing UI reactively
-            if (window.MNBillingUI?.refreshAll) window.MNBillingUI.refreshAll();
-          }
-          break;
-        }
-      } catch (_) {}
-    }
+    await _pollEntitlementAfterPayment(plan === 'local' ? 'local' : 'pro', retries, delayMs);
   }
 
   // ── Public API ─────────────────────────────────────────────────
@@ -735,6 +710,7 @@ window.MNPayment = (() => {
     if (!_overlay) return;
     _overlay.classList.remove('mnpo--open');
     if (typeof window._popScrollLock === 'function') window._popScrollLock(); else document.body.style.overflow = '';
+    document.dispatchEvent(new CustomEvent('mn:paymentModalClosed'));
     // Small delay so close animation plays before cleanup
     setTimeout(() => {
       if (_elements) {

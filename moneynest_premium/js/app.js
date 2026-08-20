@@ -863,6 +863,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Importar',
     topbar_exportar: '⬆ Exportar',
     nav_logros: 'Logros',
+    nav_facturacion: 'Plan y facturación', nav_sub_facturacion: 'Tu plan y pagos',
     nav_sub_logros: 'Tus metas conseguidas',
     cfg_notificaciones: 'Notificaciones',
     tut_salir: '✕ Salir',
@@ -1379,6 +1380,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Import',
     topbar_exportar: '⬆ Export',
     nav_logros: 'Achievements',
+    nav_facturacion: 'Billing & Plan', nav_sub_facturacion: 'Your plan and payments',
     nav_sub_logros: 'Your milestones',
     cfg_notificaciones: 'Notifications',
     tut_salir: '✕ Exit',
@@ -1794,6 +1796,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Importa',
     topbar_exportar: '⬆ Esporta',
     nav_logros: 'Traguardi',
+    nav_facturacion: 'Piano e fatturazione', nav_sub_facturacion: 'Il tuo piano e pagamenti',
     nav_sub_logros: 'I tuoi obiettivi raggiunti',
     cfg_notificaciones: 'Notifiche',
     tut_salir: '✕ Esci',
@@ -2209,6 +2212,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Importer',
     topbar_exportar: '⬆ Exporter',
     nav_logros: 'Succès',
+    nav_facturacion: 'Forfait et facturation', nav_sub_facturacion: 'Votre forfait et paiements',
     nav_sub_logros: 'Vos objectifs atteints',
     cfg_notificaciones: 'Notifications',
     tut_salir: '✕ Quitter',
@@ -2624,6 +2628,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Importieren',
     topbar_exportar: '⬆ Exportieren',
     nav_logros: 'Erfolge',
+    nav_facturacion: 'Plan & Abrechnung', nav_sub_facturacion: 'Ihr Plan und Zahlungen',
     nav_sub_logros: 'Deine Meilensteine',
     cfg_notificaciones: 'Benachrichtigungen',
     tut_salir: '✕ Beenden',
@@ -3039,6 +3044,7 @@ const TRANSLATIONS = {
     topbar_importar: '⬇ Importar',
     topbar_exportar: '⬆ Exportar',
     nav_logros: 'Conquistas',
+    nav_facturacion: 'Plano e faturação', nav_sub_facturacion: 'Seu plano e pagamentos',
     nav_sub_logros: 'As suas metas alcançadas',
     cfg_notificaciones: 'Notificações',
     tut_salir: '✕ Sair',
@@ -7388,105 +7394,6 @@ function renderConfiguracion() {
         <button class="btn btn-primary btn-sm" onclick="guardarPerfil()">${t('cfg_guardar')}</button>
       </div>
 
-      <!-- Plan y facturación -->
-      <div class="card" id="mn-billing-card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
-            <div class="card-subtitle">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
-          </div>
-        </div>
-        ${(() => {
-          // Fuente real: MNEntitlements (respaldado por Supabase/Stripe),
-          // nunca el estado mock de MNBilling directamente — así nunca
-          // se muestra "activo" si el plan no está realmente confirmado.
-          const e = window.MNEntitlements
-          const isTrial = e ? e.isTrial() : true
-          const isExpired = e ? e.isTrialExpired() : false
-          const isPro = e ? e.isPro() : false
-          const isLocal = e ? e.isLocal() : false
-          const pink = '#EC4899'
-
-          // ── TRIAL (activo) ──
-          if (isTrial) {
-            const state = window.MNEntitlements?.getServerState()
-            const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
-            const hoursLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / 3600000)) : 24
-            return `
-            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
-              <div style="font-size:1.05rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.8rem;color:var(--text2)">· ${_aut('cfg_te_quedan','Te quedan')} ${hoursLeft}h</span></div>
-              <div style="font-size:.8rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
-              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-                <button class="btn btn-secondary btn-sm" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_local','Elegir Local')}</button>
-                <button class="btn btn-sm" style="background:${pink};color:#fff;border:none" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_pro','Elegir Pro')}</button>
-              </div>
-            </div>`
-          }
-
-          // ── LOCAL ──
-          if (isLocal) {
-            const price = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
-            return `
-            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                <div>
-                  <div style="font-size:1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
-                  <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(price)} <span style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase">— ${_aut('plan_pago_unico','Pago único')}</span></div>
-                </div>
-                <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
-              </div>
-              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
-                <li style="font-size:.8rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
-              </ul>
-              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px"></div>
-              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_mejorar_pro','Mejorar a Pro')}</button>
-              <div style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px">${_aut('cfg_local_upsell','Actualiza a Pro para sincronizar tus datos entre dispositivos.')}</div>
-            </div>`
-          }
-
-          // ── PRO (tratamiento rosa/premium) ──
-          if (isPro) {
-            const price = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
-            return `
-            <div style="padding:16px 18px;background:linear-gradient(160deg, rgba(236,72,153,.1), var(--bg2) 65%);border-radius:12px;border:1.5px solid rgba(236,72,153,.4);margin-bottom:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                <div>
-                  <div style="font-size:1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
-                  <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
-                </div>
-                <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_pro_activo','PRO ACTIVO')}</span>
-              </div>
-              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
-              </ul>
-              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px"></div>
-              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
-            </div>`
-          }
-
-          // ── EXPIRED (trial terminado, sin plan activo — en la
-          // práctica bloquearApp() ya cubre toda la pantalla en este
-          // caso, pero se mantiene por si se accede a esta vista de
-          // otra forma) ──
-          return `
-          <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-            <div style="font-size:1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Prueba gratuita finalizada')}</div>
-            <div style="font-size:.8rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
-            <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_plan','Elegir plan')}</button>
-          </div>`
-        })()}
-
-        <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
-        <div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>
       </div>
 
 
@@ -7610,24 +7517,22 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- Columna derecha: FAQ (Categorías personalizadas se eliminó — ya tiene su propia sección en el sidebar) -->
+    <!-- Columna derecha: Categorías personalizadas se eliminó — ya tiene su propia sección en el sidebar -->
     <div class="card" style="align-self:start">
-      <div class="card-header">
-        <div><div class="card-title">❓ ${t('cfg_faq_titulo','Preguntas frecuentes')}</div><div class="card-subtitle">${t('cfg_faq_sub','Dudas comunes sobre MoneyNest')}</div></div>
+      <div class="card-header"><div class="card-title">🏷️ ${t('cfg_cats_titulo')}</div></div>
+      <div style="text-align:center;padding:16px 8px">
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">${t('cfg_cats_movido','La gestión de categorías ahora tiene su propia sección.')}</div>
+        <button class="btn btn-primary btn-sm" onclick="goTo('categorias')">🏷️ ${t('nav_categorias','Categorías')} →</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-        ${[
-          [t('faq_q1','¿Cómo añado un ingreso?'), t('faq_a1','Ve a la sección Ingresos y pulsa + Nuevo ingreso.')],
-          [t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), t('faq_a_local_pro_short','Local: acceso ilimitado sin suscripción. Pro añade Cloud, sincronización y backup.')],
-          [t('faq_q_recuperar','¿Cómo recupero mis datos si cambio de dispositivo?'), t('faq_a_recuperar_short','Usa Restaurar acceso con el email de tu compra, o inicia sesión si eres Pro.')],
-        ].map(([q,a]) => `
-          <div style="padding:10px 12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
-            <div style="font-size:.82rem;font-weight:700;color:var(--text)">${q}</div>
-            <div style="font-size:.76rem;color:var(--text2);margin-top:4px">${a}</div>
-          </div>`).join('')}
-      </div>
-      <button class="btn btn-secondary btn-sm" style="width:100%" onclick="goTo('faq')">${t('cfg_ver_todas_faq','Ver todas las preguntas')} →</button>
     </div>
+  </div>
+
+  <!-- FAQ — ancho completo, todas las preguntas desplegadas (Bloque 6) -->
+  <div class="card" style="margin-top:20px;max-width:1100px">
+    <div class="card-header">
+      <div><div class="card-title">❓ ${t('cfg_faq_titulo','Preguntas frecuentes')}</div><div class="card-subtitle">${t('cfg_faq_sub','Dudas comunes sobre MoneyNest')}</div></div>
+    </div>
+    ${_faqBodyHtml()}
   </div>`
 
   // Notifications settings panel (post-render)
@@ -7645,6 +7550,150 @@ function renderConfiguracion() {
   // local mock cache.
   if (document.getElementById('mn-sub-status-info')) _loadRealSubscriptionStatus()
 }
+function renderFacturacion() {
+  const el = document.getElementById('content')
+  if (!el) return
+  const e = window.MNEntitlements
+  const isTrial   = e ? e.isTrial() : true
+  const isPro     = e ? e.isPro() : false
+  const isLocal   = e ? e.isLocal() : false
+  const hasPlan   = isPro || isLocal
+  const pink      = '#EC4899'
+  const localPrice = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
+  const proPrice   = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
+
+  // ── "Tu plan" — current status, with real management actions ──
+  const currentPlanHtml = (() => {
+    if (isPro) return `
+      <div class="card" style="background:linear-gradient(160deg, rgba(236,72,153,.1), var(--card) 65%);border:1.5px solid rgba(236,72,153,.4)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
+            <div style="font-size:1.5rem;font-weight:900;color:${pink};margin:4px 0">${eur(proPrice)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
+          </div>
+          <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_pro_activo','PRO ACTIVO')}</span>
+        </div>
+        <ul style="list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:6px">
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
+        </ul>
+        <div id="mn-sub-status-info" style="font-size:.78rem;color:var(--text3);margin-bottom:14px"></div>
+        <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
+      </div>`
+
+    if (isLocal) return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(localPrice)} <span style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase">— ${_aut('plan_pago_unico','Pago único')}</span></div>
+          </div>
+          <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
+        </div>
+        <ul style="list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:6px">
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
+          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
+          <li style="font-size:.84rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
+        </ul>
+        <div id="mn-sub-status-info" style="font-size:.78rem;color:var(--text3);margin-bottom:14px"></div>
+        <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('facturacion')">${_aut('cfg_btn_mejorar_pro','Mejorar a Pro')}</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
+      </div>`
+
+    // Trial / sin plan
+    const state = e?.getServerState()
+    const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
+    const hoursLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / 3600000)) : 24
+    const expired = e ? e.isTrialExpired() : false
+    return `
+      <div class="card">
+        <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
+        ${expired ? `
+          <div style="font-size:1.1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Prueba gratuita finalizada')}</div>
+          <div style="font-size:.85rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
+        ` : `
+          <div style="font-size:1.1rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.85rem;color:var(--text2)">· ${_aut('cfg_te_quedan','Te quedan')} ${hoursLeft}h</span></div>
+          <div style="font-size:.85rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
+        `}
+      </div>`
+  })()
+
+  // ── Comparación Local vs Pro — botones reales: nunca conceden nada,
+  // abren el modal de pago antiguo (MNPayment) directamente ──
+  const comparisonHtml = `
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">⚖️ ${_aut('cfg_comparar_planes','Compara los planes')}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="padding:16px;border-radius:12px;border:1.5px solid var(--border2);${isLocal ? 'border-color:var(--accent);background:var(--accent-dim)' : ''}">
+          <div style="font-size:.9rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
+          <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:6px 0 2px">${eur(localPrice)}</div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">${_aut('plan_pago_unico','Pago único')}</div>
+          <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:4px">
+            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
+            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
+            <li style="font-size:.78rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
+          </ul>
+          ${isLocal
+            ? `<div style="text-align:center;font-size:.72rem;font-weight:800;color:var(--accent);text-transform:uppercase">✓ ${_aut('cfg_estado_activo','Activo')}</div>`
+            : `<button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNAuthUI._doConfirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')}</button>`}
+        </div>
+        <div style="padding:16px;border-radius:12px;border:1.5px solid ${isPro ? pink : 'var(--border2)'};${isPro ? 'background:rgba(236,72,153,.08)' : ''}">
+          <div style="font-size:.9rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
+          <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:6px 0 2px">${eur(proPrice)}</div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">/${_aut('plan_periodo_ano','año')}</div>
+          <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:4px">
+            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
+            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
+            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
+          </ul>
+          ${isPro
+            ? `<div style="text-align:center;font-size:.72rem;font-weight:800;color:${pink};text-transform:uppercase">✓ PRO ACTIVO</div>`
+            : `<button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI._doConfirmPlan('pro')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>`}
+        </div>
+      </div>
+    </div>`
+
+  // ── Acciones adicionales: restaurar acceso y código promocional ──
+  const actionsHtml = `
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">🔑 ${_aut('cfg_mas_opciones','Más opciones')}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-ghost btn-sm" style="width:100%;text-align:left;justify-content:flex-start" onclick="_openRestoreAccessModal(window.MNAuth?.getUser?.() ?? null)">🔓 ${_aut('cfg_btn_restaurar_acceso','Restaurar acceso')}</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%;text-align:left;justify-content:flex-start" onclick="MNAuthUI._doConfirmPlan('${isPro ? 'pro' : 'local'}')">🏷️ ${_aut('cfg_btn_codigo_promo','Introducir código promocional')}</button>
+      </div>
+    </div>
+    <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
+    <div class="card" style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>`
+
+  // Order: no plan yet → pick-a-plan comparison comes first; already
+  // Local/Pro → current status comes first, comparison/upsell last.
+  const sections = hasPlan
+    ? [currentPlanHtml, comparisonHtml, actionsHtml]
+    : [comparisonHtml, currentPlanHtml, actionsHtml]
+
+  el.innerHTML = `
+  <div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+    <div class="section-header">
+      <div>
+        <div class="page-h1">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
+        <div class="page-sub">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
+      </div>
+    </div>
+    ${sections.join('')}
+  </div>`
+
+  if (document.getElementById('mn-sub-status-info')) _loadRealSubscriptionStatus()
+}
+
 function renderLogros() {
   const el = document.getElementById('content')
   if (!el) return
@@ -8546,8 +8595,6 @@ function resetIngresoForm() {
   poblarCuentaSelect('ingresoCuenta')
   const cl = document.getElementById('ingresoClienteLink')
   if (cl) cl.value = ''
-  const saveAddBtn = document.getElementById('ingresoSaveAddAnotherBtn')
-  if (saveAddBtn) saveAddBtn.style.display = ''
 }
 function editarIngreso(id) {
   const i = S.ingresos.find(x=>x.id===id)
@@ -8564,11 +8611,9 @@ function editarIngreso(id) {
   document.getElementById('ingresoUpdateSaldo').checked = false
   poblarSelect('ingresoCat','ingreso',i.categoria||'')
   poblarCuentaSelect('ingresoCuenta',i.cuentaId||'')
-  const saveAddBtn = document.getElementById('ingresoSaveAddAnotherBtn')
-  if (saveAddBtn) saveAddBtn.style.display = 'none'
   openModal('ingresoModal')
 }
-function guardarIngreso(keepOpen) {
+function guardarIngreso() {
   if (!_formGuard.lock('ingresoModal')) return
   const _unlock = () => _formGuard.unlock('ingresoModal')
   const concepto = document.getElementById('ingresoConcepto').value.trim()
@@ -8612,27 +8657,21 @@ function guardarIngreso(keepOpen) {
   if (window.MNGamification) { MNGamification.checkAchievement('ingreso_added'); MNGamification.checkAchievement('data_check'); }
   // Clear month filter so all incomes are visible after saving
   if (!id) _ingMesFilter = ''
-  // "Guardar y añadir otro" solo aplica a creacion nueva — editar
-  // siempre cierra el modal normalmente, sin importar keepOpen.
-  if (keepOpen && !id) {
-    render()
-    _resetIngresoFormKeepingContext()
-    _unlock()
-    toast('✓ ' + t('toast_ingreso_guardado') + ' · ' + t('toast_seguir_anadiendo','sigue añadiendo otro'))
-  } else {
-    closeModal('ingresoModal')
-    _unlock()
-    render()
-    toast(t('toast_ingreso_guardado'))
-  }
+  closeModal('ingresoModal')
+  _unlock()
+  render()
+  toast(t('toast_ingreso_guardado'))
+  // Post-save modal (solo al CREAR, no al editar) — ofrece continuar
+  // añadiendo con la misma fecha/cuenta/categoría, con otra fecha, o
+  // cerrar. Sustituye por completo al viejo "Guardar y añadir otro".
+  if (!id) _openPostSaveModal('ingreso')
 }
 
-// Reseteo PARCIAL para "Guardar y añadir otro": mantiene la fecha y la
-// cuenta (lo mas util al introducir varias transacciones seguidas del
-// mismo dia/cuenta — el usuario puede cambiarlas libremente si quiere
-// "otra fecha"), pero NUNCA copia importe, concepto ni categoria — cada
-// transaccion debe introducirse explicitamente para evitar duplicados
-// accidentales por descuido.
+// Reseteo PARCIAL para el modal post-guardado ("Misma fecha"): mantiene
+// fecha y cuenta (lo mas util al introducir varias transacciones
+// seguidas del mismo dia/cuenta), pero NUNCA copia importe, concepto ni
+// categoria — cada transaccion debe introducirse explicitamente para
+// evitar duplicados accidentales por descuido.
 function _resetIngresoFormKeepingContext() {
   document.getElementById('ingresoId').value = ''
   document.getElementById('ingresoModalTitle').textContent = t('modal_nuevo_ingreso')
@@ -8643,6 +8682,16 @@ function _resetIngresoFormKeepingContext() {
   poblarSelect('ingresoCat','ingreso')
   const concepto = document.getElementById('ingresoConcepto')
   if (concepto) concepto.focus()
+}
+// Reseteo COMPLETO para el modal post-guardado ("Otra fecha"): igual
+// que el anterior, pero fecha y cuenta tambien vuelven a su valor por
+// defecto — el usuario elige una fecha nueva libremente.
+function _resetIngresoFormFull() {
+  _resetIngresoFormKeepingContext()
+  const fechaEl = document.getElementById('ingresoFecha')
+  if (fechaEl) fechaEl.value = todayISO()
+  const cuentaEl = document.getElementById('ingresoCuenta')
+  if (cuentaEl) cuentaEl.selectedIndex = 0
 }
 // Unico punto de eliminacion de gastos/ingresos — usado tanto por el
 // borrado individual (borrarGasto/borrarIngreso) como por el borrado en
@@ -8720,8 +8769,6 @@ function resetGastoForm() {
   poblarCuentaSelect('gastoCuenta')
   poblarProveedorSelect('gastoProveedor','')
   window._gastoProveedorId = null
-  const saveAddBtn = document.getElementById('gastoSaveAddAnotherBtn')
-  if (saveAddBtn) saveAddBtn.style.display = ''
 }
 function editarGasto(id) {
   const g = S.gastos.find(x=>x.id===id)
@@ -8740,11 +8787,9 @@ function editarGasto(id) {
   poblarSelect('gastoCat','gasto',g.categoria||'')
   poblarCuentaSelect('gastoCuenta',g.cuentaId||'')
   poblarProveedorSelect('gastoProveedor',g.proveedorId||'')
-  const saveAddBtn = document.getElementById('gastoSaveAddAnotherBtn')
-  if (saveAddBtn) saveAddBtn.style.display = 'none'
   openModal('gastoModal')
 }
-function guardarGasto(keepOpen) {
+function guardarGasto() {
   if (!_formGuard.lock('gastoModal')) return
   const _unlock = () => _formGuard.unlock('gastoModal')
   const concepto = document.getElementById('gastoConcepto').value.trim()
@@ -8794,16 +8839,10 @@ function guardarGasto(keepOpen) {
         })
       } catch(e) {}
     }
-    // "Guardar y añadir otro" solo aplica a creacion nueva — editar
-    // siempre cierra el modal normalmente, sin importar keepOpen.
-    if (keepOpen && !id) {
-      render()
-      _resetGastoFormKeepingContext()
-      _unlock()
-      toast('✓ ' + t('toast_gasto_guardado') + ' · ' + t('toast_seguir_anadiendo','sigue añadiendo otro'))
-    } else {
-      closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
-    }
+    closeModal('gastoModal'); _unlock(); render(); toast(t('toast_gasto_guardado'))
+    // Post-save modal (solo al CREAR) — sustituye al viejo "Guardar y
+    // añadir otro".
+    if (!id) _openPostSaveModal('gasto')
   }
 
   // Warn if operation would leave account in negative balance
@@ -8821,9 +8860,9 @@ function guardarGasto(keepOpen) {
   _doSaveGasto()
 }
 
-// Reseteo PARCIAL para "Guardar y añadir otro": mantiene fecha, cuenta
-// y proveedor (utiles al introducir varias transacciones seguidas),
-// pero NUNCA copia importe, concepto ni categoria.
+// Reseteo PARCIAL para el modal post-guardado ("Misma fecha"): mantiene
+// fecha, cuenta y proveedor (utiles al introducir varias transacciones
+// seguidas), pero NUNCA copia importe, concepto ni categoria.
 function _resetGastoFormKeepingContext() {
   document.getElementById('gastoId').value = ''
   document.getElementById('gastoModalTitle').textContent = t('modal_nuevo_gasto')
@@ -8834,6 +8873,66 @@ function _resetGastoFormKeepingContext() {
   const concepto = document.getElementById('gastoConcepto')
   if (concepto) concepto.focus()
 }
+// Reseteo COMPLETO para el modal post-guardado ("Otra fecha"): igual
+// que el anterior, pero fecha, cuenta y proveedor tambien vuelven a su
+// valor por defecto.
+function _resetGastoFormFull() {
+  _resetGastoFormKeepingContext()
+  const fechaEl = document.getElementById('gastoFecha')
+  if (fechaEl) fechaEl.value = todayISO()
+  const cuentaEl = document.getElementById('gastoCuenta')
+  if (cuentaEl) cuentaEl.selectedIndex = 0
+  const provEl = document.getElementById('gastoProveedor')
+  if (provEl) provEl.selectedIndex = 0
+  window._gastoProveedorId = null
+}
+
+// ─── MODAL POST-GUARDADO (ingreso/gasto) ─────────────────────────
+// Sustituye al viejo botón "Guardar y añadir otro". Modal propio de
+// MoneyNest (sin alert/confirm nativos), reutiliza el sistema central
+// de scroll-lock. Mismo comportamiento para ingresos y gastos.
+function _openPostSaveModal(tipo) {
+  document.getElementById('postSaveOverlay')?.remove()
+  const esIngreso = tipo === 'ingreso'
+  const color = esIngreso ? 'var(--accent)' : 'var(--red)'
+  const overlay = document.createElement('div')
+  overlay.id = 'postSaveOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:380px">
+      <div class="modal-body" style="text-align:center;padding:28px 24px 20px">
+        <div style="font-size:2rem;margin-bottom:10px">✓</div>
+        <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:6px">${t('postsave_titulo','¿Qué quieres hacer ahora?')}</div>
+        <div style="font-size:.82rem;color:var(--text2);margin-bottom:20px">${esIngreso ? t('postsave_sub_ingreso','Tu ingreso se ha guardado correctamente.') : t('postsave_sub_gasto','Tu gasto se ha guardado correctamente.')}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary btn-sm" style="width:100%;background:${color};border-color:${color}" onclick="_postSaveChoice('${tipo}','misma')">📅 ${t('postsave_misma_fecha','Crear otro con la misma fecha')}</button>
+          <button class="btn btn-secondary btn-sm" style="width:100%" onclick="_postSaveChoice('${tipo}','otra')">🗓️ ${t('postsave_otra_fecha','Crear otro con otra fecha')}</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="_postSaveChoice('${tipo}','cerrar')">${t('btn_cerrar','Cerrar')}</button>
+        </div>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) _postSaveChoice(tipo, 'cerrar') })
+}
+
+function _postSaveChoice(tipo, choice) {
+  const overlay = document.getElementById('postSaveOverlay')
+  if (overlay) { overlay.classList.remove('open'); setTimeout(() => overlay.remove(), 200) }
+  _popScrollLock()
+
+  if (choice === 'cerrar') return
+
+  const modalId = tipo === 'ingreso' ? 'ingresoModal' : 'gastoModal'
+  if (choice === 'misma') {
+    if (tipo === 'ingreso') _resetIngresoFormKeepingContext(); else _resetGastoFormKeepingContext()
+  } else {
+    if (tipo === 'ingreso') _resetIngresoFormFull(); else _resetGastoFormFull()
+  }
+  openModal(modalId)
+}
+
 function borrarGasto(id) {
   confirmar(t('confirm_eliminar_gasto'), ()=>{
     removeTransactions([id], 'gasto')
@@ -12603,7 +12702,7 @@ function _obRightHTML(step) {
           <span class="ob-pc-emoji">💾</span>
           <span class="ob-pc-tag ob-pc-tag--local">Pago único</span>
         </div>
-        <div class="ob-pc-name">MoneyNest</div>
+        <div class="ob-pc-name">MoneyNest Local</div>
         <div class="ob-pc-price-main">6,99<span class="ob-pc-cur">€</span></div>
         <div class="ob-pc-period">para siempre</div>
         <div class="ob-pc-divider"></div>
@@ -12613,6 +12712,26 @@ function _obRightHTML(step) {
           <li class="no">Sin sincronización cloud</li>
         </ul>
         <div class="ob-pc-check ${obData.plan === 'local' ? 'active' : ''}">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <div class="ob-plan-card ob-plan-card--pro ${obData.plan === 'pro' ? 'selected' : ''}" onclick="obSelectPlan('pro')">
+        <div class="ob-pc-popular">Más popular</div>
+        <div class="ob-pc-top">
+          <span class="ob-pc-emoji">☁️</span>
+          <span class="ob-pc-tag ob-pc-tag--pro">Anual</span>
+        </div>
+        <div class="ob-pc-name">MoneyNest Pro</div>
+        <div class="ob-pc-price-main">14,99<span class="ob-pc-cur">€</span></div>
+        <div class="ob-pc-period">al año</div>
+        <div class="ob-pc-divider"></div>
+        <ul class="ob-pc-feats">
+          <li class="ok">Todo lo de Local</li>
+          <li class="ok">Sincronización cloud</li>
+          <li class="ok">Backup y restauración</li>
+        </ul>
+        <div class="ob-pc-check ${obData.plan === 'pro' ? 'active' : ''}">
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
       </div>
@@ -12689,7 +12808,7 @@ function obSelectPlan(plan) {
     const chk = el.querySelector('.ob-pc-check')
     if (chk) chk.classList.remove('active')
   })
-  const map = { trial: 0, local: 1 }
+  const map = { trial: 0, local: 1, pro: 2 }
   const els = document.querySelectorAll('#obPlanCards .ob-plan-card')
   if (els[map[plan]]) {
     els[map[plan]].classList.add('selected')
@@ -12983,6 +13102,41 @@ async function obNext() {
       return
     }
     obData.nombre = nombre
+  }
+
+  // Step 4: Plan selector — Local/Pro opens the real payment modal
+  // instead of just advancing. Trial (or no selection) continues
+  // normally. If the user cancels/closes the payment modal, onboarding
+  // still continues — "sin permanencia, cambia cuando quieras".
+  if (obStep === 4 && (obData.plan === 'local' || obData.plan === 'pro')) {
+    const priceId = obData.plan === 'pro' ? window.MNStripeConfig?.prices?.pro : window.MNStripeConfig?.prices?.local
+    if (priceId && window.MNPayment) {
+      const proceedToNext = () => {
+        document.removeEventListener('mn:paymentModalClosed', proceedToNext)
+        obStep++
+        obRender('forward')
+      }
+      document.addEventListener('mn:paymentModalClosed', proceedToNext, { once: true })
+
+      // Step 1's signUp() is fire-and-forget — give the session a
+      // brief moment to establish if it somehow hasn't yet (steps 2-3
+      // usually take long enough that this never actually waits).
+      let waited = 0
+      while (!window.MNSupabaseAuth?.isLoggedIn() && waited < 3000) {
+        await new Promise(r => setTimeout(r, 300))
+        waited += 300
+      }
+      if (!window.MNSupabaseAuth?.isLoggedIn()) {
+        document.removeEventListener('mn:paymentModalClosed', proceedToNext)
+        toast('No se pudo verificar tu cuenta todavía. Puedes elegir un plan luego desde Plan y facturación.')
+        obStep++
+        obRender('forward')
+        return
+      }
+      const email = window.MNSupabaseAuth.getSession()?.user?.email || obData.email || ''
+      MNPayment.open(priceId, email)
+      return
+    }
   }
 
   if (obStep === OB_TOTAL) { finishOnboarding(); return }
@@ -14268,7 +14422,7 @@ function toggleFAQ(id) {
   if (arrow) arrow.textContent = window._faqOpen[id] ? '▲' : '▼'
 }
 
-function renderFAQ() {
+function _faqBodyHtml() {
   const faqs = [
     { group: '🚀 ' + t('faq_g_inicio','Primeros pasos'), color: 'var(--accent)', items: [
       { q: t('faq_q1','¿Cómo añado un ingreso?'), a: t('faq_a1','Ve a la sección <strong>Ingresos</strong> desde la barra lateral. Haz clic en <strong>+ Nuevo ingreso</strong>. Rellena el importe, categoría, fecha y descripción opcional. Pulsa <strong>Guardar</strong>.') },
@@ -14306,10 +14460,13 @@ function renderFAQ() {
     ]},
   ]
 
-  let faqHtml = faqs.map((group, gi) => {
+  return faqs.map((group, gi) => {
     const items = group.items.map((item, qi) => {
       const id = `faq-${gi}-${qi}`
-      const isOpen = window._faqOpen && window._faqOpen[id]
+      // All questions start expanded — individually collapsible, but
+      // never collapsed by default (Bloque 6: "mostrar TODAS las
+      // preguntas desplegadas verticalmente").
+      const isOpen = !window._faqOpen || window._faqOpen[id] !== false
       return `
       <div class="faq-item" id="faqitem-${id}">
         <button class="faq-q" onclick="toggleFAQ('${id}')" aria-expanded="${isOpen}">
@@ -14329,6 +14486,10 @@ function renderFAQ() {
       <div class="faq-group-items">${items}</div>
     </div>`
   }).join('')
+}
+
+function renderFAQ() {
+  const faqHtml = _faqBodyHtml()
 
   document.getElementById('content').innerHTML = `
   <div style="max-width:720px;margin:0 auto">
@@ -15435,6 +15596,7 @@ function render() {
     faq:          renderFAQ,
     sugerencias:  renderFAQ,
     logros:       renderLogros,
+    facturacion:  renderFacturacion,
   }
   const pageKeyMap = {
     dashboard:'nav_dashboard', ingresos:'nav_ingresos', gastos:'nav_gastos',
@@ -15443,7 +15605,7 @@ function render() {
     revision:'nav_revision', calendario:'nav_calendario',
     analisis:'nav_analisis', configuracion:'nav_configuracion',
     patrimonio:'nav_patrimonio', faq:'nav_faq', sugerencias:'nav_sugerencias', billing:'nav_billing',
-    logros:'nav_logros',
+    logros:'nav_logros', facturacion:'nav_facturacion',
   }
   const el = document.getElementById('pageTitle')
   if (el) el.textContent = pageKeyMap[currentPage] ? t(pageKeyMap[currentPage]) : currentPage

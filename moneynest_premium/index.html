@@ -63,7 +63,6 @@
       <div id="sidebarLogoImg" style="display:flex;align-items:center;justify-content:center;width:100%">
         <!-- Logo rendered dynamically by JS (⚡ PRO badge injected inline by updateSidebarLogo when isPro) -->
       </div>
-      <div id="trialPillContainer" style="display:contents"></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section" data-i18n="nav_seccion_principal">Principal</div>
@@ -89,6 +88,10 @@
         <span data-i18n="nav_deudas">Deudas<span class="nav-subtitle" data-i18n="nav_sub_deudas">Lo que debes</span></span>
         <span class="nav-badge" id="deudas-badge" style="display:none"></span>
       </div>
+      <div class="nav-item" onclick="goTo('cuentas')" id="nav-cuentas">
+        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>
+        <span data-i18n="nav_cuentas">Cuentas<span class="nav-subtitle" data-i18n="nav_sub_cuentas">Tu dinero disponible</span></span>
+      </div>
       <div class="nav-section" data-i18n="nav_seccion_planificacion">Planificación</div>
       <div class="nav-item" onclick="goTo('objetivos')" id="nav-objetivos">
         <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
@@ -102,27 +105,22 @@
         <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
         <span data-i18n="nav_categorias">Categorías<span class="nav-subtitle" data-i18n="nav_sub_categorias">Organiza tus movimientos</span></span>
       </div>
-      <div class="nav-item" onclick="goTo('cuentas')" id="nav-cuentas">
-        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>
-        <span data-i18n="nav_cuentas">Cuentas<span class="nav-subtitle" data-i18n="nav_sub_cuentas">Tu dinero disponible</span></span>
-      </div>
-      <div class="nav-section" data-i18n="nav_seccion_patrimonio">Patrimonio</div>
       <div class="nav-item" onclick="goTo('patrimonio')" id="nav-patrimonio">
         <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span data-i18n="nav_patrimonio">Patrimonio<span class="nav-subtitle" data-i18n="nav_sub_patrimonio">Tu riqueza total</span></span>
       </div>
-      <div class="nav-item" onclick="goTo('logros')" id="nav-logros">
-        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></span>
-        <span data-i18n="nav_logros">Logros<span class="nav-subtitle" data-i18n="nav_sub_logros">Tus metas conseguidas</span></span>
-      </div>
-      <div class="nav-section" data-i18n="nav_seccion_sistema">Sistema</div>
       <div class="nav-item" onclick="goTo('analisis')" id="nav-analisis">
         <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
         <span data-i18n="nav_analisis">Análisis<span class="nav-subtitle" data-i18n="nav_sub_analisis">Insights y tendencias</span></span>
       </div>
-      <div class="nav-item" onclick="goTo('faq')" id="nav-faq">
-        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-        <span data-i18n="nav_faq">FAQ<span class="nav-subtitle" data-i18n="nav_sub_faq">Ayuda rápida</span></span>
+      <div class="nav-section" data-i18n="nav_seccion_sistema">Sistema</div>
+      <div class="nav-item" onclick="goTo('logros')" id="nav-logros">
+        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></span>
+        <span data-i18n="nav_logros">Logros<span class="nav-subtitle" data-i18n="nav_sub_logros">Tus metas conseguidas</span></span>
+      </div>
+      <div class="nav-item" onclick="goTo('facturacion')" id="nav-facturacion">
+        <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
+        <span data-i18n="nav_facturacion">Plan y facturación<span class="nav-subtitle" data-i18n="nav_sub_facturacion">Tu plan y pagos</span></span>
       </div>
       <div class="nav-item" onclick="goTo('configuracion')" id="nav-configuracion">
         <span class="nav-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span data-i18n="nav_configuracion">Configuración</span>
@@ -284,7 +282,6 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('ingresoModal')" data-i18n="btn_cancelar">Cancelar</button>
-      <button class="btn btn-ghost btn-sm" id="ingresoSaveAddAnotherBtn" onclick="guardarIngreso(true)">➕ <span data-i18n="btn_guardar_anadir_otro">Guardar y añadir otro</span></button>
       <button class="btn btn-primary btn-sm" onclick="guardarIngreso()" data-i18n="btn_guardar">Guardar</button>
     </div>
   </div>
@@ -355,7 +352,6 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('gastoModal')" data-i18n="btn_cancelar">Cancelar</button>
-      <button class="btn btn-ghost btn-sm" id="gastoSaveAddAnotherBtn" onclick="guardarGasto(true)">➕ <span data-i18n="btn_guardar_anadir_otro">Guardar y añadir otro</span></button>
       <button class="btn btn-primary btn-sm" onclick="guardarGasto()" data-i18n="btn_guardar">Guardar</button>
     </div>
   </div>

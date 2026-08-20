@@ -57,17 +57,16 @@ function renderAuthBadge(elId) {
   if (!window.MNBilling) { el.innerHTML = ''; return; }
   const { state } = MNBilling.getSubStatus();
   const S = MNBilling.STATES;
+  // Trial/expired states show nothing here — the trial is only ever
+  // surfaced inside Plan y facturación, never in the header.
   const map = {
-    [S.ACTIVE_TRIAL]:  { label: _aut('plan_badge_trial','Prueba'),      cls: 'auth-badge--trial' },
-    [S.TRIAL_ENDING]:  { label: _aut('plan_badge_trial','Prueba'),      cls: 'auth-badge--trial' },
-    [S.EXPIRED_TRIAL]: { label: _aut('plan_badge_expired','Sin plan'),  cls: 'auth-badge--expired' },
     [S.LOCAL_ACTIVE]:  { label: _aut('plan_badge_local','Local'),       cls: 'auth-badge--local' },
     [S.PRO_TRIALING]:  { label: _aut('plan_badge_pro','Pro'),           cls: 'auth-badge--pro' },
     [S.PRO_ACTIVE]:    { label: _aut('plan_badge_pro','Pro'),           cls: 'auth-badge--pro' },
     [S.PRO_CANCELLED]: { label: _aut('plan_badge_local','Local'),       cls: 'auth-badge--local' },
   };
-  const info = map[state] || map[S.ACTIVE_TRIAL];
-  el.innerHTML = `<span class="auth-plan-badge ${info.cls}">${info.label}</span>`;
+  const info = map[state];
+  el.innerHTML = info ? `<span class="auth-plan-badge ${info.cls}">${info.label}</span>` : '';
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -132,7 +131,7 @@ function openPlanModal(context) {
               <li class="no">${_aut('plan_feat_cloud','Cloud')}</li>
               <li class="no">${_aut('plan_feat_sync','Sincronización')}</li>
             </ul>
-            <button class="btn btn-secondary btn-block" onclick="MNAuthUI.confirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(local.price)}</button>
+            <button class="btn btn-secondary btn-block" onclick="MNAuthUI._doConfirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(local.price)}</button>
           </div>
           <div class="plan-mini-card plan-mini-card--pro">
             <div class="plan-mini-card__ribbon">☁️ ${_aut('plan_pro_ribbon','Cloud')}</div>
@@ -147,7 +146,7 @@ function openPlanModal(context) {
               <li class="yes">${_aut('plan_feat_restauracion','Restauración')}</li>
               <li class="yes">${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
             </ul>
-            <button class="btn btn-primary btn-block plan-mini-card__pro-btn" onclick="MNAuthUI.confirmPlan('pro')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>
+            <button class="btn btn-primary btn-block plan-mini-card__pro-btn" onclick="MNAuthUI._doConfirmPlan('pro')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>
           </div>
         </div>
       </div>
@@ -197,12 +196,10 @@ function confirmPlan(planKey) {
 
 function _doConfirmPlan(planKey) {
   // CRITICAL RULE (never violated): pressing this button must NEVER
-  // grant Local/Pro by itself. It only ever starts a REAL Stripe
-  // Checkout session (create-checkout, Fase 3) and redirects there —
-  // the plan is granted exclusively by stripe-webhook after Stripe
-  // confirms the payment/subscription, never from this client code.
-  const btn = document.querySelector('.plan-confirm-step__actions .btn-primary');
-  const originalLabel = btn ? btn.textContent : null;
+  // grant Local/Pro by itself. It only ever opens the real embedded
+  // payment modal (MNPayment / stripe-payment.js) — the plan is
+  // granted exclusively by stripe-webhook after Stripe confirms the
+  // payment, never from this client code.
 
   // A real purchase requires a real, authenticated identity (Stripe
   // Customer must be tied to a verified user) — an anonymous/local-only
@@ -218,28 +215,15 @@ function _doConfirmPlan(planKey) {
     return;
   }
 
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…'); }
-
-  const token = window.MNSupabaseAuth.getSession()?.access_token;
-  fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify({ plan: planKey }),
-  })
-    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-    .then(({ ok, data }) => {
-      if (!ok || !data.url) throw new Error(data?.error || 'checkout_error');
-      // Redirect to the real Stripe-hosted Checkout page — nothing is
-      // granted here; the user actually has to pay first.
-      location.href = data.url;
-    })
-    .catch(err => {
-      console.error('[MNAuthUI] checkout error:', err);
-      if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
-      if (typeof window.toast === 'function') {
-        window.toast(_aut('plan_checkout_error', 'No se pudo iniciar el pago. Inténtalo de nuevo.'), 'error');
-      }
-    });
+  const priceId = planKey === 'pro' ? window.MNStripeConfig?.prices?.pro : window.MNStripeConfig?.prices?.local;
+  const email = window.MNSupabaseAuth.getSession()?.user?.email || window.MNAuth?.getUser?.()?.email || '';
+  if (!priceId || !window.MNPayment) {
+    console.error('[MNAuthUI] No se pudo abrir el pago: MNPayment o priceId no disponibles', { priceId, hasMNPayment: !!window.MNPayment });
+    if (typeof window.toast === 'function') window.toast(_aut('plan_checkout_error', 'No se pudo iniciar el pago. Inténtalo de nuevo.'), 'error');
+    return;
+  }
+  closePlanModal();
+  MNPayment.open(priceId, email);
 }
 
 // If the user was sent to sign in/register mid-purchase (see above),
