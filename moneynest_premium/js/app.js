@@ -3883,7 +3883,7 @@ function _updateSidebarLang() {
   })
   // Section labels
   const sections = document.querySelectorAll('.nav-section')
-  const sectionKeys = ['nav_principal','nav_finanzas','nav_planificacion','nav_patrimonio_sec','nav_sistema']
+  const sectionKeys = ['nav_principal','nav_finanzas','nav_planificacion','nav_sistema']
   sections.forEach((el, i) => { if (sectionKeys[i]) el.textContent = t(sectionKeys[i]) })
   // Theme toggle
   const themeLabel = document.getElementById('theme-label')
