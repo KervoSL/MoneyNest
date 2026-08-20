@@ -1,12 +1,6 @@
 import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-// API version: intentionally NOT pinned. The old code hardcoded
-// apiVersion: '2025-04-30', which went stale and made the Stripe SDK
-// reject ~120 real events outright ('Invalid Stripe API version').
-// Omitting it makes every request use the account's own
-// Dashboard-configured default version, which Stripe recommends
-// specifically to avoid this failure class recurring.
 const stripeLive = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {});
 const stripeTest = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') ?? '', {});
 
@@ -18,10 +12,10 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// Same price→plan mapping as create-checkout (test-mode defaults from
-// Fase 2; overridable via secrets once live prices are ready).
+// Local = one-time purchase (mode:'payment'), Pro = annual subscription
+// (mode:'subscription'). Both price ids resolve to their plan below.
 const PRICE_TO_PLAN: Record<string, string> = {
-  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
+  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8']: 'local',
   [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
 };
 
@@ -35,10 +29,6 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
 
-// Subscription period dates live on the subscription ITEM in current
-// API versions, not on the subscription object root — reading
-// sub.current_period_start directly (the old bug) is always undefined
-// and produces 'Invalid time value' when passed to `new Date()`.
 function periodDates(sub: Stripe.Subscription): { start: string | null; end: string | null } {
   const item = sub.items?.data?.[0];
   const start = item?.current_period_start ?? (sub as unknown as Record<string, number>).current_period_start;
@@ -63,16 +53,12 @@ async function logEvent(stripeEventId: string, eventType: string, payload: unkno
   });
 }
 
-// ── Activation / cancellation ──────────────────────────────────
+// ── Subscription (Pro) activation / cancellation ──────────────────
 
 async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe) {
   const userId = sub.metadata?.user_id || null;
   const plan = resolvePlan(sub);
   if (!userId || !plan) {
-    // Identity/plan MUST be established at Checkout-creation time by
-    // our own backend. We deliberately do not guess via email lookup
-    // here — that fragility (mismatched/duplicate emails) was the
-    // original design's main weak point.
     throw new Error(`cannot resolve user_id/plan for subscription ${sub.id} (metadata: ${JSON.stringify(sub.metadata)})`);
   }
   const { start, end } = periodDates(sub);
@@ -96,10 +82,6 @@ async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe
   }
 }
 
-// After a subscription is no longer active, check whether the user
-// still holds a DIFFERENT active/trialing subscription (e.g. they had
-// both Local and Pro, or switched plans) before downgrading — avoids
-// blindly downgrading someone who is still legitimately entitled.
 async function reevaluateAfterLoss(userId: string, endedSubscriptionId: string) {
   const { data: others } = await supabase
     .from('subscriptions')
@@ -115,13 +97,42 @@ async function reevaluateAfterLoss(userId: string, endedSubscriptionId: string) 
     .eq('id', userId);
 }
 
+// ── One-time purchase (Local) activation ───────────────────────────
+
+async function activateFromOneTimePurchase(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.user_id || session.client_reference_id || null;
+  if (!userId) {
+    throw new Error(`cannot resolve user_id for checkout session ${session.id} (metadata: ${JSON.stringify(session.metadata)})`);
+  }
+  const custId = typeof session.customer === 'string' ? session.customer : session.customer?.id ?? '';
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? '';
+  const priceId = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8';
+
+  const { error } = await supabase.rpc('activate_local_purchase', {
+    p_user_id: userId,
+    p_stripe_customer_id: custId,
+    p_stripe_checkout_session_id: session.id,
+    p_stripe_payment_intent_id: paymentIntentId,
+    p_stripe_price_id: priceId,
+    p_amount: session.amount_total ?? 699,
+    p_currency: session.currency ?? 'eur',
+  });
+  if (error) throw error;
+}
+
 // ── Handlers ────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
-  if (session.mode !== 'subscription' || !session.subscription) return;
-  const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
-  const sub = await stripe.subscriptions.retrieve(subId);
-  await activateFromSubscription(sub, stripe);
+  if (session.mode === 'payment') {
+    // Local: one-time purchase, no subscription object involved at all.
+    await activateFromOneTimePurchase(session);
+  } else if (session.mode === 'subscription' && session.subscription) {
+    const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+    const sub = await stripe.subscriptions.retrieve(subId);
+    await activateFromSubscription(sub, stripe);
+  } else {
+    return;
+  }
 
   const email = session.customer_email ?? session.customer_details?.email ?? '';
   if (email) {
@@ -137,9 +148,9 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription, stripe: Stripe
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, stripe: Stripe) {
   const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
-  if (!subId) return;
+  if (!subId) return; // one-time payments don't have an associated subscription invoice
   const sub = await stripe.subscriptions.retrieve(subId);
-  await activateFromSubscription(sub, stripe); // covers renewals — refreshes period dates + reconfirms active status
+  await activateFromSubscription(sub, stripe);
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -174,10 +185,6 @@ Deno.serve(async (req) => {
 
   const rawBody = await req.text();
 
-  // This endpoint receives both live and test-mode events (each Stripe
-  // mode has its own signing secret). Try live first, then test —
-  // whichever matches determines which Stripe client (and therefore
-  // which mode's data) subsequent API calls use.
   let event: Stripe.Event;
   let stripeForThisEvent: Stripe;
   try {
@@ -192,10 +199,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── Idempotency: a stripe_event_id can only ever be logged once
-  // (billing_events.stripe_event_id has a UNIQUE constraint) — this
-  // check plus that constraint together guarantee no event is
-  // processed twice, even under concurrent delivery/retries.
   const { data: existingEvent } = await supabase.from('billing_events').select('id').eq('stripe_event_id', event.id).maybeSingle();
   if (existingEvent) return json({ received: true, skipped: 'duplicate' });
 

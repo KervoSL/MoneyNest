@@ -65,6 +65,13 @@ function initAuthUI() {
   document.addEventListener('mn:buyLocal',      () => showAuthModal('plan'));
   document.addEventListener('mn:restoreAccess', () => showAuthModal('login'));
   document.addEventListener('mn:activatePro',   () => showAuthModal('plan'));
+
+  // Escape closes this modal too — the app's global Escape handler
+  // (closeAllModals) only targets .modal-overlay.open, which this
+  // modal doesn't use (it toggles style.display directly).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('authModal')?.style.display === 'flex') closeAuthModal();
+  });
 }
 
 function showAuthModal(mode) {
@@ -79,16 +86,20 @@ function showAuthModal(mode) {
   if (mode === 'login' && isLoggedIn) mode = 'plan';
   _modalMode = mode || (isLoggedIn ? 'plan' : 'login');
 
+  const wasOpen = modal.style.display === 'flex';
   card.innerHTML = _buildContent(user);
   modal.style.display = 'flex';
   modal.onclick = (e) => { if (e.target === modal) closeAuthModal(); };
   _attachListeners(user);
+  if (!wasOpen && typeof window._pushScrollLock === 'function') window._pushScrollLock();
 }
 
 function closeAuthModal() {
   const modal = document.getElementById('authModal');
+  const wasOpen = modal && modal.style.display === 'flex';
   if (modal) modal.style.display = 'none';
   _modalLoading = false;
+  if (wasOpen && typeof window._popScrollLock === 'function') window._popScrollLock();
 }
 
 function renderAuthBadge(containerId = 'authPlanBadge') {

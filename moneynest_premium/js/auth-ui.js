@@ -25,7 +25,15 @@ function _aut(key, fallback) {
 // ────────────────────────────────────────────────────────────────
 //  INIT
 // ────────────────────────────────────────────────────────────────
+// Preserve the original initAuthUI from components/auth-ui.js (loaded
+// first) — it registers the mn:buyLocal/mn:restoreAccess/mn:activatePro
+// listeners that open the real login/account modal (showAuthModal).
+// Without this, the object-merge below would silently lose them.
+const _originalInitAuthUI = window.MNAuthUI?.initAuthUI;
+
 function initAuthUI() {
+  if (typeof _originalInitAuthUI === 'function') _originalInitAuthUI();
+
   // Re-render the badge/pill whenever the underlying billing/auth
   // state changes anywhere in the app (e.g. after confirming a plan).
   document.addEventListener('mn:billing:change', () => {
@@ -114,7 +122,7 @@ function openPlanModal(context) {
         <div class="plan-modal-grid">
           <div class="plan-mini-card plan-mini-card--local">
             <div class="plan-mini-card__name">${_aut('plan_local_name','MoneyNest Local')}</div>
-            <div class="plan-mini-card__price">${eur(local.price)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
+            <div class="plan-mini-card__price">${eur(local.price)}<span class="plan-mini-card__period">${_aut('plan_pago_unico','Pago único')}</span></div>
             <div class="plan-mini-card__desc">${_aut('plan_local_desc','MoneyNest completo, directamente en tu dispositivo.')}</div>
             <ul class="plan-mini-card__list">
               <li class="yes">${_aut('plan_feat_todas_funciones','Todas las funciones')}</li>
@@ -124,12 +132,12 @@ function openPlanModal(context) {
               <li class="no">${_aut('plan_feat_cloud','Cloud')}</li>
               <li class="no">${_aut('plan_feat_sync','Sincronización')}</li>
             </ul>
-            <button class="btn btn-secondary btn-block" onclick="MNAuthUI.confirmPlan('local')">${_aut('plan_btn_continuar_local','Continuar con Local')}</button>
+            <button class="btn btn-secondary btn-block" onclick="MNAuthUI.confirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(local.price)}</button>
           </div>
           <div class="plan-mini-card plan-mini-card--pro">
             <div class="plan-mini-card__ribbon">☁️ ${_aut('plan_pro_ribbon','Cloud')}</div>
             <div class="plan-mini-card__name">${_aut('plan_pro_name','MoneyNest Pro')}</div>
-            <div class="plan-mini-card__price">${eur(pro.price)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
+            <div class="plan-mini-card__price">${eur(pro.price)}<span class="plan-mini-card__period">/${_aut('plan_periodo_ano','año')}</span></div>
             <div class="plan-mini-card__desc">${_aut('plan_pro_desc','Todo MoneyNest + sincronización y nube.')}</div>
             <ul class="plan-mini-card__list">
               <li class="yes">${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
@@ -178,8 +186,8 @@ function confirmPlan(planKey) {
     <div class="plan-confirm-step">
       <div class="plan-confirm-step__icon" style="color:${color}">${isPro ? '☁️' : '💾'}</div>
       <div class="plan-confirm-step__name">${isPro ? _aut('plan_pro_name','MoneyNest Pro') : _aut('plan_local_name','MoneyNest Local')}</div>
-      <div class="plan-confirm-step__price" style="color:${color}">${eur(planDef.price)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
-      <div class="plan-confirm-step__notice">${_aut('plan_confirm_mock_notice','Este paso simula la activación del plan mientras conectamos el sistema de pagos.')}</div>
+      <div class="plan-confirm-step__price" style="color:${color}">${eur(planDef.price)}${isPro ? `<span>/${_aut('plan_periodo_ano','año')}</span>` : `<span>${_aut('plan_pago_unico','Pago único')}</span>`}</div>
+      <div class="plan-confirm-step__notice">${_aut('plan_confirm_real_notice','Al confirmar irás a la pasarela de pago segura de Stripe. Tu plan se activará en cuanto el pago se confirme.')}</div>
       <div class="plan-confirm-step__actions">
         <button class="btn btn-ghost btn-sm" onclick="MNAuthUI.openPlanModal()">${_aut('btn_cancelar','Cancelar')}</button>
         <button class="btn btn-primary btn-sm" style="${isPro ? `background:${color};color:#fff` : ''}" onclick="MNAuthUI._doConfirmPlan('${planKey}')">${_aut('plan_btn_confirmar','Confirmar')}</button>
@@ -188,29 +196,64 @@ function confirmPlan(planKey) {
 }
 
 function _doConfirmPlan(planKey) {
-  const b = window.MNBilling;
-  if (!b) return;
-  const email = (window.MNAuth?.getUser?.().email) || null;
-  // Close the modal FIRST — activatePro/activateLocal below dispatch
-  // 'mn:billing:activated' synchronously, which the lock screen listens
-  // for to reload the page. If the modal still had the .open class at
-  // that point, the app's existing beforeunload guard (protects open
-  // modals from accidental navigation) would show a native browser
-  // confirmation dialog.
-  closePlanModal();
-  // Reuses MNBilling's already-existing direct activation (no mock
-  // delay/animation needed here — this IS the explicit confirmation
-  // step the task asks for) — it already syncs with MNAuth and never
-  // touches or deletes any financial data.
-  if (planKey === 'pro') b.activatePro(email);
-  else b.activateLocal(email);
+  // CRITICAL RULE (never violated): pressing this button must NEVER
+  // grant Local/Pro by itself. It only ever starts a REAL Stripe
+  // Checkout session (create-checkout, Fase 3) and redirects there —
+  // the plan is granted exclusively by stripe-webhook after Stripe
+  // confirms the payment/subscription, never from this client code.
+  const btn = document.querySelector('.plan-confirm-step__actions .btn-primary');
+  const originalLabel = btn ? btn.textContent : null;
 
-  renderAuthBadge('authPlanBadge');
-  renderTrialPill('trialPillContainer');
-  if (typeof window.render === 'function' && (window.currentPage === 'configuracion')) window.render();
-  if (typeof window.toast === 'function') {
-    window.toast(planKey === 'pro' ? _aut('toast_plan_pro_activo','✓ Plan Pro activado') : _aut('toast_plan_local_activo','✓ Plan Local activado'));
+  // A real purchase requires a real, authenticated identity (Stripe
+  // Customer must be tied to a verified user) — an anonymous/local-only
+  // trial session isn't enough. Ask them to sign in/create an account
+  // first, then resume this exact checkout right after.
+  if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
+    window._mnPendingCheckoutPlan = planKey;
+    closePlanModal();
+    if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal('register');
+    if (typeof window.toast === 'function') {
+      window.toast(_aut('plan_necesita_cuenta', 'Crea una cuenta o inicia sesión para continuar con la compra.'), 'info');
+    }
+    return;
   }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…'); }
+
+  const token = window.MNSupabaseAuth.getSession()?.access_token;
+  fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ plan: planKey }),
+  })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok || !data.url) throw new Error(data?.error || 'checkout_error');
+      // Redirect to the real Stripe-hosted Checkout page — nothing is
+      // granted here; the user actually has to pay first.
+      location.href = data.url;
+    })
+    .catch(err => {
+      console.error('[MNAuthUI] checkout error:', err);
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+      if (typeof window.toast === 'function') {
+        window.toast(_aut('plan_checkout_error', 'No se pudo iniciar el pago. Inténtalo de nuevo.'), 'error');
+      }
+    });
+}
+
+// If the user was sent to sign in/register mid-purchase (see above),
+// resume the exact checkout they were trying to complete right after a
+// real session is established.
+if (window.MNSupabaseAuth) {
+  window.MNSupabaseAuth.onAuthChange((event, session) => {
+    if (event === 'SIGNED_IN' && session && window._mnPendingCheckoutPlan) {
+      const plan = window._mnPendingCheckoutPlan;
+      window._mnPendingCheckoutPlan = null;
+      if (window.MNAuthUI?.closeAuthModal) window.MNAuthUI.closeAuthModal();
+      _doConfirmPlan(plan);
+    }
+  });
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -230,7 +273,7 @@ function requireCloud(context) {
 // ────────────────────────────────────────────────────────────────
 //  EXPORT
 // ────────────────────────────────────────────────────────────────
-window.MNAuthUI = {
+window.MNAuthUI = Object.assign(window.MNAuthUI || {}, {
   initAuthUI,
   renderAuthBadge,
   renderTrialPill,
@@ -239,4 +282,4 @@ window.MNAuthUI = {
   confirmPlan,
   _doConfirmPlan,
   requireCloud,
-};
+});

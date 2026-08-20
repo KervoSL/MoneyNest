@@ -3619,7 +3619,8 @@ ize:.92rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3}
 /* Deuda estrategia picker — 3 presets + 1 create custom card */
 .mn-strat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
 @media(max-width:900px){ .mn-strat-grid { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width:600px){ .mn-strat-grid { grid-template-columns: 1fr; } }
+.mn-lock-plans-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+@media(max-width:600px){ .mn-strat-grid { grid-template-columns: 1fr; } .mn-lock-plans-grid { grid-template-columns: 1fr; } }
 .mn-strat-card {
   padding: 14px 12px;
   border-radius: 12px;
@@ -3868,6 +3869,14 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
   .nw-change-badge { font-size:.95rem; }
   .nw-range-btn { padding:5px 11px; font-size:.72rem; }
 }
+/* ── ANÁLISIS: TABS (Resumen / Revisión / Calendario) ───────────── */
+.analisis-tabs { display:flex; gap:6px; margin-bottom:18px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.analisis-tabs::-webkit-scrollbar { display:none; }
+.analisis-tab-btn { flex-shrink:0; display:flex; align-items:center; gap:6px; padding:9px 16px; border-radius:11px; border:1px solid var(--border); background:var(--bg2); color:var(--text2); font-size:.82rem; font-weight:700; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.analisis-tab-btn:hover { border-color:var(--border2); color:var(--text); }
+.analisis-tab-btn.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+.analisis-tab-badge { background:var(--red); color:#fff; font-size:.65rem; font-weight:800; border-radius:99px; padding:1px 7px; }
+
 /* ── CALENDARIO FINANCIERO ────────────────────────────────────── */
 .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
 .cal-nav-center { display:flex; align-items:center; gap:10px; }

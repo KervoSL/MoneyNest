@@ -148,34 +148,46 @@ function isGuest() { return getUser().plan === 'locked_local'; }
 
 function bloquearApp(user) {
   document.body.innerHTML = `
-    <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif">
-      <div style="position:relative;width:min(460px,100%);background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0));border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:36px 32px;overflow:hidden">
-        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00D4AA,#6366F1)"></div>
-        <div style="text-align:center">
-          <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.3);color:#FB7185;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px">● Tu prueba ha expirado</span>
-          <div style="font-size:3rem;margin-bottom:8px">🔒</div>
-          <div style="font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:10px">Acceso bloqueado</div>
-          <div style="font-size:.9rem;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:26px">
-            Tu período de prueba gratuita de 24h ha concluido.<br>Elige un plan para seguir usando MoneyNest — tus datos siguen intactos.
+    <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif;overflow-y:auto">
+      <div style="position:relative;width:min(720px,100%);margin:auto 0;padding:8px 0">
+        <div style="text-align:center;margin-bottom:28px">
+          <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#A5B4FC;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px">⏳ Prueba gratuita finalizada</span>
+          <div style="font-size:1.7rem;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-.02em">Elige tu plan de MoneyNest</div>
+          <div style="font-size:.9rem;color:rgba(255,255,255,0.55);line-height:1.6">
+            Tu período de prueba gratuita de 24h ha concluido.<br>Tus datos siguen intactos — elige un plan para seguir usando MoneyNest.
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
-          ${['Todos tus datos están seguros','Acceso ilimitado sin publicidad','Exportación PDF y Excel','Sin rastreo'].map(f => `
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;font-size:.78rem;color:rgba(255,255,255,0.8);font-weight:600">
-              <span style="color:#00D4AA">✅</span> ${f}
-            </div>`).join('')}
+
+        <div class="mn-lock-plans-grid" id="mn-lock-plans-grid">
+          <div style="background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0));border:1.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column">
+            <div style="font-size:.95rem;font-weight:800;color:#fff;margin-bottom:2px">MoneyNest Local</div>
+            <div style="font-size:1.9rem;font-weight:900;color:#00D4AA;margin:6px 0 2px">6,99 €</div>
+            <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">Pago único</div>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;flex:1">
+              ${['Acceso ilimitado','Datos locales','Sin suscripción','Sin Cloud','Sin sincronización'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#00D4AA">✓</span> ${f}</li>`).join('')}
+            </ul>
+            <button class="mn-lock-plan-btn" data-plan="local" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(0,212,170,.4);background:rgba(0,212,170,.08);color:#00D4AA;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Comprar Local — 6,99 €</button>
+          </div>
+
+          <div style="background:linear-gradient(160deg,rgba(236,72,153,.1),rgba(255,255,255,0) 60%);border:1.5px solid rgba(236,72,153,.4);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column;position:relative">
+            <span style="position:absolute;top:-10px;right:16px;background:#EC4899;color:#fff;font-size:.62rem;font-weight:800;padding:3px 10px;border-radius:99px">☁️ CLOUD</span>
+            <div style="font-size:.95rem;font-weight:800;color:#fff;margin-bottom:2px">MoneyNest Pro</div>
+            <div style="font-size:1.9rem;font-weight:900;color:#EC4899;margin:6px 0 2px">14,99 €</div>
+            <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">al año</div>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;flex:1">
+              ${['Todo lo de Local','Cloud','Sincronización','Backup automático','Restauración','Varios dispositivos'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#EC4899">✓</span> ${f}</li>`).join('')}
+            </ul>
+            <button class="mn-lock-plan-btn" data-plan="pro" style="width:100%;padding:14px;border-radius:12px;border:none;background:#EC4899;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Pro — 14,99 €/año</button>
+          </div>
         </div>
-        <button id="mn-lock-unlock-btn" style="width:100%;padding:16px;border-radius:14px;border:none;background:#00D4AA;color:#042b20;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,212,170,.25)">
-          🔒 Elegir plan — desde 6,99€/año
-        </button>
-        <div id="mn-lock-error" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#FCA5A5;font-size:.8rem;font-weight:600;line-height:1.5;text-align:center"></div>
-        <div style="text-align:center;margin-top:16px;font-size:.78rem;color:rgba(255,255,255,0.4)">
+
+        <div id="mn-lock-error" style="display:none;margin-bottom:12px;padding:12px 14px;border-radius:12px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#FCA5A5;font-size:.8rem;font-weight:600;line-height:1.5;text-align:center"></div>
+        <div style="text-align:center;font-size:.78rem;color:rgba(255,255,255,0.4)">
           ¿Ya tienes licencia? <a id="mn-lock-restore-link" href="#" style="color:#00D4AA;font-weight:700;text-decoration:none">Restaurar acceso</a>
         </div>
       </div>
     </div>`
 
-  const unlockBtn = document.getElementById('mn-lock-unlock-btn')
   const lockErrorEl = document.getElementById('mn-lock-error')
   const _showLockError = (msg) => {
     if (!lockErrorEl) return
@@ -184,35 +196,30 @@ function bloquearApp(user) {
   }
   const _hideLockError = () => { if (lockErrorEl) lockErrorEl.style.display = 'none' }
 
-  if (unlockBtn) unlockBtn.addEventListener('click', () => {
-    _hideLockError()
-    if (window.MNAuthUI) {
-      MNAuthUI.openPlanModal('trial_expired_lock')
-      return
-    }
-    // Fallback to the real Stripe flow only if the mock plan UI module
-    // somehow isn't loaded, so this never silently does nothing.
-    const priceId = window.MNStripeConfig?.prices?.local
-    if (!window.MNPayment || !priceId) {
-      console.error('[bloquearApp] No se pudo iniciar el checkout: MNPayment o priceId no disponibles', { hasMNPayment: !!window.MNPayment, priceId })
-      _showLockError('No se pudo iniciar el pago. Recarga la página e inténtalo de nuevo.')
-      return
-    }
-    const originalLabel = unlockBtn.innerHTML
-    unlockBtn.disabled = true
-    unlockBtn.style.opacity = '.7'
-    unlockBtn.innerHTML = '⏳ Abriendo pago…'
-    try {
-      MNPayment.open(priceId, user?.email || '')
-    } catch (err) {
-      console.error('[bloquearApp] Error al abrir el checkout:', err)
-      _showLockError('No se pudo iniciar el pago. Inténtalo de nuevo.')
-    }
-    setTimeout(() => {
-      unlockBtn.disabled = false
-      unlockBtn.style.opacity = '1'
-      unlockBtn.innerHTML = originalLabel
-    }, 600)
+  // Both plan buttons go straight to the REAL Stripe Checkout flow
+  // (MNAuthUI._doConfirmPlan) — never grant Local/Pro directly here.
+  document.querySelectorAll('.mn-lock-plan-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _hideLockError()
+      const plan = btn.dataset.plan
+      if (window.MNAuthUI && window.MNAuthUI._doConfirmPlan) {
+        MNAuthUI._doConfirmPlan(plan)
+        return
+      }
+      // Fallback to the mock plan modal, then the legacy Stripe flow,
+      // only if the primary path somehow isn't loaded.
+      if (window.MNAuthUI) { MNAuthUI.openPlanModal('trial_expired_lock'); return }
+      const priceId = window.MNStripeConfig?.prices?.[plan]
+      if (!window.MNPayment || !priceId) {
+        console.error('[bloquearApp] No se pudo iniciar el checkout', { hasMNPayment: !!window.MNPayment, priceId })
+        _showLockError('No se pudo iniciar el pago. Recarga la página e inténtalo de nuevo.')
+        return
+      }
+      try { MNPayment.open(priceId, user?.email || '') } catch (err) {
+        console.error('[bloquearApp] Error al abrir el checkout:', err)
+        _showLockError('No se pudo iniciar el pago. Inténtalo de nuevo.')
+      }
+    })
   })
 
   // Reload once a plan is confirmed (mock or real) so the app leaves
@@ -3950,6 +3957,7 @@ function defaultState() {
     catColors: {},
     categoriaEmojis: {},
     deudaHiddenStrats: [],
+    deudaEstrategiaActiva: null, // {key, appliedAt} — solo se establece cuando el usuario confirma explícitamente "Aplicar estrategia", nunca por defecto
     theme: 'dark'
   }
 }
@@ -4105,6 +4113,7 @@ function load() {
     if (!Array.isArray(S.cuentas) || !S.cuentas.length) S.cuentas = defaultState().cuentas
     if (!Array.isArray(S.assets)) S.assets = []
     if (!Array.isArray(S.eventosFinancieros)) S.eventosFinancieros = []
+    if (S.deudaEstrategiaActiva === undefined) S.deudaEstrategiaActiva = null
     if (!Array.isArray(S.patrimonio_hist)) S.patrimonio_hist = []
     if (!S.presupuestos || typeof S.presupuestos !== 'object') S.presupuestos = {}
     if (!Array.isArray(S.clientes)) S.clientes = []
@@ -4338,6 +4347,13 @@ const _pageKeyMap = {
   patrimonio:'nav_patrimonio', revision:'nav_revision', calendario:'nav_calendario'
 }
 function goTo(page) {
+  // Redirige cualquier navegación antigua (enlaces guardados, código
+  // legacy) hacia Análisis con la tab correspondiente — Revisión y
+  // Calendario ya no son páginas independientes.
+  if (page === 'revision') { window._analisisActiveTab = 'revision'; page = 'analisis' }
+  else if (page === 'calendario') { window._analisisActiveTab = 'calendario'; page = 'analisis' }
+  else if (page === 'analisis') { window._analisisActiveTab = 'resumen' }
+
   currentPage = page
   S._currentPage = page // Track for achievements
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'))
@@ -5607,11 +5623,30 @@ function renderDeudas() {
     { key:'agresivo', icon:'🚀', name:'Agresivo', desc:'Pago mensual alto, libre de deudas en menor tiempo', mul:1.6, color:'var(--red)' },
   ]
 
-  // Persist active strategy in window (survives re-renders within session)
-  if (!window._deudaStrat) window._deudaStrat = 'moderado'
-  const activeStrat = window._deudaStrat
-  const activeStratData = strats.find(s=>s.key===activeStrat) || strats[1]
-  const {monthlyPayment: activePago, months: activeMonths} = calcDebtStrategy(pendiente, interesMedio, activeStratData.mul)
+  // Persist active strategy in S — never assumed by default. null means
+  // the user has never explicitly confirmed one yet.
+  const activeStrat = S.deudaEstrategiaActiva?.key || null
+  const activeStratData = strats.find(s=>s.key===activeStrat) || null
+  const {monthlyPayment: activePago, months: activeMonths} = activeStratData
+    ? calcDebtStrategy(pendiente, interesMedio, activeStratData.mul)
+    : { monthlyPayment: 0, months: 0 }
+
+  // Deuda prioritaria según la estrategia activa (o avalancha por defecto
+  // para el calculo de "próxima deuda" cuando aún no hay estrategia)
+  const priorityOrder = activeStrat === 'agresivo'
+    ? [...S.deudas].filter(d=>(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)>0.01).sort((a,b)=>(Number(b.interes)||0)-(Number(a.interes)||0))
+    : [...S.deudas].filter(d=>(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)>0.01).sort((a,b)=>((Number(a.importeTotal)||0)-(Number(a.importePagado)||0))-((Number(b.importeTotal)||0)-(Number(b.importePagado)||0)))
+  const deudaPrioritaria = priorityOrder[0] || null
+
+  // Confirma explícitamente una estrategia como ACTIVA — nunca registra
+  // ningún pago. Separado a propósito de "Registrar pagos" (Bloque 8).
+  window._confirmarEstrategiaDeuda = function(key) {
+    S.deudaEstrategiaActiva = { key, appliedAt: todayISO() }
+    save()
+    render()
+    const s = strats.find(x=>x.key===key)
+    toast(`✓ ${t('estrategia_activa','Estrategia activa')}: ${s ? s.icon+' '+s.name : key}`)
+  }
 
   // toggleStratMenu helper
   window.toggleStratMenu = function() {
@@ -5619,13 +5654,13 @@ function renderDeudas() {
     if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none'
   }
 
-  const stratCards = (() => {
-    const active = strats.find(s => s.key === activeStrat)
+  const stratCards = activeStratData ? (() => {
+    const active = activeStratData
     const others = strats.filter(s => s.key !== activeStrat)
     const {monthlyPayment: aPago, months: aMeses} = calcDebtStrategy(pendiente, interesMedio, active.mul)
     const changeOpts = others.map(x => {
       const {monthlyPayment: xPago, months: xMeses} = calcDebtStrategy(pendiente, interesMedio, x.mul)
-      return `<div onclick="window._deudaStrat='${x.key}';document.getElementById('stratMenu').style.display='none';renderDeudas()"
+      return `<div onclick="document.getElementById('stratMenu').style.display='none';window._confirmarEstrategiaDeuda('${x.key}')"
         style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text2)"
         onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
         <span style="font-size:1.2rem">${x.icon}</span>
@@ -5638,13 +5673,12 @@ function renderDeudas() {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span style="font-size:.95rem;font-weight:800;color:${active.color}">${active.name}</span>
-          <span style="background:${active.color}22;color:${active.color};font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px">✓ Estrategia activa</span>
+          <span style="background:${active.color}22;color:${active.color};font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px">✓ ${t('estrategia_activa','Estrategia activa')}</span>
         </div>
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">${active.desc}</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
           <span style="font-size:.85rem;font-weight:700;color:var(--accent)">💳 ${eur(aPago)}/mes</span>
           <span style="font-size:.78rem;color:var(--text2)">⏱ Libre en <strong style="color:var(--text)">${fmtMonths(aMeses)}</strong></span>
-          <button class="btn btn-primary btn-xs" onclick="event.stopPropagation();openApplyStrategyModal()">⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual')}</button>
         </div>
       </div>
       <div style="position:relative;flex-shrink:0">
@@ -5657,7 +5691,10 @@ function renderDeudas() {
         </div>
       </div>
     </div>`
-  })()
+  })() : `<div class="mn-insight" style="grid-column:1/-1">
+    <span class="mn-insight-icon">👇</span>
+    <div class="mn-insight-body"><strong>${t('deuda_sin_estrategia','Aún no has aplicado ninguna estrategia')}</strong> — ${t('deuda_sin_estrategia_desc','elige una de las opciones de abajo y pulsa "Aplicar esta estrategia" para activarla.')}</div>
+  </div>`
 
   // Filtros
   const allCats = [...new Set(S.deudas.map(d=>d.categoria).filter(Boolean))]
@@ -5740,7 +5777,7 @@ function renderDeudas() {
   </div>
 
   <!-- ── KPIs ──────────────────────────────────────────────────── -->
-  <div class="kpi-grid kpi-grid-4 mn-section">
+  <div class="kpi-grid kpi-grid-5 mn-section">
     <div class="kpi-card">
       <div class="kpi-icon" style="background:var(--red-dim)">💸</div>
       <div class="kpi-label">${t('deuda_total_lbl','Deuda total')}</div>
@@ -5762,9 +5799,15 @@ function renderDeudas() {
       <div class="kpi-icon" style="background:var(--accent-dim)">🏁</div>
       <div class="kpi-label">${t('libertad_financiera','Libertad financiera')}</div>
       <div class="kpi-value sm" style="color:var(--accent)">
-        ${_fechaLibertad(activeMonths) || (pendiente<=0 ? `✅ ${t('sin_deudas','Sin deudas')}` : '—')}
+        ${activeStratData ? (_fechaLibertad(activeMonths) || (pendiente<=0 ? `✅ ${t('sin_deudas','Sin deudas')}` : '—')) : '—'}
       </div>
-      <div class="kpi-sub">${activeStratData.icon} ${activeStratData.name} · ${eur(activePago)}/${t('mes_lbl','mes')}</div>
+      <div class="kpi-sub">${activeStratData ? `${activeStratData.icon} ${activeStratData.name} · ${eur(activePago)}/${t('mes_lbl','mes')}` : t('deuda_sin_estrategia_kpi','Sin estrategia activa')}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:var(--red-dim)">🎯</div>
+      <div class="kpi-label">${t('deuda_proxima_lbl','Próxima deuda')}</div>
+      <div class="kpi-value sm">${deudaPrioritaria ? deudaPrioritaria.nombre : (pendiente<=0 ? `✅ ${t('sin_deudas','Sin deudas')}` : '—')}</div>
+      <div class="kpi-sub">${deudaPrioritaria ? `${eur((Number(deudaPrioritaria.importeTotal)||0)-(Number(deudaPrioritaria.importePagado)||0))} ${t('deuda_pendiente_lbl','pendiente').toLowerCase()}` : ''}</div>
     </div>
   </div>
 
@@ -5780,14 +5823,16 @@ function renderDeudas() {
         const {monthlyPayment: sPago, months: sMeses} = calcDebtStrategy(pendiente, interesMedio, s.mul)
         const isActive = s.key === activeStrat
         const fechaS = _fechaLibertad(sMeses)
-        return `<div class="mn-strat-card ${isActive ? 'active' : ''}" style="position:relative" onclick="window._deudaStrat='${s.key}';renderDeudas()">
+        return `<div class="mn-strat-card ${isActive ? 'active' : ''}" style="position:relative">
           <span onclick="event.stopPropagation();window._hideDefaultStrat('${s.key}')" title="Ocultar" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--bg2);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:.7rem;cursor:pointer;z-index:2">✕</span>
           <div class="mn-strat-card-icon">${s.icon}</div>
           <div class="mn-strat-card-name">${s.name}</div>
           <div class="mn-strat-card-pay">${eur(sPago)}/${t('mes_lbl','mes')}</div>
           <div class="mn-strat-card-months">${fmtMonths(sMeses)}</div>
           <div class="mn-strat-card-date">${fechaS || '—'}</div>
-          ${isActive ? `<div style="margin-top:6px;font-size:.65rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em">✓ ${t('estrategia_activa','Activa')}</div>` : ''}
+          ${isActive
+            ? `<div style="margin-top:8px;font-size:.65rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;text-align:center">✓ ${t('estrategia_activa','Activa')}</div>`
+            : `<button class="btn btn-secondary btn-xs" style="width:100%;margin-top:8px" onclick="event.stopPropagation();window._confirmarEstrategiaDeuda('${s.key}')">${t('deuda_activar_estrategia','Activar esta estrategia')}</button>`}
         </div>`
       }).join('')}
       <!-- Custom saved strategies, inline in the same grid -->
@@ -5810,9 +5855,29 @@ function renderDeudas() {
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- ── PAGOS DE LA ESTRATEGIA (Bloque 8B) ───────────────────────
+       Separado a propósito de "Aplicar estrategia" de arriba: aquí sí
+       se registran pagos reales, solo disponible cuando hay una
+       estrategia realmente confirmada por el usuario. -->
+  ${activeStratData ? `
+  <div class="card mn-section">
+    <div class="card-header">
+      <div><div class="card-title">💳 ${t('deuda_pagos_estrategia','Pagos de la estrategia')}</div><div class="card-subtitle">${t('deuda_pagos_estrategia_sub','Registra el pago mensual repartido según tu estrategia activa')}</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 16px;background:var(--bg2);border-radius:12px">
+      <div>
+        <div style="font-size:.78rem;color:var(--text2)">${t('deuda_pago_recomendado','Pago recomendado este mes')}</div>
+        <div style="font-size:1.2rem;font-weight:900;color:var(--accent)">${eur(activePago)}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openApplyStrategyModal()">${t('deuda_registrar_pagos','Registrar pagos de este mes')}</button>
+    </div>
+  </div>` : ''}
+
+  <div class="card mn-section">
     <!-- Multi-payment feature card — bigger, more visible -->
-    <div onclick="openMultiPagoModal()" style="margin-top:16px;padding:18px 20px;border-radius:14px;border:1.5px solid var(--border2);background:var(--bg2);cursor:pointer;display:flex;align-items:center;gap:16px;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+    <div onclick="openMultiPagoModal()" style="padding:18px 20px;border-radius:14px;border:1.5px solid var(--border2);background:var(--bg2);cursor:pointer;display:flex;align-items:center;gap:16px;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
       <div style="width:48px;height:48px;border-radius:12px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">💳</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.95rem;font-weight:800;color:var(--text)">${t('pago_multiple','Pagar varias deudas a la vez')}</div>
@@ -5821,12 +5886,13 @@ function renderDeudas() {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
+    ${activeStratData ? `
     <!-- Libertad financiera card -->
     <div class="mn-freedom-card" style="margin-top:16px">
       <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🏁 ${t('libertad_financiera','Fecha de libertad financiera')}</div>
       <div class="mn-freedom-date">${_fechaLibertad(activeMonths) || '—'}</div>
       <div class="mn-freedom-sub">${activeStratData.icon} ${activeStratData.name} · ${eur(activePago)}/${t('mes_lbl','mes')} · ${fmtMonths(activeMonths)}</div>
-    </div>
+    </div>` : ''}
   </div>
 
   <!-- ── PROYECCIÓN + ORDEN DE PAGO ───────────────────────────── -->
@@ -6694,7 +6760,9 @@ function renderRevision() {
       <div class="empty-sub" style="color:var(--text2);margin-top:4px">${t('revision_vacio_sub','Perfecto. No tienes movimientos pendientes de revisar.')}</div>
     </div>`
 
-  document.getElementById('content').innerHTML = `
+  const _analisisTarget = (currentPage === 'analisis') ? document.getElementById('analisisTabContent') : document.getElementById('content')
+  if (!_analisisTarget) return
+  _analisisTarget.innerHTML = `
   <div class="section-header">
     <div>
       <div class="page-h1">🔔 ${t('revision_titulo','Revisión')}</div>
@@ -6942,7 +7010,9 @@ function renderCalendario() {
     </div>`
   }
 
-  document.getElementById('content').innerHTML = `
+  const _analisisTarget = (currentPage === 'analisis') ? document.getElementById('analisisTabContent') : document.getElementById('content')
+  if (!_analisisTarget) return
+  _analisisTarget.innerHTML = `
   <div class="section-header">
     <div>
       <div class="page-h1">📅 ${t('calendario_titulo','Calendario')}</div>
@@ -7318,6 +7388,108 @@ function renderConfiguracion() {
         <button class="btn btn-primary btn-sm" onclick="guardarPerfil()">${t('cfg_guardar')}</button>
       </div>
 
+      <!-- Plan y facturación -->
+      <div class="card" id="mn-billing-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
+            <div class="card-subtitle">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
+          </div>
+        </div>
+        ${(() => {
+          // Fuente real: MNEntitlements (respaldado por Supabase/Stripe),
+          // nunca el estado mock de MNBilling directamente — así nunca
+          // se muestra "activo" si el plan no está realmente confirmado.
+          const e = window.MNEntitlements
+          const isTrial = e ? e.isTrial() : true
+          const isExpired = e ? e.isTrialExpired() : false
+          const isPro = e ? e.isPro() : false
+          const isLocal = e ? e.isLocal() : false
+          const pink = '#EC4899'
+
+          // ── TRIAL (activo) ──
+          if (isTrial) {
+            const state = window.MNEntitlements?.getServerState()
+            const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
+            const hoursLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / 3600000)) : 24
+            return `
+            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
+              <div style="font-size:1.05rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.8rem;color:var(--text2)">· ${_aut('cfg_te_quedan','Te quedan')} ${hoursLeft}h</span></div>
+              <div style="font-size:.8rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_local','Elegir Local')}</button>
+                <button class="btn btn-sm" style="background:${pink};color:#fff;border:none" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_pro','Elegir Pro')}</button>
+              </div>
+            </div>`
+          }
+
+          // ── LOCAL ──
+          if (isLocal) {
+            const price = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
+            return `
+            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
+                  <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(price)} <span style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase">— ${_aut('plan_pago_unico','Pago único')}</span></div>
+                </div>
+                <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
+              </div>
+              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
+                <li style="font-size:.8rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
+              </ul>
+              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px"></div>
+              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_mejorar_pro','Mejorar a Pro')}</button>
+              <div style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px">${_aut('cfg_local_upsell','Actualiza a Pro para sincronizar tus datos entre dispositivos.')}</div>
+            </div>`
+          }
+
+          // ── PRO (tratamiento rosa/premium) ──
+          if (isPro) {
+            const price = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
+            return `
+            <div style="padding:16px 18px;background:linear-gradient(160deg, rgba(236,72,153,.1), var(--bg2) 65%);border-radius:12px;border:1.5px solid rgba(236,72,153,.4);margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
+                  <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
+                </div>
+                <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_pro_activo','PRO ACTIVO')}</span>
+              </div>
+              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
+                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
+              </ul>
+              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px"></div>
+              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
+            </div>`
+          }
+
+          // ── EXPIRED (trial terminado, sin plan activo — en la
+          // práctica bloquearApp() ya cubre toda la pantalla en este
+          // caso, pero se mantiene por si se accede a esta vista de
+          // otra forma) ──
+          return `
+          <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
+            <div style="font-size:1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Prueba gratuita finalizada')}</div>
+            <div style="font-size:.8rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
+            <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_plan','Elegir plan')}</button>
+          </div>`
+        })()}
+
+        <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>
+      </div>
+
+
       <!-- Idioma -->
       <div class="card">
         <div class="card-header"><div class="card-title">🌐 ${t('cfg_idioma')}</div></div>
@@ -7365,103 +7537,6 @@ function renderConfiguracion() {
           <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
           <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
         </div>
-      </div>
-
-      <!-- Plan y facturación -->
-      <div class="card" id="mn-billing-card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
-            <div class="card-subtitle">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
-          </div>
-        </div>
-        ${(() => {
-          const b = window.MNBilling
-          const status = b ? b.getSubStatus() : null
-          const state = status ? status.state : null
-          const S = b ? b.STATES : {}
-          const isPro = state === S.PRO_ACTIVE || state === S.PRO_TRIALING
-          const isLocal = state === S.LOCAL_ACTIVE || state === S.PRO_CANCELLED
-          const isExpired = state === S.EXPIRED_TRIAL
-          const pink = '#EC4899'
-
-          // ── TRIAL (activo o terminando) ──
-          if (!isPro && !isLocal && !isExpired) {
-            const tl = b ? b.getTrialTimeLeft() : { label: '' }
-            return `
-            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-              <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
-              <div style="font-size:1.05rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.8rem;color:var(--text2)">· ${tl.label || '24h'}</span></div>
-              <div style="font-size:.8rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
-              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-                <button class="btn btn-secondary btn-sm" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_local','Elegir Local')}</button>
-                <button class="btn btn-sm" style="background:${pink};color:#fff;border:none" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_pro','Elegir Pro')}</button>
-              </div>
-            </div>`
-          }
-
-          // ── LOCAL ──
-          if (isLocal) {
-            const price = b ? b.PLANS.LOCAL_LIFETIME.price : 6.99
-            return `
-            <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                <div>
-                  <div style="font-size:1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
-                  <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
-                </div>
-                <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
-              </div>
-              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todas_funciones','Todas las funciones')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_importacion','Importación')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_exportacion','Exportación')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
-              </ul>
-              <div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">☁️ ${_aut('cfg_cloud_lbl','Cloud')}: <strong style="color:var(--text3)">${_aut('cfg_no_incluido','No incluido')}</strong></div>
-              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px">${_aut('cfg_cargando_estado','Cargando estado de suscripción…')}</div>
-              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_pasar_pro','Pasar a Pro')}</button>
-              <div style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px">${_aut('cfg_local_upsell','Actualiza a Pro para sincronizar tus datos entre dispositivos.')}</div>
-              <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
-            </div>`
-          }
-
-          // ── PRO (tratamiento rosa/premium) ──
-          if (isPro) {
-            const price = b ? b.PLANS.PRO_ANNUAL.price : 14.99
-            return `
-            <div style="padding:16px 18px;background:linear-gradient(160deg, rgba(236,72,153,.1), var(--bg2) 65%);border-radius:12px;border:1.5px solid rgba(236,72,153,.4);margin-bottom:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                <div>
-                  <div style="font-size:1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
-                  <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:4px 0">${eur(price)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
-                </div>
-                <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
-              </div>
-              <ul style="list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:5px">
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
-                <li style="font-size:.8rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
-              </ul>
-              <div id="mn-sub-status-info" style="font-size:.76rem;color:var(--text3);margin-bottom:12px">${_aut('cfg_cargando_estado','Cargando estado de suscripción…')}</div>
-              <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_plan','Gestionar plan')}</button>
-            </div>`
-          }
-
-          // ── EXPIRED (trial terminado, sin plan activo) ──
-          return `
-          <div style="padding:16px 18px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);margin-bottom:14px">
-            <div style="font-size:1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Tu prueba ha terminado')}</div>
-            <div style="font-size:.8rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
-            <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="MNAuthUI.openPlanModal('settings')">${_aut('cfg_btn_elegir_plan','Elegir plan')}</button>
-          </div>`
-        })()}
-
-        <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
-        <div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>
       </div>
 
       <!-- Modo uso: personal / pareja (próximamente v2) -->
@@ -7535,15 +7610,23 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- Columna derecha: categorías (movido a su propia seccion) -->
+    <!-- Columna derecha: FAQ (Categorías personalizadas se eliminó — ya tiene su propia sección en el sidebar) -->
     <div class="card" style="align-self:start">
       <div class="card-header">
-        <div><div class="card-title">🏷 ${t('cfg_cats_titulo')}</div><div class="card-subtitle">${t('cfg_cats_sub')}</div></div>
+        <div><div class="card-title">❓ ${t('cfg_faq_titulo','Preguntas frecuentes')}</div><div class="card-subtitle">${t('cfg_faq_sub','Dudas comunes sobre MoneyNest')}</div></div>
       </div>
-      <div style="text-align:center;padding:20px 8px">
-        <div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">${t('cfg_cats_movido','La gestión de categorías ahora tiene su propia sección.')}</div>
-        <button class="btn btn-primary btn-sm" onclick="goTo('categorias')">🏷️ ${t('nav_categorias','Categorías')} →</button>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        ${[
+          [t('faq_q1','¿Cómo añado un ingreso?'), t('faq_a1','Ve a la sección Ingresos y pulsa + Nuevo ingreso.')],
+          [t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), t('faq_a_local_pro_short','Local: acceso ilimitado sin suscripción. Pro añade Cloud, sincronización y backup.')],
+          [t('faq_q_recuperar','¿Cómo recupero mis datos si cambio de dispositivo?'), t('faq_a_recuperar_short','Usa Restaurar acceso con el email de tu compra, o inicia sesión si eres Pro.')],
+        ].map(([q,a]) => `
+          <div style="padding:10px 12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:.82rem;font-weight:700;color:var(--text)">${q}</div>
+            <div style="font-size:.76rem;color:var(--text2);margin-top:4px">${a}</div>
+          </div>`).join('')}
       </div>
+      <button class="btn btn-secondary btn-sm" style="width:100%" onclick="goTo('faq')">${t('cfg_ver_todas_faq','Ver todas las preguntas')} →</button>
     </div>
   </div>`
 
@@ -11163,6 +11246,11 @@ function _renderDayOfWeekHeatmap() {
     </div>`
 }
 
+function _analisisSwitchTab(tab) {
+  window._analisisActiveTab = tab
+  renderAnalisis()
+}
+
 function renderAnalisis() {
   const m   = currentMonth()
   const rev = generateMonthlyReview(m)
@@ -11306,7 +11394,7 @@ function renderAnalisis() {
     return { type: 'warn', icon: '⚠️', msg: `${t('proyeccion_ajustada', 'Proyección ajustada')}: ${eur(cfPlanner)}/${t('mes_lbl','mes')}. ${t('proyeccion_ajustada_msg','Margen de mejora disponible.')}` }
   })()
 
-  document.getElementById('content').innerHTML = `
+  const _analisisResumenHtml = `
   <!-- ── HEADER ────────────────────────────────────────────────── -->
   <div class="section-header mn-section">
     <div>
@@ -11654,6 +11742,24 @@ function renderAnalisis() {
     </div>
   </div>` : ''}
 `
+
+  const _analisisTab = window._analisisActiveTab || 'resumen'
+  document.getElementById('content').innerHTML = `
+  <div class="section-header">
+    <div>
+      <div class="page-h1">📊 ${t('page_analisis','Análisis')}</div>
+      <div class="page-sub">${t('analisis_sub','Resumen, revisión, calendario y tendencias en un solo lugar')}</div>
+    </div>
+  </div>
+  <div class="analisis-tabs" role="tablist">
+    <button class="analisis-tab-btn ${_analisisTab==='resumen'?'active':''}" onclick="_analisisSwitchTab('resumen')">📈 ${t('analisis_tab_resumen','Resumen')}</button>
+    <button class="analisis-tab-btn ${_analisisTab==='revision'?'active':''}" onclick="_analisisSwitchTab('revision')">🔔 ${t('analisis_tab_revision','Revisión')}${_reviewCount()>0?` <span class="analisis-tab-badge">${_reviewCount()}</span>`:''}</button>
+    <button class="analisis-tab-btn ${_analisisTab==='calendario'?'active':''}" onclick="_analisisSwitchTab('calendario')">📅 ${t('analisis_tab_calendario','Calendario financiero')}</button>
+  </div>
+  <div id="analisisTabContent">${_analisisTab==='resumen' ? _analisisResumenHtml : ''}</div>
+  `
+  if (_analisisTab === 'revision') { renderRevision(); return }
+  if (_analisisTab === 'calendario') { renderCalendario(); return }
 
   // Charts
   setTimeout(()=>{
@@ -14168,11 +14274,14 @@ function renderFAQ() {
       { q: t('faq_q1','¿Cómo añado un ingreso?'), a: t('faq_a1','Ve a la sección <strong>Ingresos</strong> desde la barra lateral. Haz clic en <strong>+ Nuevo ingreso</strong>. Rellena el importe, categoría, fecha y descripción opcional. Pulsa <strong>Guardar</strong>.') },
       { q: t('faq_q2','¿Cómo añado un gasto?'), a: t('faq_a2','Ve a la sección <strong>Gastos</strong>. Pulsa <strong>+ Nuevo gasto</strong>. Introduce el importe, elige la categoría, la fecha y una descripción. Guarda y aparecerá en el dashboard automáticamente.') },
       { q: t('faq_q3','¿Cómo creo categorías personalizadas?'), a: t('faq_a3','En <strong>Configuración → Categorías</strong> encontrarás las listas de ingresos y gastos. Escribe el nombre en el campo de texto y pulsa <strong>Añadir</strong>.') },
+      { q: t('faq_q_cuenta','¿Cómo creo una cuenta bancaria?'), a: t('faq_a_cuenta','Ve a <strong>Cuentas</strong> desde la barra lateral y pulsa <strong>+ Nueva cuenta</strong>. Elige un nombre, tipo (banco, efectivo, tarjeta…) y saldo inicial.') },
+      { q: t('faq_q_import_banco','¿Cómo importo datos bancarios?'), a: t('faq_a_import_banco','Desde la barra superior pulsa <strong>Importar banco</strong>, selecciona el archivo de tu banco (CSV/Excel) y MoneyNest categorizará automáticamente los movimientos, pidiéndote confirmación para los que no reconozca.') },
     ]},
     { group: '📚 ' + t('faq_g_conceptos','Conceptos financieros'), color: 'var(--indigo)', items: [
       { q: t('faq_q4','¿Qué es el patrimonio neto?'), a: t('faq_a4','El patrimonio neto es la diferencia entre todos tus activos (cuentas, inversiones, inmuebles…) y tus pasivos (deudas). MoneyNest lo calcula automáticamente en la sección <strong>Patrimonio</strong>.') },
       { q: t('faq_q5','¿Cómo funciona el análisis?'), a: t('faq_a5','El <strong>Análisis</strong> cruza tus datos de ingresos, gastos, inversiones y deudas para generar insights personalizados: tasa de ahorro, categorías con mayor gasto, evolución mensual y regla 50/30/20.') },
       { q: t('faq_q6','¿Cómo interpreto los gráficos?'), a: t('faq_a6','Los gráficos de líneas muestran evolución temporal. Los de dona muestran distribución por categorías. Los KPI en verde indican mejora y en rojo empeoramiento respecto al período anterior.') },
+      { q: t('faq_q_inversiones','¿Cómo funcionan las inversiones?'), a: t('faq_a_inversiones','En <strong>Inversiones</strong> registra cada activo (fondo, acción, cripto…) con su importe invertido. MoneyNest calcula la ganancia latente y realizada, y el ROI medio al cerrar una posición.') },
     ]},
     { group: '💳 ' + t('faq_g_deudas','Deudas'), color: 'var(--red)', items: [
       { q: t('faq_q7','¿Qué es una estrategia de pago?'), a: t('faq_a7','Es un plan para liquidar tus deudas de forma ordenada. MoneyNest ofrece tres ritmos: <strong>Conservador</strong> 🐢, <strong>Moderado</strong> ⚖️ y <strong>Agresivo</strong> 🚀.') },
@@ -14184,6 +14293,11 @@ function renderFAQ() {
       { q: t('faq_q11','¿Cómo importo una copia de seguridad?'), a: t('faq_a11','En <strong>Configuración → Importar / Exportar datos</strong>, pulsa <strong>Importar copia de seguridad</strong> y selecciona tu archivo .json. <em>⚠️ Esto sobreescribe los datos actuales.</em>') },
       { q: t('faq_q12','¿Cómo traslado MoneyNest a otro dispositivo?'), a: t('faq_a12','<strong>1.</strong> Exporta desde Configuración → Copia de seguridad (JSON).<br><strong>2.</strong> En el nuevo dispositivo abre MoneyNest.<br><strong>3.</strong> Ve a Configuración → Importar y selecciona el archivo .json.') },
       { q: t('faq_q13','¿Qué pasa si reseteo la app?'), a: t('faq_a13','El reset elimina <strong>todos los datos permanentemente</strong>. Exporta siempre una copia de seguridad antes.') },
+    ]},
+    { group: '💳 ' + t('faq_g_plan','Plan y facturación'), color: 'var(--gold)', items: [
+      { q: t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), a: t('faq_a_local_pro','<strong>Local</strong> (6,99€ pago único) te da acceso ilimitado a MoneyNest en este dispositivo, sin suscripción. <strong>Pro</strong> (14,99€/año) añade Cloud: sincronización automática entre dispositivos, backup y restauración.') },
+      { q: t('faq_q_cloud','¿Cómo funciona Cloud?'), a: t('faq_a_cloud','Con el plan Pro, tus datos se sincronizan automáticamente en la nube. Así puedes acceder a tu información desde cualquier dispositivo y siempre tienes una copia de seguridad actualizada.') },
+      { q: t('faq_q_recuperar','¿Cómo recupero mis datos si cambio de dispositivo?'), a: t('faq_a_recuperar','Si ya tienes una licencia, usa <strong>Restaurar acceso</strong> desde la pantalla de inicio de sesión con el email de tu compra. Si eres Pro, tus datos se sincronizan automáticamente al iniciar sesión.') },
     ]},
     { group: '⚙️ ' + t('faq_g_uso','Uso de la app'), color: 'var(--green)', items: [
       { q: t('faq_q14','¿Cómo cambio el idioma?'), a: t('faq_a14','Ve a <strong>Configuración → Idioma</strong> y haz clic en el idioma que quieres. El cambio es inmediato.') },
@@ -14216,86 +14330,22 @@ function renderFAQ() {
     </div>`
   }).join('')
 
-  try { if (!window._sugerencias) window._sugerencias = JSON.parse(localStorage.getItem('mn_sugerencias')||'[]') } catch(e) { window._sugerencias = [] }
-  const sugCats = ['General','UI / Diseño','Nuevas funciones','Rendimiento','Idioma / Traducción','Otro']
-  const sugList = (window._sugerencias||[]).map(s=>`
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.88rem;font-weight:600;color:var(--text);margin-bottom:5px">${s.text}</div>
-        <div style="font-size:.73rem;color:var(--text3)">${s.fecha} · <span style="background:var(--border);padding:2px 8px;border-radius:99px;font-weight:600;color:var(--text2)">${s.categoria}</span>${s.tipo?` · <span style="font-size:.7rem;color:var(--accent)">${s.tipo}</span>`:''}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
-        <button onclick="votarSugerencia(${s.id})" style="background:var(--accent-dim);border:1px solid rgba(0,212,170,.2);color:var(--accent);border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;cursor:pointer;min-width:52px">👍 ${s.votos||0}</button>
-        <button onclick="borrarSugerencia(${s.id})" style="background:transparent;border:none;color:var(--text3);font-size:.72rem;cursor:pointer" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">✕ ${t('btn_eliminar','Eliminar')}</button>
-      </div>
-    </div>`).join('') || `<div class="empty"><div class="empty-icon">💬</div><div class="empty-title">${t('sug_vacio_titulo','Aún no hay sugerencias')}</div><div class="empty-sub">${t('sug_vacio_sub','¡Sé el primero en proponer una mejora!')}</div></div>`
-
   document.getElementById('content').innerHTML = `
   <div style="max-width:720px;margin:0 auto">
     <div class="section-header">
       <div>
-        <div class="page-h1">❓ ${t('faq_titulo','FAQ & Sugerencias')}</div>
-        <div class="page-sub">${t('faq_sub','Guías paso a paso, respuestas frecuentes y envío de sugerencias')}</div>
+        <div class="page-h1">❓ ${t('faq_titulo','Preguntas frecuentes')}</div>
+        <div class="page-sub">${t('faq_sub_v2','Guías paso a paso y respuestas a las dudas más comunes')}</div>
       </div>
     </div>
 
     ${faqHtml}
 
-    <div style="margin-top:56px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <div style="font-size:1.05rem;font-weight:800;color:var(--text);letter-spacing:-.02em">💡 ${t('sugerencias_titulo','Sugerencias')}</div>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title" style="margin-bottom:16px">✍️ ${t('sug_nueva_titulo','Nueva sugerencia')}</div>
-        <div class="form-group">
-          <label>${t('sug_tipo_label','Tipo')}</label>
-          <div style="display:flex;gap:10px;margin-bottom:4px">
-            <label style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:var(--bg2);cursor:pointer;flex:1;font-size:.85rem;font-weight:600;color:var(--text2);transition:all .15s" id="sug-tipo-label-sug">
-              <input type="radio" name="sug-tipo" value="Sugerencia" id="sug-tipo-sug" checked style="accent-color:var(--accent)" onchange="document.getElementById('sug-tipo-label-sug').style.borderColor='var(--accent)';document.getElementById('sug-tipo-label-sug').style.color='var(--accent)';document.getElementById('sug-tipo-label-preg').style.borderColor='var(--border2)';document.getElementById('sug-tipo-label-preg').style.color='var(--text2)'">
-              💡 ${t('sug_tipo_sug')}
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:var(--bg2);cursor:pointer;flex:1;font-size:.85rem;font-weight:600;color:var(--text2);transition:all .15s" id="sug-tipo-label-preg">
-              <input type="radio" name="sug-tipo" value="Pregunta" id="sug-tipo-preg" style="accent-color:var(--accent)" onchange="document.getElementById('sug-tipo-label-preg').style.borderColor='var(--accent)';document.getElementById('sug-tipo-label-preg').style.color='var(--accent)';document.getElementById('sug-tipo-label-sug').style.borderColor='var(--border2)';document.getElementById('sug-tipo-label-sug').style.color='var(--text2)'">
-              ❓ ${t('sug_tipo_preg')}
-            </label>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>${t('sug_categoria_label','Categoría')}</label>
-          <select id="sug-cat">${sugCats.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
-        </div>
-        <div class="form-group">
-          <label>${t('sug_mensaje_label','Mensaje')}</label>
-          <textarea id="sug-input" placeholder="${t('sug_placeholder')}" style="min-height:100px;-webkit-user-select:text;user-select:text"></textarea>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px">
-          <button class="btn btn-primary" onclick="saveSugerencia()">${t('sug_guardar')}</button>
-          <button class="btn btn-secondary" onclick="enviarSugerenciaEmail()">📧 ${t('sug_enviar_email','Enviar por email')}</button>
-        </div>
-        <div style="margin-top:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:.72rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">${t('contacto_directo','Contacto directo')}:</span>
-          <a href="mailto:invest.grid.main@gmail.com" style="font-size:.85rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">invest.grid.main@gmail.com</a>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header" style="margin-bottom:12px">
-          <div class="card-title">📋 ${t('sug_enviadas','Sugerencias enviadas')}</div>
-          <span class="badge badge-accent">${(window._sugerencias||[]).length}</span>
-        </div>
-        ${sugList}
-      </div>
+    <div style="margin-top:32px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center">
+      <div style="font-size:.82rem;color:var(--text2)">${t('faq_contacto_intro','¿No encuentras lo que buscas?')}</div>
+      <a href="mailto:invest.grid.main@gmail.com" style="font-size:.88rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">invest.grid.main@gmail.com</a>
     </div>
   </div>`
-
-  // Highlight the initially-selected radio
-  setTimeout(()=>{
-    const lbl = document.getElementById('sug-tipo-label-sug')
-    if (lbl) { lbl.style.borderColor='var(--accent)'; lbl.style.color='var(--accent)' }
-  }, 0)
 }
 
 // ─── SUGERENCIAS ───────────────────────────────────────────────

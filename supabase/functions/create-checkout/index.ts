@@ -2,11 +2,11 @@ import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // ── Server-side price whitelist — NEVER trust a priceId/amount from
-// the client. Test-mode ids from Fase 2 are the defaults; override via
-// Supabase secrets STRIPE_PRICE_LOCAL / STRIPE_PRICE_PRO when the live
-// prices are ready, with no code change needed.
+// the client. Local is a ONE-TIME purchase (mode:'payment'), Pro is an
+// annual subscription (mode:'subscription') — per the business model:
+// Local 6,99€ pago único, sin suscripción; Pro 14,99€/año.
 const PRICE_MAP: Record<string, string> = {
-  local: Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3',
+  local: Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8',
   pro:   Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j',
 };
 
@@ -51,9 +51,6 @@ Deno.serve(async (req) => {
   const origin = req.headers.get('origin') ?? '';
   if (!ALLOWED_ORIGINS.has(origin)) return json({ error: 'invalid_origin' }, 403, cors);
 
-  // ── AUTH: resolve the REAL caller from their Supabase JWT. Never
-  // trust a user_id/email sent in the request body — this is the only
-  // identity source used from here on.
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
   if (!jwt) return json({ error: 'missing_authorization' }, 401, cors);
@@ -63,7 +60,6 @@ Deno.serve(async (req) => {
   const user = userData.user;
   const userEmail = user.email ?? '';
 
-  // ── Body: ONLY a plan key, validated against the server whitelist.
   let plan: string;
   try {
     const body = await req.json();
@@ -75,10 +71,8 @@ Deno.serve(async (req) => {
     return json({ error: 'invalid_plan' }, 400, cors);
   }
   const priceId = PRICE_MAP[plan];
+  const isSubscription = plan === 'pro';
 
-  // ── Reuse an existing Stripe Customer for this user if one is on
-  // file and still valid in Stripe; otherwise create a fresh one tied
-  // to their verified email and user_id.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('stripe_customer_id, plan, pro_trial_used')
@@ -91,7 +85,7 @@ Deno.serve(async (req) => {
       const existing = await stripe.customers.retrieve(customerId);
       if ((existing as Stripe.Customer).deleted) customerId = null;
     } catch {
-      customerId = null; // stale/invalid id (e.g. belonged to a different Stripe mode) — recreate below
+      customerId = null;
     }
   }
   if (!customerId) {
@@ -102,14 +96,11 @@ Deno.serve(async (req) => {
     customerId = customer.id;
   }
 
-  // ── Preserve the existing 7-day Pro trial-from-Local perk, applied
-  // correctly: only for users who haven't already used it, and only
-  // when they're not already on Pro.
   const applyProTrial = plan === 'pro' && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode: isSubscription ? 'subscription' : 'payment',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/?checkout=success&plan=${plan}`,
@@ -117,10 +108,21 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true,
       client_reference_id: user.id,
       metadata: { app: 'moneynest', user_id: user.id, plan },
-      subscription_data: {
-        metadata: { app: 'moneynest', user_id: user.id, plan },
-        ...(applyProTrial ? { trial_period_days: 7 } : {}),
-      },
+      ...(isSubscription ? {
+        subscription_data: {
+          metadata: { app: 'moneynest', user_id: user.id, plan },
+          ...(applyProTrial ? { trial_period_days: 7 } : {}),
+        },
+      } : {
+        // One-time payment (Local): no subscription_data — Stripe
+        // rejects that param outright in mode:'payment'. Identity is
+        // still carried via metadata + client_reference_id above, and
+        // stripe-webhook reads session.payment_intent for one-time
+        // purchases (see handleCheckoutCompleted).
+        payment_intent_data: {
+          metadata: { app: 'moneynest', user_id: user.id, plan },
+        },
+      }),
     });
 
     // IMPORTANT: this function NEVER writes plan/entitlement to Supabase

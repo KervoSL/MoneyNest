@@ -53,10 +53,7 @@ function _getScenario() {
 function _onStateChange() {
   const scenario = _getScenario();
 
-  // 1. Paywall management (global, regardless of current page)
-  _manageLockOverlay(scenario);
-
-  // 2. Export button gating (global)
+  // 1. Export button gating (global)
   _applyExportGating(scenario);
 
   // 3. Dynamic background — only applied when inside the billing view
@@ -86,112 +83,17 @@ function _isBillingPageActive() {
 //  PAYWALL MANAGER — Hard block, no read-only
 // ────────────────────────────────────────────────────────────────
 
-let _lockActive = false;
+// NOTA: el bloqueo de acceso por trial expirado vive únicamente en
+// bloquearApp() (app.js), conectado al flujo real de auth/checkAccess.
+// Este archivo antes tenía un SEGUNDO sistema de bloqueo independiente
+// (_activateLock/_deactivateLock, con su propio overlay y CTA) que se
+// disparaba en paralelo vía _onStateChange() — dos pantallas de
+// bloqueo superpuestas con diseños distintos. Eliminado por completo.
 
-function _manageLockOverlay(scenario) {
-  if (scenario === 'EXPIRED') {
-    if (!_lockActive) _activateLock();
-  } else {
-    if (_lockActive) _deactivateLock();
-  }
-}
-
-function _activateLock() {
-  _lockActive = true;
-
-  // Prevent ALL interaction with the app behind the overlay
-  document.body.style.overflow = 'hidden';
-
-  let overlay = document.getElementById('billingLockOverlay');
-  if (overlay) return; // already showing
-
-  overlay = document.createElement('div');
-  overlay.id = 'billingLockOverlay';
-
-  // Intercept ALL pointer events globally
-  overlay.style.cssText = `
-    position:fixed;inset:0;z-index:99000;
-    display:flex;align-items:center;justify-content:center;
-    padding:24px;
-    background:rgba(7,10,18,0.82);
-    backdrop-filter:blur(20px) saturate(0.6);
-    -webkit-backdrop-filter:blur(20px) saturate(0.6);
-    animation:lockOverlayIn 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
-  `;
-
-  overlay.innerHTML = `
-  <div class="lock-wrap">
-    <div class="lock-card" style="position:relative;max-width:440px;width:100%">
-      <div class="lock-card-top-bar"></div>
-      <div class="lock-card-glow"></div>
-
-      <div class="lock-header">
-        <div class="lock-expired-badge">
-          <span class="lock-expired-dot"></span>
-          ${t('billing_lock_badge')}
-        </div>
-
-        <div class="lock-icon-wrap">
-          <span class="lock-icon">🔒</span>
-        </div>
-
-        <div class="lock-title">${t('billing_lock_title')}</div>
-        <div class="lock-sub">${t('billing_lock_desc')}</div>
-      </div>
-
-      <div class="lock-body">
-        <div class="lock-features">
-          <div class="lock-feat">${t('billing_lock_feat1')}</div>
-          <div class="lock-feat">${t('billing_lock_feat2')}</div>
-          <div class="lock-feat">${t('billing_lock_feat3')}</div>
-          <div class="lock-feat">${t('billing_lock_feat4')}</div>
-        </div>
-
-        <div class="lock-ctas">
-          <!-- ÚNICO CTA principal: Local (embudo Local-First) -->
-          <button class="lock-cta-primary" id="lockBuyLocalBtn"
-            onclick="MNBillingUI.startBuyLocal()">
-            ${t('billing_lock_cta')}
-          </button>
-          <div class="lock-cta-sub-note">
-            ${t('billing_lock_cta_note')}
-          </div>
-        </div>
-
-        <p class="lock-note">
-          ${t('billing_lock_restore_q')}
-          <a href="#" onclick="event.preventDefault();MNBillingUI._restoreAccess()">
-            ${t('billing_lock_restore_link')}
-          </a>
-        </p>
-      </div>
-    </div>
-  </div>`;
-
-  document.body.appendChild(overlay);
-}
-
-function _deactivateLock() {
-  _lockActive = false;
-  document.body.style.overflow = '';
-
-  const overlay = document.getElementById('billingLockOverlay');
-  if (!overlay) return;
-  overlay.style.animation = 'lockOverlayOut 0.3s ease forwards';
-  setTimeout(() => overlay.remove(), 320);
-}
-
-function showLockOverlay() {
-  _activateLock();
-}
-
-function hideLockOverlay() {
-  _deactivateLock();
-}
-
-// Alias para el link "Restaurar acceso" — en producción haría lookup de licencia
+// Alias para el link "Restaurar acceso" — abre el modal compartido de
+// planes, que a su vez ofrece el flujo real de restauración.
 function _restoreAccess() {
-  // Por ahora abre el flow de compra
+  if (window.MNAuthUI?.openPlanModal) { window.MNAuthUI.openPlanModal('restore_link'); return; }
   startBuyLocal();
 }
 
@@ -818,8 +720,6 @@ function _closeCheckoutModal() {
 }
 
 function startBuyLocal() {
-  document.getElementById('billingLockOverlay')?.remove();
-  _lockActive = false;
   // Mock plan flow for now (no Stripe connection in this phase) — see
   // js/auth-ui.js. Falls back to the real Stripe flow only if the mock
   // UI module somehow isn't loaded, so this never silently does nothing.
@@ -829,8 +729,6 @@ function startBuyLocal() {
 }
 
 function startActivatePro() {
-  document.getElementById('billingLockOverlay')?.remove();
-  _lockActive = false;
   if (window.MNAuthUI) { MNAuthUI.openPlanModal('billing_lock'); return; }
   const email = window.MNAuth?.getUser()?.email ?? '';
   MNStripe.openPayment(MNStripeConfig.prices.pro, email);
@@ -970,76 +868,6 @@ function renderStatusBadge(el) {
 function _refreshBadges() {
   if (window.MNAuthUI?.renderAuthBadge) window.MNAuthUI.renderAuthBadge('authPlanBadge');
   if (window.MNAuthUI?.renderTrialPill) window.MNAuthUI.renderTrialPill('trialPillContainer');
-
-  const { state } = _b()?.getSubStatus?.() || {};
-
-  // ── Topbar "Activar Pro" button ─────────────────────────────────────
-  // Show ONLY during the 7-day free trial of the Pro Annual plan (pro_trialing).
-  // Hide for every other state: initial trial, expired, local, pro_active, cancelled.
-  // ── Premium Topbar Pill ──────────────────────────────────────────────
-  const pill     = document.getElementById('mnTrialPill');
-  const pillIcon = document.getElementById('mnTrialPillIcon');
-  const pillText = document.getElementById('mnTrialPillText');
-
-  if (pill && pillIcon && pillText) {
-    // Clear state classes
-    pill.classList.remove('pill--pro', 'pill--trial', 'pill--urgent');
-
-    if (state === 'pro_active') {
-      // State 1: full PRO — show static badge, no action needed
-      pill.style.display = 'flex';
-      pill.classList.add('pill--pro');
-      pillIcon.textContent = '⚡';
-      pillText.textContent = 'Plan PRO';
-      pill.onclick = null;
-      pill.style.cursor = 'default';
-
-    } else if (state === 'pro_trialing') {
-      // State 2 & 3: trial — show countdown, clickable to upgrade
-      const sub = _b()?.getSub?.();
-      const endsAt = (sub && (sub.proTrialEndsAt || sub.expiresAt)) || null;
-      const ms = endsAt ? Math.max(0, endsAt - Date.now()) : 0;
-      const urgent = ms > 0 && ms < 86400000; // < 24h
-
-      pill.style.display = 'flex';
-      pill.classList.add(urgent ? 'pill--urgent' : 'pill--trial');
-      pill.style.cursor = 'pointer';
-      pill.onclick = () => _showAuthModal();
-
-      if (ms <= 0) {
-        pillIcon.textContent = '⚡';
-        pillText.textContent = 'Prueba PRO';
-      } else {
-        const d = Math.floor(ms / 86400000);
-        const h = Math.floor((ms % 86400000) / 3600000);
-        const m = Math.floor((ms % 3600000)  / 60000);
-        if (urgent) {
-          pillIcon.textContent = '⏰';
-          pillText.textContent = h + 'h ' + m + 'm restantes';
-        } else {
-          pillIcon.textContent = '⚡';
-          pillText.textContent = 'Prueba termina en ' + (d > 0 ? d + 'd ' : '') + h + 'h';
-        }
-      }
-
-      // Live countdown — refresh every minute
-      if (window._mnPillInterval) clearInterval(window._mnPillInterval);
-      window._mnPillInterval = setInterval(function() {
-        if (typeof _refreshBadges === 'function') _refreshBadges();
-      }, 60000);
-
-    } else {
-      // All other states: hide pill
-      pill.style.display = 'none';
-      if (window._mnPillInterval) { clearInterval(window._mnPillInterval); window._mnPillInterval = null; }
-    }
-  }
-
-  // ── Sidebar ⚡ PRO badge (next to MoneyNest logo) ───────────────────
-  const proBadge = document.getElementById('sidebarProBadge');
-  if (proBadge) {
-    proBadge.style.display = state === 'pro_active' ? 'inline-flex' : 'none';
-  }
 }
 
 function refreshAll() {
@@ -1085,12 +913,7 @@ function initBillingUI() {
   // Export gating: re-apply after every page navigation
   document.addEventListener('mn:navigate', () => setTimeout(() => _applyExportGating(), 80));
 
-  // Check paywall on boot (if trial already expired before app loaded)
-  const bootScenario = _getScenario();
-  if (bootScenario === 'EXPIRED') {
-    setTimeout(_activateLock, 400);
-  }
-  _applyExportGating(bootScenario);
+  _applyExportGating(_getScenario());
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1145,8 +968,6 @@ async function openStripePortal() {
 window.MNBillingUI = {
   init:              initBillingUI,
   renderBillingPage,
-  showLockOverlay,
-  hideLockOverlay,
   renderStatusBadge,
   initDynamicBg,
   cleanupDynamicBg,
