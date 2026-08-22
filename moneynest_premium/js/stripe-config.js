@@ -1,18 +1,13 @@
 'use strict';
 
 const MNStripeConfig = Object.freeze({
-  // TODO(accion manual pendiente): esta es la publishable key de LIVE.
-  // El backend (create-payment-intent, create-checkout) prioriza
-  // STRIPE_SECRET_KEY_TEST — para que Stripe.js y el backend operen en
-  // el MISMO modo, esta debe sustituirse por la publishable key de
-  // TEST (pk_test_...), obtenible en Stripe Dashboard → Developers →
-  // API keys con el toggle "Test mode" activo. No se puede recuperar
-  // via el conector (a diferencia de los Price IDs, no es un dato de
-  // solo lectura expuesto por la API).
+  // LIVE mode — cobros reales. Coincide con el backend (create-checkout,
+  // create-payment-intent), que usa la clave secreta LIVE al no haber
+  // ninguna clave de test configurada en Supabase.
   publishableKey: 'pk_live_51T57NbFWll222Kpac9uR0087YoUUATVJCxRg3TzYSC7y0EacJnpooDne5ty7vZOEGrkqA35mj6Rf5unOsDiMzBlp00h0Q8bEJt',
   prices: {
-    local: 'price_1U5uN8FWll222KpaX0qENvX3',  // MoneyNest Local — TEST, 6,99€/año (recurring)
-    pro:   'price_1U5uNNFWll222Kpawefje59j',  // MoneyNest Pro — TEST, 14,99€/año (recurring)
+    local: 'price_1U68YVFWll222KpaCJ6WrKWg',  // MoneyNest Local — LIVE, 6,99€/año (recurring)
+    pro:   'price_1U68YaFWll222Kpa4mynzdAp',  // MoneyNest Pro — LIVE, 14,99€/año (recurring)
   },
   products: {
     local: 'prod_USDdaHgyW9lPe6',
