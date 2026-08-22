@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.1'
+const VERSION = '1.2'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -17024,13 +17024,157 @@ window.addEventListener('DOMContentLoaded', function() {
   
 })
 
-/* ─── PWA Service Worker Registration ─── */
+/* ─── PWA Service Worker Registration + Update System ───────────
+   Patron estandar (Workbox/Notion/Telegram Web): un nuevo deploy no
+   se activa solo — el navegador instala el nuevo worker en segundo
+   plano y lo deja en estado 'waiting' junto al que ya controla la
+   pagina. Solo cuando la persona pulsa "Actualizar ahora" en el
+   banner propio de MoneyNest se le pide que tome el control y se
+   recarga. Nunca toca LocalStorage ni IndexedDB — solo reemplaza los
+   archivos de la app (Cache Storage). */
 if ('serviceWorker' in navigator) {
+  // Captured BEFORE registering anything — tells us whether this page
+  // load was already controlled by a service worker. Only an actual
+  // controller HANDOVER (this was true, then changes) means a real
+  // update happened; the very first install also fires
+  // 'controllerchange' once, and that must never trigger a reload.
+  const hadControllerAlready = !!navigator.serviceWorker.controller
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
-      .then(reg => console.log('[MoneyNest] SW registered:', reg.scope))
+      .then(reg => {
+        console.log('[MoneyNest] SW registered:', reg.scope)
+
+        // A worker already waiting from a previous visit (e.g. the
+        // banner was dismissed with "Más tarde" and the tab was closed
+        // before updating) — show the banner again right away.
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          _showUpdateBanner(reg)
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing
+          if (!newWorker) return
+          newWorker.addEventListener('statechange', () => {
+            // 'installed' + an existing controller means this is a
+            // genuine update (not the very first install ever).
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              _showUpdateBanner(reg)
+            }
+          })
+        })
+      })
       .catch(err => console.warn('[MoneyNest] SW registration failed:', err))
+
+    // Reload only once the NEW worker has actually taken control of a
+    // page that was already controlled by a previous one — never on
+    // the very first install (no previous version to "update" from).
+    let _mnReloadedForUpdate = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadControllerAlready || _mnReloadedForUpdate) return
+      _mnReloadedForUpdate = true
+      window.location.reload()
+    })
   })
+
+  // Shown once per version, right after the app finishes updating —
+  // reuses the version already fetched for the update banner.
+  window.addEventListener('load', () => {
+    setTimeout(_maybeShowChangelog, 1200)
+  })
+}
+
+async function _fetchAppVersionInfo() {
+  try {
+    const res = await fetch('./version.json', { cache: 'no-store' })
+    if (!res.ok) return null
+    return await res.json()
+  } catch (_) {
+    return null
+  }
+}
+
+async function _showUpdateBanner(registration) {
+  if (document.getElementById('mnUpdateBanner')) return // already showing
+  const info = await _fetchAppVersionInfo()
+
+  const el = document.createElement('div')
+  el.id = 'mnUpdateBanner'
+  el.className = 'mn-update-banner'
+  el.innerHTML = `
+    <div class="mn-update-banner__icon">🚀</div>
+    <div class="mn-update-banner__body">
+      <div class="mn-update-banner__title">${_aut ? _aut('update_titulo','Actualización disponible') : 'Actualización disponible'}</div>
+      <div class="mn-update-banner__sub">${info?.version ? `MoneyNest ${info.version} ya está lista.` : 'Hay una nueva versión de MoneyNest lista.'} <span class="mn-update-banner__badge">🔒 Datos conservados</span></div>
+    </div>
+    <div class="mn-update-banner__actions">
+      <button class="mn-update-banner__later" id="mnUpdateLaterBtn">Más tarde</button>
+      <button class="mn-update-banner__now" id="mnUpdateNowBtn">Actualizar ahora</button>
+    </div>`
+  document.body.appendChild(el)
+  requestAnimationFrame(() => el.classList.add('mn-update-banner--in'))
+
+  document.getElementById('mnUpdateLaterBtn').onclick = () => {
+    el.classList.remove('mn-update-banner--in')
+    setTimeout(() => el.remove(), 300)
+  }
+  document.getElementById('mnUpdateNowBtn').onclick = () => _applyUpdate(registration)
+}
+
+function _applyUpdate(registration) {
+  const btn = document.getElementById('mnUpdateNowBtn')
+  if (btn) { btn.disabled = true; btn.textContent = 'Actualizando…' }
+  const waitingWorker = registration.waiting
+  if (!waitingWorker) { window.location.reload(); return }
+  waitingWorker.postMessage({ type: 'SKIP_WAITING' })
+  // controllerchange (registered above) triggers the actual reload —
+  // this only kicks off the handover.
+}
+
+// Shows the "what's new" modal at most once per version, right after
+// an update was applied (or on first load if the version.json fetch
+// succeeds and differs from what was last acknowledged).
+async function _maybeShowChangelog() {
+  const full = await _fetchAppVersionInfo()
+  if (!full || !full.version || !full.changelog) return
+  const lastSeen = localStorage.getItem('mn_last_seen_version')
+  if (lastSeen === full.version) return
+  // First-ever load (no previous version acknowledged yet) shouldn't
+  // show a changelog — just silently record the current version.
+  if (!lastSeen) { localStorage.setItem('mn_last_seen_version', full.version); return }
+
+  document.getElementById('mnChangelogOverlay')?.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'mnChangelogOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-body" style="text-align:center;padding:32px 26px 24px">
+        <div style="font-size:2.2rem;margin-bottom:8px">🎉</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:4px">${full.changelog.title || 'Novedades'}</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:18px">Lo nuevo en MoneyNest</div>
+        <div style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+          ${(full.changelog.items||[]).map(item => `
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:.85rem;color:var(--text)">
+              <span style="color:var(--accent);flex-shrink:0">✓</span>
+              <span>${item}</span>
+            </div>`).join('')}
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%" id="mnChangelogCloseBtn">Continuar</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
+
+  const close = () => {
+    overlay.classList.remove('open')
+    _popScrollLock()
+    localStorage.setItem('mn_last_seen_version', full.version)
+    setTimeout(() => overlay.remove(), 250)
+  }
+  document.getElementById('mnChangelogCloseBtn').onclick = close
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close() })
 }
 
 

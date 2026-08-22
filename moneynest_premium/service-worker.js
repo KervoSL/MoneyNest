@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v4 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v6'
+/* ─── MoneyNest Service Worker v7 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v7'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -34,7 +34,12 @@ self.addEventListener('install', event => {
           )
         )
       )
-    ).then(() => self.skipWaiting())
+    )
+    // NOTE: skipWaiting() is intentionally NOT called here anymore.
+    // A new worker now stays in 'waiting' until the person explicitly
+    // confirms the update banner — see the 'message' listener below.
+    // This never touches LocalStorage/IndexedDB either way; only the
+    // Cache Storage (app files) is ever affected.
   )
 })
 
@@ -44,6 +49,12 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   )
+})
+
+// Only path that lets a waiting worker take over: the person pressed
+// "Actualizar ahora" in the app's own update banner (see app.js).
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
 
 self.addEventListener('notificationclick', event => {
@@ -61,6 +72,15 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return
   const url = event.request.url
   if (url.startsWith('chrome-extension://') || url.startsWith('blob:')) return
+
+  // version.json is always fetched fresh from the network — comparing
+  // a cached copy against itself would never detect a new deploy.
+  if (url.endsWith('/version.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' }).catch(() => caches.match(event.request))
+    )
+    return
+  }
 
   event.respondWith(
     caches.match(event.request).then(cached => {

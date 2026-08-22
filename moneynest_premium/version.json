@@ -1,0 +1,13 @@
+{
+  "version": "1.2",
+  "changelog": {
+    "title": "Novedades de la versión 1.2",
+    "items": [
+      "Sistema de actualización automática — recibe las mejoras sin perder tus datos",
+      "Los importes ya aceptan coma y punto como separador decimal (5,35 o 5.35)",
+      "Los beneficios retirados de inversiones ahora son editables y eliminables",
+      "Nuevo flujo al añadir ingresos y gastos, con opción de crear otro rápidamente",
+      "Plan y facturación con su propio apartado, más claro y profesional"
+    ]
+  }
+}
