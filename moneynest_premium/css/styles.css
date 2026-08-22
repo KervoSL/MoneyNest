@@ -3959,3 +3959,47 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
   .mn-update-banner__actions { flex-direction: row; width: 100%; margin-left: 56px; }
   .mn-update-banner__now, .mn-update-banner__later { flex: 1; text-align: center; }
 }
+
+/* ── MODAL "AÑADIR OTRO" (post-guardado) — hoja premium ──────────
+   Sustituye al pequeño popup anterior: tarjetas grandes con icono,
+   titulo y descripcion, faciles de pulsar en movil y escritorio. */
+.mn-postsave-sheet { max-width: 460px; width: min(460px, calc(100vw - 32px)); }
+.mn-postsave-check {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 800;
+}
+.mn-postsave-card {
+  display: flex; align-items: center; gap: 16px;
+  width: 100%; text-align: left;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border2);
+  background: var(--bg2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.mn-postsave-card:hover { border-color: var(--mn-ps-color, var(--accent)); transform: translateY(-1px); }
+.mn-postsave-card:active { transform: translateY(0); }
+.mn-postsave-card--primary {
+  border-color: var(--mn-ps-color);
+  background: var(--mn-ps-dim);
+}
+.mn-postsave-card--finish { justify-content: center; }
+.mn-postsave-card--finish .mn-postsave-card__body { flex: none; text-align: center; }
+.mn-postsave-card__icon {
+  font-size: 1.6rem; flex-shrink: 0;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); border-radius: 12px;
+}
+.mn-postsave-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mn-postsave-card__title { font-size: .95rem; font-weight: 800; color: var(--text); }
+.mn-postsave-card__desc { font-size: .76rem; color: var(--text2); }
+.mn-postsave-card__arrow { font-size: 1.1rem; color: var(--text3); flex-shrink: 0; }
+
+@media (max-width: 480px) {
+  .mn-postsave-card { padding: 14px; gap: 12px; }
+  .mn-postsave-card__icon { width: 42px; height: 42px; font-size: 1.4rem; }
+}

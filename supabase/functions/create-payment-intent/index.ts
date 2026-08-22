@@ -10,11 +10,8 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// FIX: Local was still pointing at the OLD annual-recurring test price
-// from Fase 2 — the business model was corrected to a one-time
-// purchase in a later session (create-checkout / stripe-webhook were
-// updated then, but this function was missed).
-const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8';
+// Both plans are annual subscriptions: Local 6,99€/año, Pro 14,99€/año.
+const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3';
 const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j';
 const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
 
@@ -97,34 +94,29 @@ Deno.serve(async (req) => {
     const priceObj = await stripe.prices.retrieve(priceId);
     const baseAmount = priceObj.unit_amount ?? 0;
 
-    if (priceId === PRICE_LOCAL) {
-      const { discountAmount, finalAmount } = promo ? computeDiscount(baseAmount, promo) : { discountAmount: 0, finalAmount: baseAmount };
-      const customer = await findOrCreateCustomer(userId, email);
-      const pi = await stripe.paymentIntents.create({
-        amount: finalAmount,
-        currency: priceObj.currency,
-        customer: customer.id,
-        receipt_email: email,
-        metadata: { app: 'moneynest', plan: 'local', user_id: userId, ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}) },
-        automatic_payment_methods: { enabled: true },
-      });
-      return json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, type: 'payment', pricing: { originalAmount: baseAmount, discountAmount, finalAmount, currency: priceObj.currency } });
+    // Both Local and Pro are subscriptions now — same creation path,
+    // only the trial (Pro-only, unchanged plan logic) differs.
+    const customer = await findOrCreateCustomer(userId, email);
+    const isPro = priceId === PRICE_PRO;
+
+    if (isPro) {
+      const existing = await stripe.subscriptions.list({ customer: customer.id, price: PRICE_PRO, limit: 1 });
+      const activeSub = existing.data.find((s) => s.status === 'active' || s.status === 'trialing');
+      if (activeSub) return json({ error: 'already_subscribed' }, 409);
     }
 
-    const customer = await findOrCreateCustomer(userId, email);
-    const existing = await stripe.subscriptions.list({ customer: customer.id, price: PRICE_PRO, limit: 1 });
-    const activeSub = existing.data.find((s) => s.status === 'active' || s.status === 'trialing');
-    if (activeSub) return json({ error: 'already_subscribed' }, 409);
+    const { data: profile } = await supabase.from('profiles').select('plan, pro_trial_used').eq('id', userId).maybeSingle();
+    const applyProTrial = isPro && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
 
     const sub = await stripe.subscriptions.create({
       customer: customer.id,
-      items: [{ price: PRICE_PRO }],
-      trial_period_days: 7,
+      items: [{ price: priceId }],
+      ...(applyProTrial ? { trial_period_days: 7 } : {}),
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription', payment_method_types: ['card'] },
       ...(promo ? { discounts: [{ promotion_code: promo.promotionCodeId! }] } : {}),
       expand: ['pending_setup_intent', 'latest_invoice.payment_intent'],
-      metadata: { app: 'moneynest', plan: 'pro', user_id: userId, ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}) },
+      metadata: { app: 'moneynest', plan: isPro ? 'pro' : 'local', user_id: userId, ...(promo ? { promotion_code: promo.promotionCodeId ?? '' } : {}) },
     });
 
     const pendingSetup  = sub.pending_setup_intent as Stripe.SetupIntent | null;
@@ -133,10 +125,10 @@ Deno.serve(async (req) => {
     const clientSecret  = pendingSetup?.client_secret ?? paymentIntent?.client_secret;
     if (!clientSecret) throw new Error('no_client_secret');
 
-    const proDiscount = promo ? computeDiscount(baseAmount, promo) : { discountAmount: 0, finalAmount: baseAmount };
+    const discount = promo ? computeDiscount(baseAmount, promo) : { discountAmount: 0, finalAmount: baseAmount };
     return json({
       clientSecret, type: pendingSetup ? 'setup' : 'payment', subscriptionId: sub.id,
-      pricing: { originalAmount: baseAmount, discountAmount: proDiscount.discountAmount, finalAmount: proDiscount.finalAmount, currency: priceObj.currency },
+      pricing: { originalAmount: baseAmount, discountAmount: discount.discountAmount, finalAmount: discount.finalAmount, currency: priceObj.currency },
     });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'stripe_error' }, 500);

@@ -11,7 +11,7 @@ const MNStripeConfig = Object.freeze({
   // solo lectura expuesto por la API).
   publishableKey: 'pk_live_51T57NbFWll222Kpac9uR0087YoUUATVJCxRg3TzYSC7y0EacJnpooDne5ty7vZOEGrkqA35mj6Rf5unOsDiMzBlp00h0Q8bEJt',
   prices: {
-    local: 'price_1U6GvUFWll222KpaM0pOY3g8',  // MoneyNest Local — TEST, 6,99€ pago único
+    local: 'price_1U5uN8FWll222KpaX0qENvX3',  // MoneyNest Local — TEST, 6,99€/año (recurring)
     pro:   'price_1U5uNNFWll222Kpawefje59j',  // MoneyNest Pro — TEST, 14,99€/año (recurring)
   },
   products: {

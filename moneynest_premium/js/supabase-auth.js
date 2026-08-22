@@ -140,6 +140,14 @@
 
     if (data.user) {
       await _ensureProfile(data.user.id, email, displayName);
+      // Assign the session immediately if Supabase returned one — never
+      // rely solely on the async onAuthStateChange listener to update
+      // it, since that can lag behind (or not fire predictably in every
+      // browser/timing scenario), leaving isLoggedIn() incorrectly
+      // false right after a genuinely successful signup. This was the
+      // root cause of purchases re-prompting "create account" even
+      // though the account had just been created.
+      if (data.session) _session = data.session;
       // ✅ Crear sesión automáticamente para que el usuario pueda acceder sin confirmar email
       await _syncProfileToLocal(data.user);
     }
@@ -165,6 +173,7 @@
 
     _rl.reset(`signin:${email}`);
     if (data.user) {
+      if (data.session) _session = data.session;
       await _syncProfileToLocal(data.user);
       // Single-session enforcement: write a new session_id to profiles.
       // Any other tab/device polling will detect the mismatch and sign out.

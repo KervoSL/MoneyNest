@@ -121,7 +121,7 @@ function openPlanModal(context) {
         <div class="plan-modal-grid">
           <div class="plan-mini-card plan-mini-card--local">
             <div class="plan-mini-card__name">${_aut('plan_local_name','MoneyNest Local')}</div>
-            <div class="plan-mini-card__price">${eur(local.price)}<span class="plan-mini-card__period">${_aut('plan_pago_unico','Pago único')}</span></div>
+            <div class="plan-mini-card__price">${eur(local.price)}<span class="plan-mini-card__period">/${_aut('plan_periodo_ano','año')}</span></div>
             <div class="plan-mini-card__desc">${_aut('plan_local_desc','MoneyNest completo, directamente en tu dispositivo.')}</div>
             <ul class="plan-mini-card__list">
               <li class="yes">${_aut('plan_feat_todas_funciones','Todas las funciones')}</li>
@@ -185,7 +185,7 @@ function confirmPlan(planKey) {
     <div class="plan-confirm-step">
       <div class="plan-confirm-step__icon" style="color:${color}">${isPro ? '☁️' : '💾'}</div>
       <div class="plan-confirm-step__name">${isPro ? _aut('plan_pro_name','MoneyNest Pro') : _aut('plan_local_name','MoneyNest Local')}</div>
-      <div class="plan-confirm-step__price" style="color:${color}">${eur(planDef.price)}${isPro ? `<span>/${_aut('plan_periodo_ano','año')}</span>` : `<span>${_aut('plan_pago_unico','Pago único')}</span>`}</div>
+      <div class="plan-confirm-step__price" style="color:${color}">${eur(planDef.price)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
       <div class="plan-confirm-step__notice">${_aut('plan_confirm_real_notice','Al confirmar irás a la pasarela de pago segura de Stripe. Tu plan se activará en cuanto el pago se confirme.')}</div>
       <div class="plan-confirm-step__actions">
         <button class="btn btn-ghost btn-sm" onclick="MNAuthUI.openPlanModal()">${_aut('btn_cancelar','Cancelar')}</button>

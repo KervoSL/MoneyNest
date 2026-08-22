@@ -271,12 +271,12 @@ window.MNPayment = (() => {
     const isLocal = priceId === MNStripeConfig.prices.local;
     const titleEl = document.getElementById('mnPoTitle');
     if (titleEl) titleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€')
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€/año')
       : _spt('payment_pro_plan_title',   'MoneyNest Pro — 14,99€/año');
 
     const rightTitleEl = document.getElementById('mnPoRightTitle');
     if (rightTitleEl) rightTitleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€')
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 6,99€/año')
       : _spt('payment_pro_plan_title',   'MoneyNest Pro — 14,99€/año');
 
     document.getElementById('mnPoPlanSummary').innerHTML = isLocal ? `
@@ -288,12 +288,11 @@ window.MNPayment = (() => {
         <div class="mnpo-left-emoji">💾</div>
         <div class="mnpo-left-plan-name">MoneyNest Local</div>
         <div class="mnpo-left-price">6<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
-        <div class="mnpo-left-period">pago único · tuyo para siempre</div>
+        <div class="mnpo-left-period">al año</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Acceso ilimitado a todo</li>
           <li>Datos en tu dispositivo</li>
-          <li>Sin suscripción</li>
           <li>Exportación PDF y Excel</li>
         </ul>
         <div class="mnpo-left-guarantee">✓ Sin riesgo · Reembolso 14 días</div>

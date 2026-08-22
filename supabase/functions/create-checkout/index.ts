@@ -2,11 +2,10 @@ import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // ── Server-side price whitelist — NEVER trust a priceId/amount from
-// the client. Local is a ONE-TIME purchase (mode:'payment'), Pro is an
-// annual subscription (mode:'subscription') — per the business model:
-// Local 6,99€ pago único, sin suscripción; Pro 14,99€/año.
+// the client. Both plans are annual subscriptions: Local 6,99€/año,
+// Pro 14,99€/año.
 const PRICE_MAP: Record<string, string> = {
-  local: Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8',
+  local: Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3',
   pro:   Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j',
 };
 
@@ -71,7 +70,6 @@ Deno.serve(async (req) => {
     return json({ error: 'invalid_plan' }, 400, cors);
   }
   const priceId = PRICE_MAP[plan];
-  const isSubscription = plan === 'pro';
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -96,11 +94,13 @@ Deno.serve(async (req) => {
     customerId = customer.id;
   }
 
+  // Trial period on Stripe's side only ever applies to Pro (Local has
+  // never had a trial-then-charge flow) — unchanged plan logic.
   const applyProTrial = plan === 'pro' && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode: isSubscription ? 'subscription' : 'payment',
+      mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/?checkout=success&plan=${plan}`,
@@ -108,21 +108,10 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true,
       client_reference_id: user.id,
       metadata: { app: 'moneynest', user_id: user.id, plan },
-      ...(isSubscription ? {
-        subscription_data: {
-          metadata: { app: 'moneynest', user_id: user.id, plan },
-          ...(applyProTrial ? { trial_period_days: 7 } : {}),
-        },
-      } : {
-        // One-time payment (Local): no subscription_data — Stripe
-        // rejects that param outright in mode:'payment'. Identity is
-        // still carried via metadata + client_reference_id above, and
-        // stripe-webhook reads session.payment_intent for one-time
-        // purchases (see handleCheckoutCompleted).
-        payment_intent_data: {
-          metadata: { app: 'moneynest', user_id: user.id, plan },
-        },
-      }),
+      subscription_data: {
+        metadata: { app: 'moneynest', user_id: user.id, plan },
+        ...(applyProTrial ? { trial_period_days: 7 } : {}),
+      },
     });
 
     // IMPORTANT: this function NEVER writes plan/entitlement to Supabase

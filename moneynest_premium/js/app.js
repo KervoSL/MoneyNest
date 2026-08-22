@@ -162,11 +162,11 @@ function bloquearApp(user) {
           <div style="background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0));border:1.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column">
             <div style="font-size:.95rem;font-weight:800;color:#fff;margin-bottom:2px">MoneyNest Local</div>
             <div style="font-size:1.9rem;font-weight:900;color:#00D4AA;margin:6px 0 2px">6,99 €</div>
-            <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">Pago único</div>
+            <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">al año</div>
             <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;flex:1">
-              ${['Acceso ilimitado','Datos locales','Sin suscripción','Sin Cloud','Sin sincronización'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#00D4AA">✓</span> ${f}</li>`).join('')}
+              ${['Acceso ilimitado','Datos locales','Sin Cloud','Sin sincronización'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#00D4AA">✓</span> ${f}</li>`).join('')}
             </ul>
-            <button class="mn-lock-plan-btn" data-plan="local" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(0,212,170,.4);background:rgba(0,212,170,.08);color:#00D4AA;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Comprar Local — 6,99 €</button>
+            <button class="mn-lock-plan-btn" data-plan="local" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(0,212,170,.4);background:rgba(0,212,170,.08);color:#00D4AA;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Local — 6,99 €/año</button>
           </div>
 
           <div style="background:linear-gradient(160deg,rgba(236,72,153,.1),rgba(255,255,255,0) 60%);border:1.5px solid rgba(236,72,153,.4);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column;position:relative">
@@ -7526,22 +7526,26 @@ function renderConfiguracion() {
         </div>
       </div>
 
-      <!-- Modo uso: personal / pareja (próximamente v2) -->
-      <div class="card">
+      <!-- Modo Demo -->
+      <div class="card" style="background:linear-gradient(160deg, var(--gold-dim), var(--card) 65%);border:1.5px solid rgba(245,158,11,.25)">
         <div class="card-header">
           <div>
-            <div class="card-title">👥 Modo de uso</div>
-            <div class="card-subtitle">Personal · Pareja · Familia</div>
+            <div class="card-title">🔍 ${t('cfg_demo_titulo','Modo demo')}</div>
+            <div class="card-subtitle">${isDemoMode()
+              ? `<span style="color:var(--gold);font-weight:700">${t('cfg_demo_activo_lbl','● Activo')}</span>`
+              : t('cfg_demo_inactivo_lbl','Explorar la app con datos de ejemplo')}</div>
           </div>
+          ${isDemoMode() ? `<span style="font-size:.68rem;padding:3px 10px;background:var(--gold-dim);color:var(--gold);border-radius:99px;font-weight:700">DEMO</span>` : ''}
         </div>
-        <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border-radius:12px;border:1px dashed var(--border2)">
-          <span style="font-size:1.8rem;flex-shrink:0">🚧</span>
-          <div>
-            <div style="font-size:.88rem;font-weight:700;color:var(--text)">Próximamente en la v2</div>
-            <div style="font-size:.78rem;color:var(--text2);margin-top:3px;line-height:1.5">
-              Compartir presupuesto con tu pareja o familia, con sincronización en la nube, llegará en una próxima actualización.
-            </div>
-          </div>
+        <div style="font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:16px">
+          ${isDemoMode()
+            ? t('cfg_demo_explicacion_activo','Estás viendo MoneyNest con datos de ejemplo generados automáticamente. Tus datos reales están a salvo y volverán al desactivar el modo demo.')
+            : t('cfg_demo_explicacion','Activa el modo demo para explorar todas las funciones de MoneyNest con datos de ejemplo realistas, sin afectar a tu información real. Ideal para hacerte una idea rápida antes de empezar a usar tus propios datos.')}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${isDemoMode()
+            ? `<button class="btn btn-danger btn-sm" onclick="confirmar(t('confirm_salir_demo'),()=>{clearDemoData()},{titulo:t('confirm_salir_demo_titulo'),icono:'🏁',btnLabel:t('confirm_salir_demo_btn')})">${t('cfg_demo_salir','🏁 Desactivar demo')}</button>`
+            : `<button class="btn btn-secondary btn-sm" onclick="activateDemoWithConfig()" style="background:var(--gold-dim);border-color:rgba(245,158,11,.2);color:var(--gold);font-weight:700">${t('cfg_demo_activar','🚀 Activar modo demo')}</button>`}
         </div>
       </div>
 
@@ -7554,24 +7558,6 @@ function renderConfiguracion() {
           </div>
         </div>
         ${window.MNInstall ? window.MNInstall.renderInstallCard() : ''}
-      </div>
-
-      <!-- Demo Mode -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🔍 ${t('cfg_demo_titulo','Modo demo')}</div>
-            <div class="card-subtitle">${isDemoMode()
-              ? `<span style="color:var(--gold);font-weight:700">${t('cfg_demo_activo_lbl','● Activo')}</span>`
-              : t('cfg_demo_inactivo_lbl','Explorar la app con datos de ejemplo')}</div>
-          </div>
-          ${isDemoMode() ? `<span style="font-size:.68rem;padding:3px 10px;background:var(--gold-dim);color:var(--gold);border-radius:99px;font-weight:700">DEMO</span>` : ''}
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${isDemoMode()
-            ? `<button class="btn btn-danger btn-sm" onclick="confirmar(t('confirm_salir_demo'),()=>{clearDemoData()},{titulo:t('confirm_salir_demo_titulo'),icono:'🏁',btnLabel:t('confirm_salir_demo_btn')})">${t('cfg_demo_salir','🏁 Desactivar demo')}</button>`
-            : `<button class="btn btn-secondary btn-sm" onclick="activateDemoWithConfig()" style="background:var(--gold-dim);border-color:rgba(245,158,11,.2);color:var(--gold);font-weight:700">${t('cfg_demo_activar','🚀 Activar modo demo')}</button>`}
-        </div>
       </div>
 
       <!-- Notificaciones -->
@@ -7666,18 +7652,17 @@ function renderFacturacion() {
       </div>`
 
     if (isLocal) return `
-      <div class="card">
+      <div class="card" style="background:linear-gradient(160deg, var(--accent-dim), var(--card) 65%);border:1.5px solid rgba(0,212,170,.35)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
             <div style="font-size:1.1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
-            <div style="font-size:1.5rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(localPrice)} <span style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase">— ${_aut('plan_pago_unico','Pago único')}</span></div>
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(localPrice)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
           </div>
           <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
         </div>
         <ul style="list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:6px">
           <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
           <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
           <li style="font-size:.84rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
         </ul>
         <div id="mn-sub-status-info" style="font-size:.78rem;color:var(--text3);margin-bottom:14px"></div>
@@ -7714,10 +7699,9 @@ function renderFacturacion() {
         <div style="padding:16px;border-radius:12px;border:1.5px solid var(--border2);${isLocal ? 'border-color:var(--accent);background:var(--accent-dim)' : ''}">
           <div style="font-size:.9rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
           <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:6px 0 2px">${eur(localPrice)}</div>
-          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">${_aut('plan_pago_unico','Pago único')}</div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">/${_aut('plan_periodo_ano','año')}</div>
           <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:4px">
             <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
-            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_sin_suscripcion','Sin suscripción')}</li>
             <li style="font-size:.78rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
           </ul>
           ${isLocal
@@ -8975,19 +8959,42 @@ function _openPostSaveModal(tipo) {
   document.getElementById('postSaveOverlay')?.remove()
   const esIngreso = tipo === 'ingreso'
   const color = esIngreso ? 'var(--accent)' : 'var(--red)'
+  const colorDim = esIngreso ? 'var(--accent-dim)' : 'var(--red-dim)'
   const overlay = document.createElement('div')
   overlay.id = 'postSaveOverlay'
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
-      <div class="modal-body" style="text-align:center;padding:28px 24px 20px">
-        <div style="font-size:2rem;margin-bottom:10px">✓</div>
-        <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:6px">${t('postsave_titulo','¿Qué quieres hacer ahora?')}</div>
-        <div style="font-size:.82rem;color:var(--text2);margin-bottom:20px">${esIngreso ? t('postsave_sub_ingreso','Tu ingreso se ha guardado correctamente.') : t('postsave_sub_gasto','Tu gasto se ha guardado correctamente.')}</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-primary btn-sm" style="width:100%;background:${color};border-color:${color}" onclick="_postSaveChoice('${tipo}','misma')">📅 ${t('postsave_misma_fecha','Crear otro con la misma fecha')}</button>
-          <button class="btn btn-secondary btn-sm" style="width:100%" onclick="_postSaveChoice('${tipo}','otra')">🗓️ ${t('postsave_otra_fecha','Crear otro con otra fecha')}</button>
-          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="_postSaveChoice('${tipo}','cerrar')">${t('btn_cerrar','Cerrar')}</button>
+    <div class="modal mn-postsave-sheet">
+      <div class="modal-body" style="padding:32px 28px 28px">
+        <div style="text-align:center;margin-bottom:26px">
+          <div class="mn-postsave-check" style="background:${colorDim};color:${color}">✓</div>
+          <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-top:14px">${t('postsave_titulo','¿Qué quieres hacer ahora?')}</div>
+          <div style="font-size:.85rem;color:var(--text2);margin-top:4px">${esIngreso ? t('postsave_sub_ingreso','Tu ingreso se ha guardado correctamente.') : t('postsave_sub_gasto','Tu gasto se ha guardado correctamente.')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button class="mn-postsave-card mn-postsave-card--primary" style="--mn-ps-color:${color};--mn-ps-dim:${colorDim}" onclick="_postSaveChoice('${tipo}','misma')">
+            <span class="mn-postsave-card__icon">📅</span>
+            <span class="mn-postsave-card__body">
+              <span class="mn-postsave-card__title">${t('postsave_misma_fecha','Crear otro con la misma fecha')}</span>
+              <span class="mn-postsave-card__desc">${t('postsave_misma_fecha_desc','Mantiene la fecha, la cuenta y la categoría')}</span>
+            </span>
+            <span class="mn-postsave-card__arrow">→</span>
+          </button>
+          <button class="mn-postsave-card" onclick="_postSaveChoice('${tipo}','otra')">
+            <span class="mn-postsave-card__icon">🗓️</span>
+            <span class="mn-postsave-card__body">
+              <span class="mn-postsave-card__title">${t('postsave_otra_fecha','Crear otro con otra fecha')}</span>
+              <span class="mn-postsave-card__desc">${t('postsave_otra_fecha_desc','Abre un formulario limpio para elegir otra fecha')}</span>
+            </span>
+            <span class="mn-postsave-card__arrow">→</span>
+          </button>
+          <button class="mn-postsave-card mn-postsave-card--finish" onclick="_postSaveChoice('${tipo}','cerrar')">
+            <span class="mn-postsave-card__icon">✅</span>
+            <span class="mn-postsave-card__body">
+              <span class="mn-postsave-card__title">${t('postsave_terminar','Terminar')}</span>
+              <span class="mn-postsave-card__desc">${t('postsave_terminar_desc','Cerrar y volver al listado')}</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>`
@@ -12931,15 +12938,14 @@ function _obRightHTML(step) {
       <div class="ob-plan-card ob-plan-card--local ${obData.plan === 'local' ? 'selected' : ''}" onclick="obSelectPlan('local')">
         <div class="ob-pc-top">
           <span class="ob-pc-emoji">💾</span>
-          <span class="ob-pc-tag ob-pc-tag--local">Pago único</span>
+          <span class="ob-pc-tag ob-pc-tag--local">Anual</span>
         </div>
         <div class="ob-pc-name">MoneyNest Local</div>
         <div class="ob-pc-price-main">6,99<span class="ob-pc-cur">€</span></div>
-        <div class="ob-pc-period">para siempre</div>
+        <div class="ob-pc-period">al año</div>
         <div class="ob-pc-divider"></div>
         <ul class="ob-pc-feats">
           <li class="ok">Acceso ilimitado</li>
-          <li class="ok">Sin suscripción</li>
           <li class="no">Sin sincronización cloud</li>
         </ul>
         <div class="ob-pc-check ${obData.plan === 'local' ? 'active' : ''}">
@@ -14193,21 +14199,21 @@ function _showPaymentPrompt(email) {
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:2.5rem;margin-bottom:10px">🎉</div>
         <div style="font-size:1.25rem;font-weight:800;color:var(--text);margin-bottom:6px">Todo listo, ${S.usuario.nombre || 'hola'}!</div>
-        <div style="font-size:.87rem;color:var(--text2);line-height:1.6">MoneyNest es tuyo de por vida por un único pago. Sin suscripciones, sin sorpresas.</div>
+        <div style="font-size:.87rem;color:var(--text2);line-height:1.6">MoneyNest Local, directamente en tu dispositivo. 6,99€ al año.</div>
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 22px;margin-bottom:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <div style="font-size:1rem;font-weight:700;color:var(--text)">MoneyNest</div>
-            <div style="font-size:.75rem;color:var(--text2)">Pago único · Tuyo para siempre</div>
+            <div style="font-size:1rem;font-weight:700;color:var(--text)">MoneyNest Local</div>
+            <div style="font-size:.75rem;color:var(--text2)">Suscripción anual</div>
           </div>
           <div style="text-align:right">
             <div style="font-size:1.6rem;font-weight:900;color:var(--accent)">6,99€</div>
-            <div style="font-size:.68rem;color:var(--text3)">IVA incluido</div>
+            <div style="font-size:.68rem;color:var(--text3)">/año · IVA incluido</div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          ${["Acceso ilimitado a todas las funciones","Datos almacenados localmente","Sin suscripción mensual","Actualizaciones incluidas"].map(f =>
+          ${["Acceso ilimitado a todas las funciones","Datos almacenados localmente","Actualizaciones incluidas"].map(f =>
             `<div style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text2)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D4AA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               ${f}</div>`
@@ -14699,7 +14705,7 @@ function _faqBodyHtml() {
       { q: t('faq_q13','¿Qué pasa si reseteo la app?'), a: t('faq_a13','El reset elimina <strong>todos los datos permanentemente</strong>. Exporta siempre una copia de seguridad antes.') },
     ]},
     { group: '💳 ' + t('faq_g_plan','Plan y facturación'), color: 'var(--gold)', items: [
-      { q: t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), a: t('faq_a_local_pro','<strong>Local</strong> (6,99€ pago único) te da acceso ilimitado a MoneyNest en este dispositivo, sin suscripción. <strong>Pro</strong> (14,99€/año) añade Cloud: sincronización automática entre dispositivos, backup y restauración.') },
+      { q: t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), a: t('faq_a_local_pro','<strong>Local</strong> (6,99€/año) te da acceso ilimitado a MoneyNest en este dispositivo. <strong>Pro</strong> (14,99€/año) añade Cloud: sincronización automática entre dispositivos, backup y restauración.') },
       { q: t('faq_q_cloud','¿Cómo funciona Cloud?'), a: t('faq_a_cloud','Con el plan Pro, tus datos se sincronizan automáticamente en la nube. Así puedes acceder a tu información desde cualquier dispositivo y siempre tienes una copia de seguridad actualizada.') },
       { q: t('faq_q_recuperar','¿Cómo recupero mis datos si cambio de dispositivo?'), a: t('faq_a_recuperar','Si ya tienes una licencia, usa <strong>Restaurar acceso</strong> desde la pantalla de inicio de sesión con el email de tu compra. Si eres Pro, tus datos se sincronizan automáticamente al iniciar sesión.') },
     ]},
