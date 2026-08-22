@@ -193,7 +193,7 @@
       <div class="quick-add-type gasto-active" id="qat-gasto" onclick="setQuickType('gasto')" data-i18n="quick_add_gasto">💸 Gasto</div>
       <div class="quick-add-type" id="qat-ingreso" onclick="setQuickType('ingreso')" data-i18n="quick_add_ingreso">💰 Ingreso</div>
     </div>
-    <input class="quick-amount-input" id="quickAmount" type="number" inputmode="decimal" placeholder="0,00" autocomplete="off">
+    <input class="quick-amount-input" id="quickAmount" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" oninput="_sanitizeAmountInput(this)">
     <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;text-align:center" data-i18n="quick_add_categoria">Categoría</div>
     <div class="quick-cat-row" id="quickCatRow"></div>
     <input type="text" id="quickConcepto" data-i18n-placeholder="quick_add_descripcion_ph" placeholder="Descripción (opcional)" style="width:100%;margin-bottom:14px;background:var(--bg2)">
@@ -237,7 +237,7 @@
         </div>
         <div class="form-group">
           <label data-i18n="modal_ingreso_importe_lbl">Importe (€) *</label>
-          <input type="number" id="ingresoImporte" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="ingresoImporte" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
         </div>
       </div>
       <div class="form-row form-row-2">
@@ -303,7 +303,7 @@
         </div>
         <div class="form-group">
           <label data-i18n="modal_gasto_importe_lbl">Importe (€) *</label>
-          <input type="number" id="gastoImporte" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="gastoImporte" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
         </div>
       </div>
       <div class="form-row form-row-2">
@@ -374,7 +374,7 @@
           </div>
           <div class="form-group">
             <label data-i18n="modal_inv_capital_lbl">Capital invertido (€) *</label>
-            <input type="number" id="invImporte" placeholder="0.00" min="0" step="0.01">
+            <input type="text" inputmode="decimal" id="invImporte" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-group">
             <label data-i18n="modal_inv_fecha_lbl">Fecha entrada</label>
@@ -390,7 +390,7 @@
           </div>
           <div class="form-group" id="invRoiGroup">
             <label data-i18n="modal_inv_rentabilidad_lbl">Rentabilidad esperada (%)</label>
-            <input type="number" id="invRentabilidad" placeholder="8.5" step="0.1">
+            <input type="text" inputmode="decimal" id="invRentabilidad" placeholder="8.5" step="0.1" oninput="_sanitizeAmountInput(this)">
             <div class="form-hint" data-i18n="modal_inv_rentabilidad_hint">Solo para activos con retorno predecible</div>
           </div>
           <div class="form-group custom-cat-field" id="invCatCustom">
@@ -445,7 +445,7 @@
         <div class="form-row form-row-2">
           <div class="form-group">
             <label data-i18n="modal_revalorizar_valor_lbl">Nuevo valor actual (€) *</label>
-            <input type="number" id="revValor" placeholder="0.00" step="0.01" min="0">
+            <input type="text" inputmode="decimal" id="revValor" placeholder="0.00" step="0.01" min="0" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-group">
             <label data-i18n="modal_revalorizar_fecha_lbl">Fecha</label>
@@ -462,7 +462,7 @@
         <div class="form-row form-row-2">
           <div class="form-group">
             <label data-i18n="modal_beneficio_importe_lbl">Importe retirado (€) *</label>
-            <input type="number" id="revBeneficio" placeholder="0.00" step="0.01" min="0">
+            <input type="text" inputmode="decimal" id="revBeneficio" placeholder="0.00" step="0.01" min="0" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-group">
             <label data-i18n="modal_beneficio_fecha_lbl">Fecha de retiro</label>
@@ -501,11 +501,11 @@
       <div class="form-row form-row-2">
         <div class="form-group">
           <label data-i18n="modal_liquidar_valor_lbl">Valor de salida (€)</label>
-          <input type="number" id="liqValor" placeholder="0.00" step="0.01" oninput="syncLiq('valor')">
+          <input type="text" inputmode="decimal" id="liqValor" placeholder="0.00" step="0.01" oninput="_sanitizeAmountInput(this);syncLiq('valor')">
         </div>
         <div class="form-group">
           <label data-i18n="modal_liquidar_rentabilidad_lbl">O rentabilidad real (%)</label>
-          <input type="number" id="liqRentPct" placeholder="12.5" step="0.1" oninput="syncLiq('pct')">
+          <input type="text" inputmode="decimal" id="liqRentPct" placeholder="12.5" step="0.1" oninput="_sanitizeAmountInput(this);syncLiq('pct')">
         </div>
       </div>
       <div class="form-group">
@@ -538,17 +538,17 @@
         </div>
         <div class="form-group">
           <label data-i18n="modal_deuda_total_lbl">Total deuda (€) *</label>
-          <input type="number" id="deudaTotal" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="deudaTotal" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
         </div>
       </div>
       <div class="form-row form-row-2">
         <div class="form-group">
           <label data-i18n="modal_deuda_pagado_lbl">Ya pagado (€)</label>
-          <input type="number" id="deudaPagado" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="deudaPagado" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
         </div>
         <div class="form-group">
           <label data-i18n="modal_deuda_interes_lbl">Interés anual (%)</label>
-          <input type="number" id="deudaInteres" placeholder="0.0" step="0.1">
+          <input type="text" inputmode="decimal" id="deudaInteres" placeholder="0.0" step="0.1" oninput="_sanitizeAmountInput(this)">
         </div>
       </div>
       <div class="form-row form-row-2">
@@ -591,7 +591,7 @@
       <p id="pagoDeudaInfo" style="font-size:.85rem;color:var(--text2);margin-bottom:14px"></p>
       <div class="form-group">
         <label data-i18n="modal_pago_importe_lbl">Importe del pago (€) *</label>
-        <input type="number" id="pagoImporte" placeholder="0.00" min="0.01" step="0.01">
+        <input type="text" inputmode="decimal" id="pagoImporte" placeholder="0.00" min="0.01" step="0.01" oninput="_sanitizeAmountInput(this)">
       </div>
       <div class="form-group">
         <label data-i18n="modal_pago_fecha_lbl">Fecha del pago</label>
@@ -642,12 +642,12 @@
             </div>
             <div class="form-group">
               <label data-i18n="modal_obj_meta_lbl">Meta (€) *</label>
-              <input type="number" id="objMeta" placeholder="5000" min="1" step="0.01">
+              <input type="text" inputmode="decimal" id="objMeta" placeholder="5000" min="1" step="0.01" oninput="_sanitizeAmountInput(this)">
             </div>
           </div>
           <div class="form-group">
             <label data-i18n="modal_obj_actual_lbl">Ahorrado hasta ahora (€)</label>
-            <input type="number" id="objActual" placeholder="0.00" min="0" step="0.01">
+            <input type="text" inputmode="decimal" id="objActual" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
@@ -708,7 +708,7 @@
       </div>
       <div class="form-group">
         <label data-i18n="modal_aportar_importe_lbl">Importe a aportar (€) *</label>
-        <input type="number" id="aportarImporte" placeholder="0.00" min="0.01" step="0.01">
+        <input type="text" inputmode="decimal" id="aportarImporte" placeholder="0.00" min="0.01" step="0.01" oninput="_sanitizeAmountInput(this)">
       </div>
       <div class="form-group" id="aportarCuentaGroup" style="display:none">
         <label data-i18n="modal_aportar_cuenta_lbl">Cuenta origen</label>
@@ -750,7 +750,7 @@
       </div>
       <div class="form-group">
         <label id="presLimiteLabel">Límite mensual (€) *</label>
-        <input type="number" id="presLimite" placeholder="500" min="1" step="0.01">
+        <input type="text" inputmode="decimal" id="presLimite" placeholder="500" min="1" step="0.01" oninput="_sanitizeAmountInput(this)">
       </div>
     </div>
     <div class="modal-footer">
@@ -787,14 +787,14 @@
         </div>
         <div class="form-group">
           <label data-i18n="modal_cuenta_valor_lbl">Valor total cuenta (€)</label>
-          <input type="number" id="cuentaValorTotal" placeholder="0.00" step="0.01">
+          <input type="text" inputmode="decimal" id="cuentaValorTotal" placeholder="0.00" step="0.01" oninput="_sanitizeAmountInput(this)">
           <div class="form-hint" data-i18n="modal_cuenta_valor_hint">Saldo total incluyendo activos</div>
         </div>
       </div>
       <div class="form-row form-row-2">
         <div class="form-group">
           <label data-i18n="modal_cuenta_saldo_lbl">Dinero disponible (€)</label>
-          <input type="number" id="cuentaSaldo" placeholder="0.00" step="0.01">
+          <input type="text" inputmode="decimal" id="cuentaSaldo" placeholder="0.00" step="0.01" oninput="_sanitizeAmountInput(this)">
           <div class="form-hint" data-i18n="modal_cuenta_saldo_hint">Libre para usar ahora mismo</div>
         </div>
         <div class="form-group">
@@ -832,7 +832,7 @@
       </div>
       <div class="form-group">
         <label data-i18n="modal_trans_importe_lbl">Importe (€) *</label>
-        <input type="number" id="transImporte" placeholder="0.00" min="0.01" step="0.01">
+        <input type="text" inputmode="decimal" id="transImporte" placeholder="0.00" min="0.01" step="0.01" oninput="_sanitizeAmountInput(this)">
       </div>
     </div>
     <div class="modal-footer">
@@ -946,12 +946,12 @@
       <div class="form-row form-row-2">
         <div class="form-group">
           <label data-i18n="modal_tax_iva_lbl">IVA (%)</label>
-          <input type="number" id="taxIVA" placeholder="21" step="0.1" min="0" max="100">
+          <input type="text" inputmode="decimal" id="taxIVA" placeholder="21" step="0.1" min="0" max="100" oninput="_sanitizeAmountInput(this)">
           <div class="form-hint" data-i18n="modal_tax_iva_hint">Porcentaje de IVA a repercutir</div>
         </div>
         <div class="form-group">
           <label data-i18n="modal_tax_irpf_lbl">IRPF / IS (%)</label>
-          <input type="number" id="taxIRPF" placeholder="15" step="0.1" min="0" max="100">
+          <input type="text" inputmode="decimal" id="taxIRPF" placeholder="15" step="0.1" min="0" max="100" oninput="_sanitizeAmountInput(this)">
           <div class="form-hint" data-i18n="modal_tax_irpf_hint">Retención a cuenta / Impuesto sociedades</div>
         </div>
       </div>
@@ -1234,7 +1234,7 @@
         <div class="modal-2col-right">
           <div class="form-group">
             <label>Importe (€) *</label>
-            <input type="number" id="devengoImporte" placeholder="0.00" step="0.01">
+            <input type="text" inputmode="decimal" id="devengoImporte" placeholder="0.00" step="0.01" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-group">
             <label>Fecha devengo *</label>
@@ -1312,11 +1312,11 @@
       <div class="form-row form-row-2">
         <div class="form-group">
           <label>Valor de compra (€) *</label>
-          <input type="number" id="assetValorCompra" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="assetValorCompra" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
         </div>
         <div class="form-group">
           <label>Valor actual (€) *</label>
-          <input type="number" id="assetValor" placeholder="0.00" min="0" step="0.01">
+          <input type="text" inputmode="decimal" id="assetValor" placeholder="0.00" min="0" step="0.01" oninput="_sanitizeAmountInput(this)">
           <div class="form-hint">Valor de mercado estimado hoy</div>
         </div>
       </div>
@@ -1344,7 +1344,7 @@
           <div class="dep-toggle-sub">Ajusta el valor actual cada año (desactivado por defecto)</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="assetDepPct" placeholder="15" step="1" min="0" max="100" style="width:70px;padding:6px 8px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.85rem" disabled>
+          <input type="text" inputmode="decimal" id="assetDepPct" placeholder="15" step="1" min="0" max="100" style="width:70px;padding:6px 8px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.85rem" disabled oninput="_sanitizeAmountInput(this)">
           <span style="font-size:.78rem;color:var(--text2)">%/año</span>
           <div class="toggle-switch" id="depToggleSwitch" onclick="toggleDepreciacion()" style="cursor:pointer;flex-shrink:0">
             <div class="toggle-knob"></div>
@@ -1424,7 +1424,7 @@
     <div class="gc-sub" data-i18n="gc_sub">Definir una meta de ahorro es el primer paso para mejorar tus finanzas. Te ayudaremos a hacer seguimiento automático.</div>
     <div class="gc-input-row">
       <span class="gc-currency">€</span>
-      <input class="gc-input" id="gcAmount" type="number" placeholder="500" min="1" step="10">
+      <input class="gc-input" id="gcAmount" type="text" inputmode="decimal" placeholder="500" oninput="_sanitizeAmountInput(this)">
     </div>
     <div class="gc-suggestion" id="gcSuggestions">
       <button class="gc-chip" onclick="gcSetAmount(200)">€200</button>

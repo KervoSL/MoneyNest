@@ -4120,6 +4120,30 @@ function load() {
     if (!Array.isArray(S.assets)) S.assets = []
     if (!Array.isArray(S.eventosFinancieros)) S.eventosFinancieros = []
     if (S.deudaEstrategiaActiva === undefined) S.deudaEstrategiaActiva = null
+    ;(S.inversiones || []).forEach(inv => {
+      if (!Array.isArray(inv.beneficiosRetirados)) return
+      inv.beneficiosRetirados.forEach(b => {
+        if (b.id) return // ya migrado
+        b.id = uid()
+        // Best-effort: buscar el ingreso que este beneficio genero,
+        // usando fecha+importe+categoria (nunca solo el nombre del
+        // activo) y que aun no este vinculado a ningun otro beneficio.
+        const alreadyLinked = new Set(
+          (S.inversiones || []).flatMap(i => (i.beneficiosRetirados || []).map(x => x.incomeId).filter(Boolean))
+        )
+        const match = S.ingresos.find(inc =>
+          !inc._profitWithdrawalId && !alreadyLinked.has(inc.id) &&
+          inc.categoria === 'Dividendos' && inc.fecha === b.fecha &&
+          Math.abs(Number(inc.importe) - Number(b.importe)) < 0.01 &&
+          inc.concepto && inc.concepto.includes(inv.nombre)
+        )
+        if (match) {
+          b.incomeId = match.id
+          match._investmentId = inv.id
+          match._profitWithdrawalId = b.id
+        }
+      })
+    })
     if (!Array.isArray(S.patrimonio_hist)) S.patrimonio_hist = []
     if (!S.presupuestos || typeof S.presupuestos !== 'object') S.presupuestos = {}
     if (!Array.isArray(S.clientes)) S.clientes = []
@@ -4162,6 +4186,62 @@ function migrateOldData() {
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6) }
 function fmt(n, d=2) { return new Intl.NumberFormat('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d}).format(Number(n)||0) }
 function eur(n) { return fmt(n) + '\u00A0€' }
+
+// ── parseAmount: unica utilidad reutilizable para parsear CUALQUIER
+// importe/cantidad introducido por el usuario, aceptando indistintamente
+// coma y punto como separador decimal (5,35 y 5.35 son equivalentes).
+// Tambien reconoce el separador de miles cuando aparecen AMBOS
+// caracteres (1.250,75 o 1,250.75): el que aparece MAS A LA DERECHA es
+// el decimal, el otro se descarta como separador de miles. Nunca lanza
+// — ante cualquier entrada invalida o vacia devuelve 0.
+function parseAmount(value) {
+  if (typeof value === 'number') return isFinite(value) ? value : 0
+  if (value === null || value === undefined) return 0
+  let s = String(value).trim().replace(/[^\d.,-]/g, '') // strip currency symbols/spaces
+  if (!s) return 0
+  const lastComma = s.lastIndexOf(',')
+  const lastDot   = s.lastIndexOf('.')
+  if (lastComma !== -1 && lastDot !== -1) {
+    // Both present — whichever is rightmost is the decimal separator,
+    // the other is a thousands separator to strip out.
+    if (lastComma > lastDot) s = s.replace(/\./g, '').replace(',', '.')
+    else s = s.replace(/,/g, '')
+  } else if (lastComma !== -1) {
+    // Only comma — always the decimal separator (never thousands here,
+    // since amount fields don't need grouping while typing).
+    s = s.replace(',', '.')
+  }
+  // Only-dot case needs no change — already valid JS float syntax.
+  const n = parseFloat(s)
+  return isFinite(n) ? n : 0
+}
+
+// ── Sanitiza en tiempo real un <input> de importe/cantidad: permite
+// solo digitos y UN separador decimal (coma o punto), sin romper la
+// posicion del cursor mientras el usuario escribe (5, / 5,3 / 5,35
+// deben quedar exactamente como el usuario los teclea, nunca revertirse
+// a mitad de escritura). Se usa via oninput="_sanitizeAmountInput(this)".
+function _sanitizeAmountInput(el) {
+  const start = el.selectionStart
+  const before = el.value
+  // Keep digits, at most one comma AND at most one dot (both can
+  // coexist — e.g. "1.250,75" — parseAmount() decides afterwards
+  // which one is the decimal separator based on position).
+  let seenComma = false, seenDot = false
+  let out = ''
+  for (const ch of before) {
+    if (ch >= '0' && ch <= '9') { out += ch; continue }
+    if (ch === ',' && !seenComma) { out += ch; seenComma = true; continue }
+    if (ch === '.' && !seenDot)   { out += ch; seenDot = true; continue }
+    // drop any other character (letters, extra separators, minus, etc.)
+  }
+  if (out !== before) {
+    el.value = out
+    const diff = before.length - out.length
+    const pos = Math.max(0, (start ?? out.length) - diff)
+    try { el.setSelectionRange(pos, pos) } catch (_) {}
+  }
+}
 function pct(n, d=1) { return fmt(n,d) + '%' }
 function fmtDate(d) { if(!d) return '—'; const locale = {'es':'es-ES','en':'en-GB','it':'it-IT','fr':'fr-FR','de':'de-DE','pt':'pt-PT'}[_currentLang]||'es-ES'; return new Date(d+'T12:00:00').toLocaleDateString(locale,{day:'2-digit',month:'short',year:'numeric'}) }
 function todayISO() { return new Date().toISOString().slice(0,10) }
@@ -6053,7 +6133,7 @@ function calcLibertad3Cards() {
   const box   = document.getElementById('libertad3Cards')
   if (!box) return
 
-  const n = parseFloat(input?.value)
+  const n = parseAmount(input?.value)
   if (!n || n <= 0) {
     box.innerHTML = `<div class="mn-insight mn-insight--alert"><span class="mn-insight-icon">⚠️</span><div class="mn-insight-body">${t('err_periodo_invalido','Introduce un período válido.')}</div></div>`
     return
@@ -6130,7 +6210,7 @@ calcLibertad3Cards._apply = function(cuotaStr) {
 
 function calcDeudaPersonalizada() {
   const inputEl = document.getElementById('deudaCalcInput')
-  const monthly = parseFloat(inputEl?.value)
+  const monthly = parseAmount(inputEl?.value)
   const result  = document.getElementById('deudaCalcResult')
   if (!result) return
   if (!monthly || monthly <= 0) { result.innerHTML = '<span style="color:var(--red)">' + t('deuda_input_invalido') + '</span>'; return }
@@ -6692,9 +6772,9 @@ function guardarCuenta() {
   const nombre = document.getElementById("cuentaNombre").value.trim()
   if (!nombre) { toast(t('err_nombre_requerido'),'error'); _unlock(); return }
   const id = document.getElementById("cuentaId").value
-  const saldo = parseFloat(document.getElementById("cuentaSaldo").value)||0
+  const saldo = parseAmount(document.getElementById("cuentaSaldo").value)||0
   const vtEl = document.getElementById("cuentaValorTotal")
-  const valorTotal = vtEl && vtEl.value !== "" ? parseFloat(vtEl.value)||0 : saldo
+  const valorTotal = vtEl && vtEl.value !== "" ? parseAmount(vtEl.value)||0 : saldo
   const nEl = document.getElementById("cuentaNotas")
   const data = {nombre, tipo:document.getElementById("cuentaTipo").value, saldo, valorTotal, color:document.getElementById("cuentaColor").value||"#00D4AA", notas: nEl ? nEl.value.trim() : ""}
   let newId = id
@@ -7148,7 +7228,7 @@ function _openEventModal(eventId, defaultDate) {
         <div class="form-row form-row-2">
           <div class="form-group">
             <label>${t('importe_lbl','Importe (€)')} *</label>
-            <input type="number" id="eventImporte" value="${ev?ev.importe:''}" min="0" step="0.01" placeholder="0.00">
+            <input type="text" inputmode="decimal" id="eventImporte" value="${ev?ev.importe:''}" min="0" step="0.01" placeholder="0.00" oninput="_sanitizeAmountInput(this)">
           </div>
           <div class="form-group">
             <label>${t('fecha_lbl','Fecha')} *</label>
@@ -7189,7 +7269,7 @@ function _closeEventModal() { document.getElementById('eventModalOverlay')?.remo
 
 function _saveEvent() {
   const titulo   = document.getElementById('eventTitulo').value.trim()
-  const importe  = parseFloat(document.getElementById('eventImporte').value)
+  const importe  = parseAmount(document.getElementById('eventImporte').value)
   const fecha    = document.getElementById('eventFecha').value
   if (!titulo || !importe || importe <= 0 || !fecha) { toast(t('err_evento_campos','Completa título, importe y fecha'),'error'); return }
   const tipo         = document.getElementById('eventTipo').value
@@ -8617,7 +8697,7 @@ function guardarIngreso() {
   if (!_formGuard.lock('ingresoModal')) return
   const _unlock = () => _formGuard.unlock('ingresoModal')
   const concepto = document.getElementById('ingresoConcepto').value.trim()
-  const importe  = parseFloat(document.getElementById('ingresoImporte').value)
+  const importe  = parseAmount(document.getElementById('ingresoImporte').value)
   if (!concepto || !importe || importe <= 0) { toast(t('err_concepto_importe'),'error'); _unlock(); return }
   const cuentaId   = document.getElementById('ingresoCuenta').value || null
   if (!cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
@@ -8793,7 +8873,7 @@ function guardarGasto() {
   if (!_formGuard.lock('gastoModal')) return
   const _unlock = () => _formGuard.unlock('gastoModal')
   const concepto = document.getElementById('gastoConcepto').value.trim()
-  const importe  = parseFloat(document.getElementById('gastoImporte').value)
+  const importe  = parseAmount(document.getElementById('gastoImporte').value)
   if (!concepto || !importe || importe <= 0) { toast('Concepto e importe requeridos','error'); _unlock(); return }
   const cuentaId   = document.getElementById('gastoCuenta').value || null
   if (!cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
@@ -8991,7 +9071,7 @@ function guardarInversion() {
   if (!_formGuard.lock('inversionModal')) return
   const _unlock = () => _formGuard.unlock('inversionModal')
   const nombre = document.getElementById('invNombre').value.trim()
-  const importe = parseFloat(document.getElementById('invImporte').value)
+  const importe = parseAmount(document.getElementById('invImporte').value)
   if (!nombre || !importe || importe <= 0) { toast(t('err_nombre_importe'),'error'); _unlock(); return }
   const cuentaId = document.getElementById('invCuenta').value || null
   const id = document.getElementById('invId').value
@@ -8999,7 +9079,7 @@ function guardarInversion() {
   if (!id && !cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
 
   const cat = getOrCreateCat('invCat','invCatCustomInput','inversion') || S.categorias.inversion[0]
-  const rentabilidad = parseFloat(document.getElementById('invRentabilidad').value)||0
+  const rentabilidad = parseAmount(document.getElementById('invRentabilidad').value)||0
   const fecha = document.getElementById('invFecha').value||todayISO()
   const notas = document.getElementById('invNotas').value.trim()
 
@@ -9044,6 +9124,20 @@ function borrarInversion(id) {
         cuenta.saldo = (Number(cuenta.saldo)||0) + (Number(inv.importe)||0)
       }
     }
+    // Eliminar en cascada TODOS los beneficios retirados asociados y
+    // los ingresos que generaron — nunca deben quedar ingresos
+    // huerfanos apuntando a una inversion que ya no existe.
+    const beneficios = inv.beneficiosRetirados || []
+    const incomeIdsToRemove = new Set(beneficios.map(b => b.incomeId).filter(Boolean))
+    if (incomeIdsToRemove.size > 0) {
+      // Revertir el saldo que cada beneficio habia añadido a su cuenta
+      beneficios.forEach(b => {
+        if (!b.incomeId) return // beneficio antiguo sin relacion estable — no se puede revertir con seguridad
+        const c = getCuenta(b.cuentaId)
+        if (c) c.saldo = (Number(c.saldo)||0) - (Number(b.importe)||0)
+      })
+      S.ingresos = S.ingresos.filter(i => !incomeIdsToRemove.has(i.id))
+    }
     S.inversiones = S.inversiones.filter(x=>x.id!==id)
     save(); render()
     toast(inv.cerrada ? t('toast_inversion_eliminada') : t('toast_inversion_eliminada') + ' · ' + eur(inv.importe) + ' devueltos')
@@ -9083,12 +9177,12 @@ function syncLiq(from) {
   const inv = S.inversiones.find(x=>x.id===document.getElementById('liqInvId').value)
   if (!inv) return
   const importe = Number(inv.importe)||0
-  // Use plain toFixed (dot decimal) for <input type="number"> — fmt() uses locale commas which are invalid
+  // toFixed (dot decimal) is fine here — parseAmount() accepts both dot and comma when read back
   if (from === 'valor') {
-    const val = parseFloat(document.getElementById('liqValor').value)||0
+    const val = parseAmount(document.getElementById('liqValor').value)||0
     if (importe > 0) document.getElementById('liqRentPct').value = (((val-importe)/importe)*100).toFixed(2)
   } else {
-    const pctVal = parseFloat(document.getElementById('liqRentPct').value)||0
+    const pctVal = parseAmount(document.getElementById('liqRentPct').value)||0
     document.getElementById('liqValor').value = (importe*(1+pctVal/100)).toFixed(2)
   }
   updateLiqPreview()
@@ -9096,7 +9190,7 @@ function syncLiq(from) {
 function updateLiqPreview() {
   const inv = S.inversiones.find(x=>x.id===document.getElementById('liqInvId').value)
   if (!inv) return
-  const valorFinal = parseFloat(document.getElementById('liqValor').value)||0
+  const valorFinal = parseAmount(document.getElementById('liqValor').value)||0
   const importe = Number(inv.importe)||0
   if (!valorFinal) { document.getElementById('liqPreview').style.display='none'; return }
 
@@ -9152,7 +9246,7 @@ function confirmarLiquidacion() {
   const id = document.getElementById('liqInvId').value
   const inv = S.inversiones.find(x=>x.id===id)
   if (!inv) { toast('Inversión no encontrada','error'); return }
-  const valorFinal = parseFloat(document.getElementById('liqValor').value)
+  const valorFinal = parseAmount(document.getElementById('liqValor').value)
   if (!valorFinal || valorFinal <= 0) { toast(t('err_valor_salida'),'error'); return }
   const ganancia = valorFinal - Number(inv.importe)
   const roiReal = inv.importe ? (ganancia/Number(inv.importe))*100 : 0
@@ -9319,9 +9413,15 @@ function abrirRevalorizar(id) {
             const b = item.data
             return `
               <div style="background:rgba(0,212,170,.04);border:1px solid rgba(0,212,170,.2);border-radius:6px;padding:8px 10px;font-size:.78rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
                   <strong style="color:var(--green)">💰 ${fmtDate(b.fecha)}</strong>
-                  <strong style="color:var(--green)">+${eur(b.importe)}</strong>
+                  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                    <strong style="color:var(--green)">+${eur(b.importe)}</strong>
+                    ${b.id ? `
+                      <button onclick="event.stopPropagation();editarBeneficioRetirado('${inv.id}','${b.id}')" title="${t('btn_editar','Editar')}" style="background:transparent;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:.85rem">✏️</button>
+                      <button onclick="event.stopPropagation();eliminarBeneficioRetirado('${inv.id}','${b.id}')" title="${t('btn_eliminar','Eliminar')}" style="background:transparent;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:.85rem">🗑️</button>
+                    ` : ''}
+                  </div>
                 </div>
                 <div style="font-size:.72rem;color:var(--text3)">
                   ${b.concepto || 'Beneficio retirado'}
@@ -9349,7 +9449,7 @@ function confirmarRevalorizacion() {
 
   if (tipo === 'revalorizacion') {
     // Revalorización normal
-    const nuevoValor = parseFloat(document.getElementById('revValor').value)
+    const nuevoValor = parseAmount(document.getElementById('revValor').value)
     if (!nuevoValor || nuevoValor <= 0) { toast(t('err_valor_salida'),'error'); return }
 
     const fecha = document.getElementById('revFecha').value || todayISO()
@@ -9383,7 +9483,7 @@ function confirmarRevalorizacion() {
 
   } else {
     // Retiro de beneficio
-    const importe = parseFloat(document.getElementById('revBeneficio').value)
+    const importe = parseAmount(document.getElementById('revBeneficio').value)
     if (!importe || importe <= 0) { toast('Introduce un importe válido','error'); return }
 
     const cuentaId = document.getElementById('revBeneficioCuenta').value
@@ -9392,9 +9492,16 @@ function confirmarRevalorizacion() {
     const fecha = document.getElementById('revBeneficioFecha').value || todayISO()
     const concepto = document.getElementById('revBeneficioNotas').value.trim() || 'Beneficio retirado'
 
-    // Guardar beneficio retirado
+    // Guardar beneficio retirado — con IDs estables, nunca basado en
+    // texto: el beneficio referencia su ingreso (incomeId) y el ingreso
+    // referencia de vuelta la inversion y el beneficio. Esto es lo que
+    // permite editar/eliminar sin depender del nombre del activo.
     if (!inv.beneficiosRetirados) inv.beneficiosRetirados = []
+    const beneficioId = uid()
+    const incomeId = uid()
     inv.beneficiosRetirados.push({
+      id: beneficioId,
+      incomeId,
       fecha,
       importe,
       concepto,
@@ -9408,15 +9515,18 @@ function confirmarRevalorizacion() {
       cuenta.saldo = (Number(cuenta.saldo)||0) + importe
     }
 
-    // Registrar como ingreso
+    // Registrar como ingreso, vinculado de forma estable a la inversion
+    // y al beneficio (no solo por el nombre del activo en el texto)
     S.ingresos.push({
-      id: uid(),
+      id: incomeId,
       concepto: `💰 ${concepto}: ${inv.nombre}`,
       importe,
       categoria: 'Dividendos',
       fecha,
       cuentaId,
-      notas: `Beneficio parcial de inversión (${inv.categoria})`
+      notas: `Beneficio parcial de inversión (${inv.categoria})`,
+      _investmentId: inv.id,
+      _profitWithdrawalId: beneficioId
     })
 
     save(); closeModal('revalorizarModal'); render()
@@ -9427,6 +9537,127 @@ function confirmarRevalorizacion() {
 
     toast(`💰 ${t('beneficio_retirado','Beneficio retirado')} · +${eur(importe)}`, 'success')
   }
+}
+
+// ─── EDITAR / ELIMINAR BENEFICIO RETIRADO ─────────────────────────
+// Modelo: cada beneficio tiene un id propio y un incomeId estable que
+// lo vincula a SU ingreso — nunca se busca por nombre/texto. Editar
+// actualiza el mismo ingreso (nunca crea uno nuevo); eliminar borra
+// ambos y revierte el saldo de cuenta afectado.
+
+function editarBeneficioRetirado(invId, beneficioId) {
+  const inv = S.inversiones.find(x => x.id === invId)
+  if (!inv) { toast(t('err_inversion_no_encontrada'), 'error'); return }
+  const b = (inv.beneficiosRetirados || []).find(x => x.id === beneficioId)
+  if (!b) { toast('Beneficio no encontrado', 'error'); return }
+
+  document.getElementById('editBeneficioOverlay')?.remove()
+  const cuentasOptions = S.cuentas.map(c => `<option value="${c.id}" ${c.id===b.cuentaId?'selected':''}>${c.nombre}</option>`).join('')
+
+  const overlay = document.createElement('div')
+  overlay.id = 'editBeneficioOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">✏️ ${t('modal_editar_beneficio','Editar beneficio')}</span>
+        <button class="modal-close" onclick="document.getElementById('editBeneficioOverlay').remove();_popScrollLock()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:14px">${inv.nombre}</div>
+        <div class="form-group">
+          <label>${t('importe_lbl','Importe (€)')} *</label>
+          <input type="text" inputmode="decimal" id="editBeneficioImporte" value="${b.importe}" oninput="_sanitizeAmountInput(this)" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>${t('modal_liquidar_cuenta_lbl','Cuenta donde ingresar')}</label>
+          <select id="editBeneficioCuenta">${cuentasOptions}</select>
+        </div>
+        <div class="form-group">
+          <label>${t('fecha_lbl','Fecha')}</label>
+          <input type="date" id="editBeneficioFecha" value="${b.fecha}">
+        </div>
+        <div class="form-group">
+          <label>${t('notas_lbl','Notas')}</label>
+          <input type="text" id="editBeneficioConcepto" value="${(b.concepto||'').replace(/"/g,'&quot;')}" placeholder="Beneficio retirado">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('editBeneficioOverlay').remove();_popScrollLock()">${t('btn_cancelar','Cancelar')}</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarEdicionBeneficio('${invId}','${beneficioId}')">${t('btn_guardar','Guardar')}</button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); _popScrollLock() } })
+}
+
+function guardarEdicionBeneficio(invId, beneficioId) {
+  const inv = S.inversiones.find(x => x.id === invId)
+  if (!inv) return
+  const idx = (inv.beneficiosRetirados || []).findIndex(x => x.id === beneficioId)
+  if (idx < 0) return
+  const b = inv.beneficiosRetirados[idx]
+
+  const nuevoImporte = parseAmount(document.getElementById('editBeneficioImporte').value)
+  if (!nuevoImporte || nuevoImporte <= 0) { toast('Introduce un importe válido', 'error'); return }
+  const nuevaCuentaId = document.getElementById('editBeneficioCuenta').value
+  const nuevaFecha = document.getElementById('editBeneficioFecha').value || b.fecha
+  const nuevoConcepto = document.getElementById('editBeneficioConcepto').value.trim() || 'Beneficio retirado'
+
+  // Revertir el ajuste de saldo ANTERIOR (cuenta e importe viejos)
+  // antes de aplicar el nuevo — incluso si la cuenta destino cambió.
+  const cuentaVieja = getCuenta(b.cuentaId)
+  if (cuentaVieja) cuentaVieja.saldo = (Number(cuentaVieja.saldo)||0) - (Number(b.importe)||0)
+  const cuentaNueva = getCuenta(nuevaCuentaId)
+  if (cuentaNueva) cuentaNueva.saldo = (Number(cuentaNueva.saldo)||0) + nuevoImporte
+
+  // Actualizar el beneficio
+  inv.beneficiosRetirados[idx] = { ...b, importe: nuevoImporte, cuentaId: nuevaCuentaId, fecha: nuevaFecha, concepto: nuevoConcepto }
+
+  // Actualizar el MISMO ingreso vinculado — nunca crea uno nuevo. Si el
+  // beneficio es antiguo y no tiene incomeId (datos previos a esta
+  // funcionalidad), no hay ingreso que sincronizar con seguridad.
+  if (b.incomeId) {
+    const income = S.ingresos.find(i => i.id === b.incomeId)
+    if (income) {
+      income.importe = nuevoImporte
+      income.cuentaId = nuevaCuentaId
+      income.fecha = nuevaFecha
+      income.concepto = `💰 ${nuevoConcepto}: ${inv.nombre}`
+    }
+  }
+
+  document.getElementById('editBeneficioOverlay')?.remove()
+  _popScrollLock()
+  save(); render()
+  if (currentPage === 'inversiones') setTimeout(() => renderChartInvROI(), 150)
+  if (document.getElementById('revalorizarModal')?.classList.contains('open')) abrirRevalorizar(invId)
+  toast('✓ Beneficio actualizado')
+}
+
+function eliminarBeneficioRetirado(invId, beneficioId) {
+  const inv = S.inversiones.find(x => x.id === invId)
+  if (!inv) return
+  const b = (inv.beneficiosRetirados || []).find(x => x.id === beneficioId)
+  if (!b) return
+
+  confirmar('¿Eliminar este beneficio retirado? El ingreso asociado también se eliminará.', () => {
+    // Revertir el saldo que este beneficio había añadido
+    const cuenta = getCuenta(b.cuentaId)
+    if (cuenta) cuenta.saldo = (Number(cuenta.saldo)||0) - (Number(b.importe)||0)
+
+    // Eliminar el ingreso vinculado — nunca queda huérfano
+    if (b.incomeId) S.ingresos = S.ingresos.filter(i => i.id !== b.incomeId)
+
+    inv.beneficiosRetirados = (inv.beneficiosRetirados || []).filter(x => x.id !== beneficioId)
+
+    save(); render()
+    if (currentPage === 'inversiones') setTimeout(() => renderChartInvROI(), 150)
+    if (document.getElementById('revalorizarModal')?.classList.contains('open')) abrirRevalorizar(invId)
+    toast('Beneficio eliminado')
+  }, { titulo: 'Eliminar beneficio', icono: '🗑️', btnLabel: t('btn_eliminar','Eliminar') })
 }
 
 // ─── DEUDA CRUD ─────────────────────────────────────────────────
@@ -9460,11 +9691,11 @@ function guardarDeuda() {
   if (!_formGuard.lock('deudaModal')) return
   const _unlock = () => _formGuard.unlock('deudaModal')
   const nombre = document.getElementById('deudaNombre').value.trim()
-  const importeTotal = parseFloat(document.getElementById('deudaTotal').value)
+  const importeTotal = parseAmount(document.getElementById('deudaTotal').value)
   if (!nombre || !importeTotal || importeTotal <= 0) { toast('Nombre e importe requeridos','error'); _unlock(); return }
   const cat = getOrCreateCat('deudaCat','deudaCatCustomInput','deuda') || S.categorias.deuda[0]
   const id = document.getElementById('deudaId').value
-  const data = {nombre, importeTotal, importePagado:parseFloat(document.getElementById('deudaPagado').value)||0, interes:parseFloat(document.getElementById('deudaInteres').value)||0, categoria:cat, vencimiento:document.getElementById('deudaVencimiento').value||'', notas:document.getElementById('deudaNotas').value.trim(), pagos:[]}
+  const data = {nombre, importeTotal, importePagado:parseAmount(document.getElementById('deudaPagado').value)||0, interes:parseAmount(document.getElementById('deudaInteres').value)||0, categoria:cat, vencimiento:document.getElementById('deudaVencimiento').value||'', notas:document.getElementById('deudaNotas').value.trim(), pagos:[]}
 
   if (id) {
     const idx = S.deudas.findIndex(x=>x.id===id)
@@ -9492,7 +9723,7 @@ function abrirPago(id) {
 }
 function registrarPago() {
   const id = document.getElementById('pagoDeudaId').value
-  const importe = parseFloat(document.getElementById('pagoImporte').value)
+  const importe = parseAmount(document.getElementById('pagoImporte').value)
   if (!importe || importe <= 0) { toast(t('err_importe_pago'),'error'); return }
   const idx = S.deudas.findIndex(x=>x.id===id)
   if (idx<0) return
@@ -9579,14 +9810,14 @@ function guardarObjetivo() {
   if (!_formGuard.lock('objetivoModal')) return
   const _unlock = () => _formGuard.unlock('objetivoModal')
   const nombre = document.getElementById('objNombre').value.trim()
-  const objetivo = parseFloat(document.getElementById('objMeta').value)
+  const objetivo = parseAmount(document.getElementById('objMeta').value)
   if (!nombre || !objetivo || objetivo <= 0) { toast(t('err_nombre_meta'),'error'); _unlock(); return }
   const cat = getOrCreateCat('objCat','objCatCustomInput','objetivo') || S.categorias.objetivo[0]
   const id = document.getElementById('objId').value
   const avatarData = document.getElementById('objAvatarData').value || null
   const data = {
     nombre, objetivo,
-    actual: parseFloat(document.getElementById('objActual').value)||0,
+    actual: parseAmount(document.getElementById('objActual').value)||0,
     categoria: cat,
     fechaObjetivo: document.getElementById('objFecha').value||'',
     color: document.getElementById('objColor').value||'#00D4AA',
@@ -9626,7 +9857,7 @@ function selectRadio(tipo) {
 }
 function confirmarAportar() {
   const id = document.getElementById('aportarObjId').value
-  const importe = parseFloat(document.getElementById('aportarImporte').value)
+  const importe = parseAmount(document.getElementById('aportarImporte').value)
   if (!importe || importe <= 0) { toast(t('err_importe_aportar'),'error'); return }
   const idx = S.objetivos.findIndex(x=>x.id===id)
   if (idx < 0) return
@@ -9714,7 +9945,7 @@ function guardarPresupuesto() {
   const _unlock = () => _formGuard.unlock('presupuestoModal')
   const cat = getOrCreateCat('presCat','presCatCustomInput','gasto')
   if (!cat) { toast(t('err_selecciona_cat'),'error'); _unlock(); return }
-  const limite = parseFloat(document.getElementById('presLimite').value)
+  const limite = parseAmount(document.getElementById('presLimite').value)
   if (!limite || limite <= 0) { toast(t('err_limite_valido'),'error'); _unlock(); return }
   const tipo = (document.getElementById('presTipo')?.value) || 'monthly'
   // Store as object with type info; keep backward compat (plain number = monthly)
@@ -9740,7 +9971,7 @@ function poblarTransModal() {
 function realizarTransferencia() {
   const desdeId = document.getElementById('transDesde').value
   const haciaId = document.getElementById('transHacia').value
-  const importe = parseFloat(document.getElementById('transImporte').value)
+  const importe = parseAmount(document.getElementById('transImporte').value)
   if (!desdeId||!haciaId||desdeId===haciaId) { toast(t('err_cuentas_distintas'),'error'); return }
   if (!importe||importe<=0) { toast(t('err_importe_valido'),'error'); return }
   const desde = getCuenta(desdeId)
@@ -10917,8 +11148,8 @@ function calcDineroReal() {
 }
 
 function guardarImpuestos() {
-  const iva  = parseFloat(document.getElementById('taxIVA').value)  || 21
-  const irpf = parseFloat(document.getElementById('taxIRPF').value) || 15
+  const iva  = parseAmount(document.getElementById('taxIVA').value)  || 21
+  const irpf = parseAmount(document.getElementById('taxIRPF').value) || 15
   const regimen = document.getElementById('taxRegimen').value
   S.taxConfig = { iva, irpf, regimen }
   save()
@@ -12220,7 +12451,7 @@ function renderDebtAdvisor() {
   <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
     <div style="font-size:.78rem;color:var(--text2);font-weight:600;margin-bottom:8px">🧮 Calculadora personalizada</div>
     <div style="display:flex;gap:8px;align-items:center">
-      <input type="number" id="monthlyPayInput" placeholder="€ / mes que puedes pagar" style="flex:1">
+      <input type="text" inputmode="decimal" id="monthlyPayInput" placeholder="€ / mes que puedes pagar" style="flex:1" oninput="_sanitizeAmountInput(this)">
       <button class="btn btn-primary btn-sm" onclick="calcDebtFree()">Calcular</button>
     </div>
     <div id="debtFreeResult" style="margin-top:8px;font-size:.82rem;color:var(--text2)"></div>
@@ -12268,7 +12499,7 @@ function renderDebtAdvisor() {
 // switchDebtTab definida anteriormente (línea ~5513) — esta es un duplicado eliminado
 
 function calcDebtFree() {
-  const monthly = parseFloat(document.getElementById('monthlyPayInput').value)
+  const monthly = parseAmount(document.getElementById('monthlyPayInput').value)
   const result  = document.getElementById('debtFreeResult')
   if (!monthly || monthly <= 0) { result.textContent = t('debt_importe_valido'); return }
   const months  = calcDebtFreeMonths(monthly)
@@ -14736,7 +14967,7 @@ function editarDevengo(id) {
 
 function guardarDevengo() {
   var concepto = document.getElementById("devengoConcepto").value.trim()
-  var importe = parseFloat(document.getElementById("devengoImporte").value)
+  var importe = parseAmount(document.getElementById("devengoImporte").value)
   if (!concepto || !importe || importe<=0) { toast("Concepto e importe requeridos","error"); return }
   if (!S.devengos) S.devengos = []
   var id = document.getElementById("devengoId").value
@@ -15397,7 +15628,7 @@ function editarAsset(id) {
 
 function guardarAsset() {
   const nombre = document.getElementById('assetNombre').value.trim()
-  const valor  = parseFloat(document.getElementById('assetValor').value)
+  const valor  = parseAmount(document.getElementById('assetValor').value)
   if (!nombre) { toast(t('err_nombre_obligatorio','El nombre es obligatorio'),'error'); return }
   if (isNaN(valor)||valor<0) { toast('Introduce un valor actual válido','error'); return }
   if (!S.assets) S.assets = []
@@ -15406,7 +15637,7 @@ function guardarAsset() {
   const tipoSel = document.getElementById('assetTipo').value
   const tipoFinal = tipoSel === '__custom__' ? 'other' : tipoSel
   const tipoCustom = tipoSel === '__custom__' ? document.getElementById('assetTipoCustomInput').value.trim() : null
-  const valorCompra = parseFloat(document.getElementById('assetValorCompra').value) || valor
+  const valorCompra = parseAmount(document.getElementById('assetValorCompra').value) || valor
   const avatarData = document.getElementById('assetAvatarData').value || null
   const data = {
     nombre,
@@ -15419,7 +15650,7 @@ function guardarAsset() {
     status:     document.getElementById('assetEstado').value,
     notas:      document.getElementById('assetNotas').value.trim(),
     depreciacion: depOn,
-    depPct: depOn ? parseFloat(document.getElementById('assetDepPct').value)||0 : 0,
+    depPct: depOn ? parseAmount(document.getElementById('assetDepPct').value)||0 : 0,
     avatar: avatarData
   }
   if (id) {
@@ -15472,7 +15703,7 @@ function marcarAssetVendido(id) {
       </div>
       <div class="form-group" style="margin-bottom:10px">
         <label style="font-size:.8rem">Valor de venta (€)</label>
-        <input type="number" id="_saleValue" value="${currentVal.toFixed(2)}" step="0.01" min="0"
+        <input type="text" inputmode="decimal" id="_saleValue" value="${currentVal.toFixed(2)}" step="0.01" min="0" oninput="_sanitizeAmountInput(this)"
           style="width:100%;padding:8px 12px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;margin-top:4px">
       </div>
       <div class="form-group">
@@ -15486,7 +15717,7 @@ function marcarAssetVendido(id) {
   btn.textContent = t('btn_confirmar_venta')
   btn.className = 'btn btn-primary btn-sm'
   btn.onclick = () => {
-    const saleVal  = parseFloat(document.getElementById('_saleValue')?.value) || 0
+    const saleVal  = parseAmount(document.getElementById('_saleValue')?.value) || 0
     const cuentaId = document.getElementById('_saleCuenta')?.value
     if (!cuentaId) { toast(t('err_selecciona_cuenta'),'error'); return }
     // Create income transaction
@@ -15534,14 +15765,14 @@ function quickUpdateAssetValue(id) {
       <div style="font-size:.82rem;color:var(--text2);margin-bottom:10px"><strong>${a.nombre}</strong> — Valor actual: <strong>${eur(Number(a.valor)||0)}</strong></div>
       <div class="form-group">
         <label style="font-size:.8rem">Nuevo valor de mercado (€)</label>
-        <input type="number" id="_quickVal" value="${a.valor||''}" step="0.01" min="0"
+        <input type="text" inputmode="decimal" id="_quickVal" value="${a.valor||''}" step="0.01" min="0" oninput="_sanitizeAmountInput(this)"
           style="width:100%;padding:8px 12px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;margin-top:4px">
       </div>
     </div>`
   btn.textContent = t('btn_actualizar','✓ Actualizar')
   btn.className = 'btn btn-primary btn-sm'
   btn.onclick = () => {
-    const newVal = parseFloat(document.getElementById('_quickVal')?.value)
+    const newVal = parseAmount(document.getElementById('_quickVal')?.value)
     if (isNaN(newVal) || newVal < 0) { toast(t('err_valor_invalido','Valor inválido'),'error'); return }
     a.valor = newVal
     recordPatrimonio()
@@ -15936,7 +16167,7 @@ function renderMonthSummaryBanner(summary) {
 function animateCounter(el, target) {
   if (!el) return
   const isEur = target.includes('€')
-  const num = parseFloat(target.replace(/[^\d.,-]/g,'').replace(',','.')) || 0
+  const num = parseAmount(target) || 0
   const start = 0
   const duration = 700
   const startTime = performance.now()
@@ -16012,7 +16243,7 @@ function selectQuickCat(cat, el, activeClass) {
 
 function saveQuickAdd() {
   if (isGuest()) { closeQuickAdd(); _showGuestGateModal(); return }
-  const importe = parseFloat(document.getElementById('quickAmount').value)
+  const importe = parseAmount(document.getElementById('quickAmount').value)
   if (!importe || importe <= 0) { toast('Introduce un importe válido','error'); return }
   const concepto = document.getElementById('quickConcepto').value.trim() || (_qaCat || (_qaType==='gasto'?'Gasto':'Ingreso'))
   const cat = _qaCat || (_qaType==='gasto' ? 'Otro' : 'Otro')
@@ -16514,7 +16745,7 @@ function gcClose() {
 }
 
 function gcCreate() {
-  const amt = Number(document.getElementById('gcAmount')?.value) || 0
+  const amt = parseAmount(document.getElementById('gcAmount')?.value) || 0
   if (amt <= 0) { document.getElementById('gcAmount')?.focus(); return }
   const now = new Date()
   const meta = amt
@@ -17098,9 +17329,9 @@ window.openCustomDebtModal = function() {
         <!-- Input principal -->
         <div class="mn-custom-input-wrap">
           <span style="font-size:1.2rem;color:var(--text2)">💳</span>
-          <input type="number" id="customPayInput" class="mn-custom-input" placeholder="${suggestedPayment.toFixed(0)}"
-            value="${suggestedPayment.toFixed(0)}" inputmode="decimal" step="1" min="1"
-            oninput="updateCustomCalc()" onkeydown="if(event.key==='Enter')event.target.blur()">
+          <input type="text" inputmode="decimal" id="customPayInput" class="mn-custom-input" placeholder="${suggestedPayment.toFixed(0)}"
+            value="${suggestedPayment.toFixed(0)}" step="1" min="1"
+            oninput="_sanitizeAmountInput(this);updateCustomCalc()" onkeydown="if(event.key==='Enter')event.target.blur()">
           <span style="font-size:.9rem;color:var(--text2);font-weight:700">/mes</span>
         </div>
 
@@ -17190,7 +17421,7 @@ window.updateCustomCalc = function() {
   const saveCard = document.getElementById('customSaveCard')
   if (!inputEl || !resultsBox || !saveCard) return
 
-  const monthlyPay = parseFloat(inputEl.value) || 0
+  const monthlyPay = parseAmount(inputEl.value) || 0
   if (monthlyPay <= 0) {
     resultsBox.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:.8rem">${t('introduce_pago','Introduce un pago mensual')}</div>`
     saveCard.innerHTML = ''
@@ -17588,7 +17819,8 @@ window.openMultiPagoModal = function() {
         <div style="font-size:.84rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.nombre||'—'}</div>
         <div style="font-size:.7rem;color:var(--text3)">Pendiente: ${eur(pend)}</div>
       </div>
-      <input type="number" class="mn-multipago-amount" data-id="${d.id}" placeholder="0.00" min="0.01" step="0.01" disabled
+      <input type="text" inputmode="decimal" class="mn-multipago-amount" data-id="${d.id}" placeholder="0.00" min="0.01" step="0.01" disabled
+        oninput="_sanitizeAmountInput(this)"
         style="width:100px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:.85rem">
     </div>`
   }).join('')
@@ -17644,7 +17876,7 @@ window._confirmMultiPago = function() {
   checks.forEach(chk => {
     const id = chk.getAttribute('data-id')
     const amountInput = document.querySelector(`.mn-multipago-amount[data-id="${id}"]`)
-    const importe = parseFloat(amountInput?.value)
+    const importe = parseAmount(amountInput?.value)
     if (!importe || importe <= 0) return
     const idx = S.deudas.findIndex(x => x.id === id)
     if (idx < 0) return
