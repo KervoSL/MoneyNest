@@ -12,8 +12,8 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// Local = one-time purchase (mode:'payment'), Pro = annual subscription
-// (mode:'subscription'). Both price ids resolve to their plan below.
+// Local = one-time purchase (mode:'payment', both via Checkout AND via
+// the embedded PaymentIntent flow), Pro = annual subscription.
 const PRICE_TO_PLAN: Record<string, string> = {
   [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8']: 'local',
   [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
@@ -97,7 +97,24 @@ async function reevaluateAfterLoss(userId: string, endedSubscriptionId: string) 
     .eq('id', userId);
 }
 
-// ── One-time purchase (Local) activation ───────────────────────────
+// ── One-time purchase (Local) activation — shared by both the
+// Checkout Session flow AND the embedded PaymentIntent flow ─────────
+
+async function activateLocalOneTime(params: {
+  userId: string; customerId: string; checkoutSessionId: string;
+  paymentIntentId: string; priceId: string; amount: number; currency: string;
+}) {
+  const { error } = await supabase.rpc('activate_local_purchase', {
+    p_user_id: params.userId,
+    p_stripe_customer_id: params.customerId,
+    p_stripe_checkout_session_id: params.checkoutSessionId,
+    p_stripe_payment_intent_id: params.paymentIntentId,
+    p_stripe_price_id: params.priceId,
+    p_amount: params.amount,
+    p_currency: params.currency,
+  });
+  if (error) throw error;
+}
 
 async function activateFromOneTimePurchase(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id || session.client_reference_id || null;
@@ -108,23 +125,44 @@ async function activateFromOneTimePurchase(session: Stripe.Checkout.Session) {
   const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? '';
   const priceId = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8';
 
-  const { error } = await supabase.rpc('activate_local_purchase', {
-    p_user_id: userId,
-    p_stripe_customer_id: custId,
-    p_stripe_checkout_session_id: session.id,
-    p_stripe_payment_intent_id: paymentIntentId,
-    p_stripe_price_id: priceId,
-    p_amount: session.amount_total ?? 699,
-    p_currency: session.currency ?? 'eur',
+  await activateLocalOneTime({
+    userId, customerId: custId, checkoutSessionId: session.id,
+    paymentIntentId, priceId, amount: session.amount_total ?? 699, currency: session.currency ?? 'eur',
   });
-  if (error) throw error;
+}
+
+// The embedded MNPayment flow (create-payment-intent) creates a bare
+// PaymentIntent directly — no Checkout Session exists at all for this
+// path, so this is the ONLY place that can activate Local when bought
+// this way. Previously MISSING entirely: this event was arriving
+// (already subscribed on the live webhook) but had no handler, so a
+// real embedded-flow Local purchase would charge the customer and
+// never activate their plan.
+async function activateFromPaymentIntent(pi: Stripe.PaymentIntent) {
+  if (pi.metadata?.plan !== 'local') return; // Pro never uses this flow (subscriptions only)
+  const userId = pi.metadata?.user_id || null;
+  if (!userId) {
+    throw new Error(`cannot resolve user_id for payment_intent ${pi.id} (metadata: ${JSON.stringify(pi.metadata)})`);
+  }
+  const custId = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id ?? '';
+  const priceId = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8';
+
+  // Use the payment_intent id itself as the idempotency key (in place
+  // of a checkout session id, which doesn't exist for this flow) —
+  // activate_local_purchase's ON CONFLICT DO NOTHING still guarantees
+  // this can't double-insert if the event is ever redelivered.
+  await activateLocalOneTime({
+    userId, customerId: custId, checkoutSessionId: `pi_flow_${pi.id}`,
+    paymentIntentId: pi.id, priceId, amount: pi.amount ?? 699, currency: pi.currency ?? 'eur',
+  });
 }
 
 // ── Handlers ────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
   if (session.mode === 'payment') {
-    // Local: one-time purchase, no subscription object involved at all.
+    // Local via Checkout Session: one-time purchase, no subscription
+    // object involved at all.
     await activateFromOneTimePurchase(session);
   } else if (session.mode === 'subscription' && session.subscription) {
     const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
@@ -218,6 +256,13 @@ Deno.serve(async (req) => {
         break;
       case 'invoice.payment_failed':
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+      case 'payment_intent.succeeded':
+        // Local purchased via the embedded MNPayment flow (no Checkout
+        // Session at all for this path) — the only place that activates
+        // that specific flow. No-ops harmlessly for a Pro subscription's
+        // own payment_intent.succeeded (metadata.plan !== 'local').
+        await activateFromPaymentIntent(event.data.object as Stripe.PaymentIntent);
         break;
       case 'customer.subscription.trial_will_end':
         await handleTrialWillEnd(event.data.object as Stripe.Subscription);

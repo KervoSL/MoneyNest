@@ -10,7 +10,11 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3';
+// FIX: Local was still pointing at the OLD annual-recurring test price
+// from Fase 2 — the business model was corrected to a one-time
+// purchase in a later session (create-checkout / stripe-webhook were
+// updated then, but this function was missed).
+const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U6GvUFWll222KpaM0pOY3g8';
 const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j';
 const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
 
@@ -24,9 +28,9 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
 
-// Inlined promo-validation (the deploy tool couldn't resolve the
-// relative import to _shared/stripe-promo.ts) — always validated
-// server-side against Stripe, never trusting a client-claimed discount.
+// Inlined from _shared/stripe-promo.ts (deploy tool couldn't resolve
+// the relative import) — always validated server-side against Stripe,
+// never trusting a client-claimed discount.
 async function validatePromoCode(code: string) {
   const trimmed = (code || '').trim();
   if (!trimmed) return { valid: false as const, reason: 'invalid' as const };
@@ -61,11 +65,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
 
-  // SECURITY FIX (Fase 6): identity used to come straight from an
-  // unauthenticated client-supplied `email` in the body — anyone could
-  // pass any email and this function would create/reuse a Stripe
-  // Customer for it. Now the caller's real Supabase session is the
-  // ONLY source of identity.
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
   if (!jwt) return json({ error: 'missing_authorization' }, 401);
