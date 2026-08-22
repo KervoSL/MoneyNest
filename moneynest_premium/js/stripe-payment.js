@@ -699,7 +699,7 @@ window.MNPayment = (() => {
         throw new Error(checkoutData.error ?? 'checkout_fallback_failed');
       } catch (fallbackErr) {
         console.error('[MNPayment] Checkout fallback also failed:', fallbackErr);
-        _showError(_spt('payment_error_init', 'No se pudo iniciar el pago. Comprueba tu conexión e inténtalo de nuevo.'));
+        _showError(_spt('payment_error_init', 'No se ha podido iniciar el proceso de pago. Inténtalo de nuevo.'));
         _setLoading(false);
       }
     }

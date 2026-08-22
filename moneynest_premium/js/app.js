@@ -13367,6 +13367,39 @@ async function obNext() {
   if (obStep === 4 && (obData.plan === 'local' || obData.plan === 'pro')) {
     const priceId = obData.plan === 'pro' ? window.MNStripeConfig?.prices?.pro : window.MNStripeConfig?.prices?.local
     if (priceId && window.MNPayment) {
+      const btn = document.querySelector('#obContentArea .ob-next-btn')
+
+      // CRITICAL: must have a real session BEFORE opening payment.
+      // Never advance without one (that would silently skip the whole
+      // payment flow) and never show a "create account" form again —
+      // email/password were already captured in step 1. If the session
+      // still isn't there (e.g. step 1's signUp failed transiently, or
+      // the onAuthStateChange listener simply hasn't caught up yet),
+      // retry silently in the background with those same credentials.
+      if (!window.MNSupabaseAuth?.isLoggedIn()) {
+        if (btn) { btn.disabled = true; btn.textContent = t('loading_verificando','Verificando tu cuenta…') }
+        try {
+          await window.MNSupabaseAuth.signUp(obData.email, obData.password)
+        } catch (err) {
+          if (err?.code === 'email_exists') {
+            // Account genuinely exists already (created in step 1) —
+            // only the local session wasn't established yet. Signing
+            // in with the same credentials the user just typed
+            // re-establishes it safely.
+            try { await window.MNSupabaseAuth.signIn(obData.email, obData.password) } catch (_) { /* handled by the check below */ }
+          }
+          // Any other error: fall through to the isLoggedIn() check
+          // below, which decides whether to proceed or show an error.
+        }
+      }
+
+      if (!window.MNSupabaseAuth?.isLoggedIn()) {
+        if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
+        toast(t('ob_error_verificacion_cuenta','No se ha podido verificar tu cuenta. Inténtalo de nuevo.'), 'error')
+        return
+      }
+      if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
+
       const proceedToNext = () => {
         document.removeEventListener('mn:paymentModalClosed', proceedToNext)
         obStep++
@@ -13374,21 +13407,6 @@ async function obNext() {
       }
       document.addEventListener('mn:paymentModalClosed', proceedToNext, { once: true })
 
-      // Step 1's signUp() is fire-and-forget — give the session a
-      // brief moment to establish if it somehow hasn't yet (steps 2-3
-      // usually take long enough that this never actually waits).
-      let waited = 0
-      while (!window.MNSupabaseAuth?.isLoggedIn() && waited < 3000) {
-        await new Promise(r => setTimeout(r, 300))
-        waited += 300
-      }
-      if (!window.MNSupabaseAuth?.isLoggedIn()) {
-        document.removeEventListener('mn:paymentModalClosed', proceedToNext)
-        toast('No se pudo verificar tu cuenta todavía. Puedes elegir un plan luego desde Plan y facturación.')
-        obStep++
-        obRender('forward')
-        return
-      }
       const email = window.MNSupabaseAuth.getSession()?.user?.email || obData.email || ''
       MNPayment.open(priceId, email)
       return
