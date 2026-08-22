@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // apiVersion intentionally omitted — see stripe-webhook for why a
 // hardcoded version silently goes stale.
+const usingTestKey = !!Deno.env.get('STRIPE_SECRET_KEY_TEST');
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') || Deno.env.get('STRIPE_SECRET_KEY') || '', {});
 
 const supabase = createClient(
@@ -11,8 +12,13 @@ const supabase = createClient(
 );
 
 // Both plans are annual subscriptions: Local 6,99€/año, Pro 14,99€/año.
-const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3';
-const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j';
+// CRITICAL: fallback price IDs must match whichever Stripe mode the
+// active secret key belongs to — mixing a test price with a live key
+// (or vice versa) fails with "No such price". This is exactly what
+// happens if STRIPE_PRICE_LOCAL/STRIPE_PRICE_PRO aren't set explicitly
+// and only live keys are configured (the account's current real state).
+const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1U68YVFWll222KpaCJ6WrKWg');
+const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1U68YaFWll222Kpa4mynzdAp');
 const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
 
 const CORS = {

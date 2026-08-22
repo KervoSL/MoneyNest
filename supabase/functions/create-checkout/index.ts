@@ -1,20 +1,26 @@
 import Stripe from 'npm:stripe@14';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-// ── Server-side price whitelist — NEVER trust a priceId/amount from
-// the client. Both plans are annual subscriptions: Local 6,99€/año,
-// Pro 14,99€/año.
-const PRICE_MAP: Record<string, string> = {
-  local: Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3',
-  pro:   Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j',
-};
-
 // This function only ever talks to whichever Stripe mode matches the
 // secret key that's configured. STRIPE_SECRET_KEY_TEST is checked
-// first so this runs safely against test mode during Fase 3; falls
-// back to STRIPE_SECRET_KEY (live) only if no test key is set.
+// first; falls back to STRIPE_SECRET_KEY (live) only if no test key is
+// set — which is the account's current real configuration (live keys
+// configured, no test keys yet).
+const usingTestKey = !!Deno.env.get('STRIPE_SECRET_KEY_TEST');
 const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY_TEST') || Deno.env.get('STRIPE_SECRET_KEY') || '';
 const stripe = new Stripe(STRIPE_KEY, {});
+
+// ── Server-side price whitelist — NEVER trust a priceId/amount from
+// the client. Both plans are annual subscriptions: Local 6,99€/año,
+// Pro 14,99€/año. CRITICAL: the fallback price IDs must match whichever
+// Stripe mode is actually active — a test price ID sent with a live
+// secret key (or vice versa) fails with "No such price", which is
+// exactly what happens if STRIPE_PRICE_LOCAL/STRIPE_PRICE_PRO aren't
+// set as explicit secrets and the account only has live keys configured.
+const PRICE_MAP: Record<string, string> = {
+  local: Deno.env.get('STRIPE_PRICE_LOCAL') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1U68YVFWll222KpaCJ6WrKWg'),
+  pro:   Deno.env.get('STRIPE_PRICE_PRO')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1U68YaFWll222Kpa4mynzdAp'),
+};
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',

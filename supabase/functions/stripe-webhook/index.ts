@@ -13,9 +13,16 @@ const supabase = createClient(
 );
 
 // Both plans are annual subscriptions: Local 6,99€/año, Pro 14,99€/año.
+// Unlike create-checkout/create-payment-intent (which only ever talk
+// to ONE mode, matching whichever secret key is configured), this
+// webhook validates against BOTH live and test signing secrets and
+// must resolve price IDs from EITHER mode — so both are always in the
+// map, not just a same-mode fallback.
 const PRICE_TO_PLAN: Record<string, string> = {
-  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
-  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
+  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local', // test
+  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',   // test
+  'price_1U68YVFWll222KpaCJ6WrKWg': 'local', // live
+  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',   // live
 };
 
 const CORS = {
