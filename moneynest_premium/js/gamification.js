@@ -1149,7 +1149,7 @@
 
     // EXPLORADOR
     todas_paginas: {
-      steps: ['Visita todas las secciones del menú lateral', 'Dashboard, Ingresos, Gastos, Inversiones, Deudas, Objetivos, Patrimonio, Logros, Análisis, Configuración'],
+      steps: ['Visita todas las secciones del menú lateral', 'Dashboard, Ingresos, Gastos, Inversiones, Deudas, Objetivos, Presupuestos, Cuentas, Patrimonio, Análisis, Logros, Configuración'],
       tip: 'Cada sección tiene herramientas únicas para gestionar tu dinero'
     },
     pagina_dashboard: {
