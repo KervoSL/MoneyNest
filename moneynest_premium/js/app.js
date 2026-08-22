@@ -13314,10 +13314,29 @@ async function obNext() {
     } else {
       const btn = document.querySelector('#obContentArea .ob-next-btn')
       if (btn) { btn.disabled = true; btn.textContent = t('loading_creando_cuenta') }
-      // Register in background — never block onboarding flow
+      try {
+        await window.MNSupabaseAuth.signUp(email, pw)
+      } catch (err) {
+        if (err?.code === 'email_exists') {
+          // Ya existe una cuenta con este email — nunca se crea otra.
+          // Mensaje propio de MoneyNest (nunca un alert del navegador),
+          // con acceso directo a iniciar sesión sin perder lo ya
+          // rellenado en el paso.
+          if (errEl) {
+            errEl.innerHTML = '⚠ Ya existe una cuenta con este correo. <a href="#" onclick="event.preventDefault();_obToggleAuthMode()" style="color:inherit;text-decoration:underline;font-weight:700">Inicia sesión</a> o recupera tu contraseña.'
+            errEl.style.display = 'block'
+            errEl.style.color = '#F43F5E'
+          }
+          if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
+          return
+        }
+        // Any other error (network, rate limit, etc.) never blocks
+        // onboarding — this was the original, intentional behavior for
+        // transient failures, unrelated to this task's scope.
+        console.warn('[Onboarding] signUp error (non-blocking):', err)
+      }
       obData._registered = true
       window.MNAuth && window.MNAuth.upgradeTrial && window.MNAuth.upgradeTrial(email)
-      window.MNSupabaseAuth && window.MNSupabaseAuth.signUp(email, pw).catch(() => {})
       obStep++
       obRender('forward')
       return

@@ -128,6 +128,16 @@
       }
     }
 
+    // Supabase's anti-enumeration behavior: when the email already
+    // belongs to a CONFIRMED account, signUp() can return success (no
+    // `error`) with a `user` object but an EMPTY `identities` array —
+    // this is the existing user being echoed back, not a new account.
+    // Without this check, the code below would treat it as a genuine
+    // new signup and the caller would never learn the email was taken.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      throw Object.assign(new Error('Este email ya está registrado.'), { code: 'email_exists' });
+    }
+
     if (data.user) {
       await _ensureProfile(data.user.id, email, displayName);
       // ✅ Crear sesión automáticamente para que el usuario pueda acceder sin confirmar email
