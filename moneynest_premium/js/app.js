@@ -7670,108 +7670,111 @@ function renderFacturacion() {
   const isTrial   = e ? e.isTrial() : true
   const isPro     = e ? e.isPro() : false
   const isLocal   = e ? e.isLocal() : false
-  const hasPlan   = isPro || isLocal
+  const isExpired = e ? e.isTrialExpired() : false
   const pink      = '#EC4899'
   const localPrice = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
   const proPrice   = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
 
-  // ── "Tu plan" — current status, with real management actions ──
-  const currentPlanHtml = (() => {
-    if (isPro) return `
-      <div class="card" style="background:linear-gradient(160deg, rgba(236,72,153,.1), var(--card) 65%);border:1.5px solid rgba(236,72,153,.4)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
-            <div style="font-size:1.5rem;font-weight:900;color:${pink};margin:4px 0">${eur(proPrice)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
-          </div>
-          <span style="font-size:.65rem;font-weight:800;color:${pink};background:rgba(236,72,153,.15);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_pro_activo','PRO ACTIVO')}</span>
-        </div>
-        <ul style="list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:6px">
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_backup','Backup automático')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_restauracion','Restauración')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
-        </ul>
-        <div id="mn-sub-status-info" style="font-size:.78rem;color:var(--text3);margin-bottom:14px"></div>
-        <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
-      </div>`
+  const state = e?.getServerState()
+  const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
+  const msLeft = trialEndsAt ? Math.max(0, trialEndsAt - Date.now()) : 0
+  const hoursLeft = trialEndsAt ? Math.floor(msLeft / 3600000) : 24
+  const minsLeft = trialEndsAt ? Math.floor((msLeft % 3600000) / 60000) : 0
+  const trialPct = trialEndsAt ? Math.max(0, Math.min(100, (msLeft / (24*3600000)) * 100)) : 100
 
-    if (isLocal) return `
-      <div class="card" style="background:linear-gradient(160deg, var(--accent-dim), var(--card) 65%);border:1.5px solid rgba(0,212,170,.35)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
-            <div style="font-size:1.5rem;font-weight:900;color:var(--accent);margin:4px 0">${eur(localPrice)}<span style="font-size:.72rem;font-weight:600;color:var(--text2)">/${_aut('plan_periodo_ano','año')}</span></div>
-          </div>
-          <span style="font-size:.65rem;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;text-transform:uppercase">${_aut('cfg_estado_activo','Activo')}</span>
-        </div>
-        <ul style="list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:6px">
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
-          <li style="font-size:.84rem;color:var(--text)">✓ ${_aut('plan_feat_datos_locales','Datos locales')}</li>
-          <li style="font-size:.84rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
-        </ul>
-        <div id="mn-sub-status-info" style="font-size:.78rem;color:var(--text3);margin-bottom:14px"></div>
-        <button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI.openPlanModal('facturacion')">${_aut('cfg_btn_mejorar_pro','Mejorar a Pro')}</button>
-        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
-      </div>`
+  // ── Badge de estado global (esquina superior derecha) ──
+  const statusBadge = isPro
+    ? `<span class="mn-plan-statusbadge" style="color:${pink};border-color:${pink}66;background:${pink}22">● PRO ACTIVO</span>`
+    : isLocal
+    ? `<span class="mn-plan-statusbadge" style="color:var(--accent);border-color:var(--accent)66;background:var(--accent-dim)">● LOCAL ACTIVO</span>`
+    : isExpired
+    ? `<span class="mn-plan-statusbadge" style="color:var(--red);border-color:var(--red)66;background:var(--red-dim)">● PRUEBA FINALIZADA</span>`
+    : `<span class="mn-plan-statusbadge" style="color:var(--gold);border-color:var(--gold)66;background:var(--gold-dim)">● TRIAL ACTIVO</span>`
 
-    // Trial / sin plan
-    const state = e?.getServerState()
-    const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
-    const hoursLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / 3600000)) : 24
-    const expired = e ? e.isTrialExpired() : false
-    return `
-      <div class="card">
-        <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${_aut('cfg_plan_actual_lbl','Plan actual')}</div>
-        ${expired ? `
-          <div style="font-size:1.1rem;font-weight:800;color:var(--text)">${_aut('cfg_plan_expirado','Prueba gratuita finalizada')}</div>
-          <div style="font-size:.85rem;color:var(--text2);margin-top:6px">${_aut('cfg_plan_expirado_desc','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
-        ` : `
-          <div style="font-size:1.1rem;font-weight:800;color:var(--gold)">⏳ ${_aut('plan_trial_name','Prueba gratuita')} <span style="font-weight:600;font-size:.85rem;color:var(--text2)">· ${_aut('cfg_te_quedan','Te quedan')} ${hoursLeft}h</span></div>
-          <div style="font-size:.85rem;color:var(--text2);margin-top:8px">${_aut('cfg_plan_trial_desc','Estás probando MoneyNest completo.')}</div>
-        `}
-      </div>`
-  })()
-
-  // ── Comparación Local vs Pro — botones reales: nunca conceden nada,
-  // abren el modal de pago antiguo (MNPayment) directamente ──
-  const comparisonHtml = `
-    <div class="card">
-      <div class="card-header">
-        <div><div class="card-title">⚖️ ${_aut('cfg_comparar_planes','Compara los planes')}</div></div>
+  // ── Banner grande de prueba (solo mientras hay trial activo) ──
+  const trialBanner = (isTrial && !isExpired) ? `
+    <div class="mn-plan-trialbanner">
+      <div>
+        <div style="font-size:.95rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">⏱ ${_aut('cfg_trial_titulo','Estás en tu periodo de prueba gratuita')}</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.75);margin-top:6px">${_aut('cfg_trial_sub','Te quedan')} <strong style="color:#fff">${hoursLeft}h ${minsLeft}m</strong> ${_aut('cfg_trial_sub2','para proteger tus datos permanentemente.')}</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div style="padding:16px;border-radius:12px;border:1.5px solid var(--border2);${isLocal ? 'border-color:var(--accent);background:var(--accent-dim)' : ''}">
-          <div style="font-size:.9rem;font-weight:800;color:var(--text)">💾 ${_aut('plan_local_name','MoneyNest Local')}</div>
-          <div style="font-size:1.3rem;font-weight:900;color:var(--accent);margin:6px 0 2px">${eur(localPrice)}</div>
-          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">/${_aut('plan_periodo_ano','año')}</div>
-          <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:4px">
-            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_ilimitado','Acceso ilimitado')}</li>
-            <li style="font-size:.78rem;color:var(--text3)">✕ ${_aut('plan_feat_cloud','Cloud')}</li>
-          </ul>
-          ${isLocal
-            ? `<div style="text-align:center;font-size:.72rem;font-weight:800;color:var(--accent);text-transform:uppercase">✓ ${_aut('cfg_estado_activo','Activo')}</div>`
-            : `<button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNAuthUI._doConfirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')}</button>`}
-        </div>
-        <div style="padding:16px;border-radius:12px;border:1.5px solid ${isPro ? pink : 'var(--border2)'};${isPro ? 'background:rgba(236,72,153,.08)' : ''}">
-          <div style="font-size:.9rem;font-weight:800;color:var(--text)">☁️ ${_aut('plan_pro_name','MoneyNest Pro')}</div>
-          <div style="font-size:1.3rem;font-weight:900;color:${pink};margin:6px 0 2px">${eur(proPrice)}</div>
-          <div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">/${_aut('plan_periodo_ano','año')}</div>
-          <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:4px">
-            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
-            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_cloud','Cloud')}</li>
-            <li style="font-size:.78rem;color:var(--text)">✓ ${_aut('plan_feat_sync','Sincronización')}</li>
-          </ul>
-          ${isPro
-            ? `<div style="text-align:center;font-size:.72rem;font-weight:800;color:${pink};text-transform:uppercase">✓ PRO ACTIVO</div>`
-            : `<button class="btn btn-sm" style="background:${pink};color:#fff;border:none;width:100%" onclick="MNAuthUI._doConfirmPlan('pro')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>`}
-        </div>
+      <svg width="56" height="56" viewBox="0 0 56 56" style="flex-shrink:0">
+        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="4"/>
+        <circle cx="28" cy="28" r="24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"
+          stroke-dasharray="${2*Math.PI*24}" stroke-dashoffset="${2*Math.PI*24*(1-trialPct/100)}"
+          transform="rotate(-90 28 28)"/>
+      </svg>
+    </div>` : (isExpired ? `
+    <div class="mn-plan-trialbanner" style="background:linear-gradient(135deg, rgba(244,63,94,.25), rgba(244,63,94,.08))">
+      <div>
+        <div style="font-size:.95rem;font-weight:800;color:#fff">⏱ ${_aut('cfg_plan_expirado','Tu prueba gratuita ha finalizado')}</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.75);margin-top:6px">${_aut('cfg_plan_expirado_desc2','Elige un plan para seguir usando MoneyNest. Tus datos siguen intactos.')}</div>
       </div>
+    </div>` : '')
+
+  // ── Las 3 tarjetas: Free Trial · Local · Pro ──
+  const cardTrial = `
+    <div class="mn-plan-card ${isTrial && !isExpired ? 'mn-plan-card--current' : ''}">
+      ${isTrial && !isExpired ? `<div class="mn-plan-card__ribbon" style="background:var(--gold-dim);color:var(--gold)">${_aut('cfg_plan_actual_lbl','PLAN ACTUAL')}</div>` : ''}
+      <div class="mn-plan-card__icon">⏱</div>
+      <div class="mn-plan-card__name">${_aut('plan_trial_name','Free Trial')}</div>
+      <div class="mn-plan-card__price">${_aut('cfg_gratis','Gratis')}</div>
+      <div class="mn-plan-card__period">${_aut('cfg_trial_periodo','Acceso 24 horas')}</div>
+      <ul class="mn-plan-card__feats">
+        <li class="ok">${_aut('plan_feat_todas_pantallas','Todas las pantallas')}</li>
+        <li class="ok">${_aut('plan_feat_datos_locales','Datos locales')}</li>
+        <li class="no">${_aut('plan_feat_exportar_excel','Exportar Excel')}</li>
+        <li class="no">${_aut('plan_feat_cloud','Cloud')}</li>
+      </ul>
+      ${isTrial && !isExpired
+        ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
+        : `<button class="btn btn-ghost btn-sm" style="width:100%" disabled>${_aut('cfg_no_disponible','No disponible')}</button>`}
     </div>`
 
-  // ── Acciones adicionales: restaurar acceso y código promocional ──
+  const cardLocal = `
+    <div class="mn-plan-card ${isLocal ? 'mn-plan-card--current mn-plan-card--accent' : ''}">
+      ${isLocal ? `<div class="mn-plan-card__ribbon" style="background:var(--accent-dim);color:var(--accent)">✓ ${_aut('cfg_plan_actual_lbl','PLAN ACTUAL')}</div>` : ''}
+      <div class="mn-plan-card__icon">💾</div>
+      <div class="mn-plan-card__name">${_aut('plan_local_name','MoneyNest Local')}</div>
+      <div class="mn-plan-card__price">${eur(localPrice)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
+      <div class="mn-plan-card__period">${_aut('cfg_sin_permanencia','Sin permanencia')}</div>
+      <ul class="mn-plan-card__feats">
+        <li class="ok">${_aut('plan_feat_ilimitado','Datos ilimitados')}</li>
+        <li class="ok">${_aut('plan_feat_exportar_excel','Exportar Excel/PDF')}</li>
+        <li class="ok">${_aut('plan_feat_offline','Funciona offline')}</li>
+        <li class="no">${_aut('plan_feat_cloud','Sincronización cloud')}</li>
+      </ul>
+      ${isLocal
+        ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
+        : `<button class="btn btn-primary btn-sm" style="width:100%" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}</button>`}
+    </div>`
+
+  const cardPro = `
+    <div class="mn-plan-card mn-plan-card--pro ${isPro ? 'mn-plan-card--current' : ''}">
+      <div class="mn-plan-card__ribbon" style="background:${pink}22;color:${pink}">${isPro ? '✓ '+_aut('cfg_plan_actual_lbl','PLAN ACTUAL') : '⭐ '+_aut('cfg_mas_elegido','MÁS ELEGIDO')}</div>
+      <div class="mn-plan-card__icon">☁️</div>
+      <div class="mn-plan-card__name">${_aut('plan_pro_name','MoneyNest Pro')}</div>
+      <div class="mn-plan-card__price" style="color:${pink}">${eur(proPrice)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
+      <div class="mn-plan-card__period">${_aut('cfg_pro_trial_incluido','7 días de prueba incluidos')}</div>
+      <ul class="mn-plan-card__feats">
+        <li class="ok">${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
+        <li class="ok">${_aut('plan_feat_cloud','Sincronización cloud')}</li>
+        <li class="ok">${_aut('plan_feat_multidispositivo','Multi-dispositivo')}</li>
+        <li class="ok">${_aut('plan_feat_backup','Backup automático')}</li>
+      </ul>
+      ${isPro
+        ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
+        : `<button class="btn btn-sm" style="width:100%;background:${pink};color:#fff;border:none" onclick="MNAuthUI._doConfirmPlan('pro')">⚡ ${_aut('cfg_btn_iniciar_prueba_pro','Iniciar 7 días gratis')}</button>`}
+    </div>`
+
+  // ── Estado de suscripción real (solo si hay plan de pago activo) ──
+  const subStatusHtml = (isPro || isLocal) ? `
+    <div class="card">
+      <div id="mn-sub-status-info" style="font-size:.8rem;color:var(--text3)"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
+    </div>` : ''
+
+  // ── Restaurar acceso + código promocional ──
   const actionsHtml = `
     <div class="card">
       <div class="card-header">
@@ -7785,21 +7788,27 @@ function renderFacturacion() {
     <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
     <div class="card" style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem">${_aut('cfg_historial_vacio','El historial de pagos aparecerá aquí.')}</div>`
 
-  // Order: no plan yet → pick-a-plan comparison comes first; already
-  // Local/Pro → current status comes first, comparison/upsell last.
-  const sections = hasPlan
-    ? [currentPlanHtml, comparisonHtml, actionsHtml]
-    : [comparisonHtml, currentPlanHtml, actionsHtml]
-
   el.innerHTML = `
-  <div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+  <div style="max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
     <div class="section-header">
       <div>
-        <div class="page-h1">🧾 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
-        <div class="page-sub">${_aut('cfg_plan_sub','Tu plan actual y opciones de facturación')}</div>
+        <div class="page-h1">💳 ${_aut('cfg_plan_titulo','Plan y facturación')}</div>
+        <div class="page-sub">${_aut('cfg_plan_sub2','Gestiona tu suscripción y acceso a MoneyNest')}</div>
+      </div>
+      ${statusBadge}
+    </div>
+    ${trialBanner}
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">${_aut('cfg_elige_plan','Elige tu plan')}</div>
+      <div style="font-size:.82rem;color:var(--text3);margin-bottom:14px">${_aut('cfg_elige_plan_sub','Sin permanencia. Cambia cuando quieras.')}</div>
+      <div class="mn-plan-grid">
+        ${cardTrial}
+        ${cardLocal}
+        ${cardPro}
       </div>
     </div>
-    ${sections.join('')}
+    ${subStatusHtml}
+    ${actionsHtml}
   </div>`
 
   if (document.getElementById('mn-sub-status-info')) _loadRealSubscriptionStatus()

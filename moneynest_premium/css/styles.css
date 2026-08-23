@@ -4003,3 +4003,67 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
   .mn-postsave-card { padding: 14px; gap: 12px; }
   .mn-postsave-card__icon { width: 42px; height: 42px; font-size: 1.4rem; }
 }
+
+/* ── PLAN Y FACTURACIÓN — rediseño premium (estilo referencia) ─────
+   Badge de estado, banner grande de trial con anillo de progreso, y
+   grid de 3 tarjetas de plan con ribbon, features con check/cruz y
+   CTA grande — igual estilo en todas las pantallas. */
+.mn-plan-statusbadge {
+  font-size: .7rem; font-weight: 800; letter-spacing: .04em;
+  padding: 5px 12px; border-radius: 99px; border: 1px solid;
+  white-space: nowrap;
+}
+
+.mn-plan-trialbanner {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 20px 24px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.08));
+  border: 1px solid rgba(99,102,241,.25);
+}
+
+.mn-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+@media (max-width: 860px) {
+  .mn-plan-grid { grid-template-columns: 1fr; }
+}
+
+.mn-plan-card {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--card);
+  border: 1.5px solid var(--border2);
+  border-radius: 18px;
+  padding: 24px 22px 22px;
+  transition: border-color .15s, transform .15s;
+  overflow: hidden;
+}
+.mn-plan-card:hover { transform: translateY(-2px); }
+.mn-plan-card--current { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.mn-plan-card--current.mn-plan-card--accent { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.mn-plan-card--pro { border-color: rgba(236,72,153,.35); }
+.mn-plan-card--pro.mn-plan-card--current { border-color: #EC4899; box-shadow: 0 0 0 1px #EC4899 inset; }
+
+.mn-plan-card__ribbon {
+  position: absolute; top: 0; left: 0; right: 0;
+  text-align: center;
+  font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: 7px 10px;
+}
+.mn-plan-card__icon { font-size: 2rem; margin: 10px 0 8px; }
+.mn-plan-card--pro .mn-plan-card__ribbon ~ .mn-plan-card__icon,
+.mn-plan-card .mn-plan-card__ribbon + .mn-plan-card__icon { margin-top: 28px; }
+.mn-plan-card__name { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+.mn-plan-card__price { font-size: 1.7rem; font-weight: 900; color: var(--text); margin-top: 8px; }
+.mn-plan-card__price span { font-size: .68rem; font-weight: 700; color: var(--text3); margin-left: 2px; }
+.mn-plan-card__period { font-size: .74rem; color: var(--text3); margin-top: 2px; margin-bottom: 16px; }
+
+.mn-plan-card__feats { list-style: none; padding: 0; margin: 0 0 20px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.mn-plan-card__feats li { font-size: .82rem; color: var(--text); padding-left: 22px; position: relative; }
+.mn-plan-card__feats li.ok::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+.mn-plan-card__feats li.no { color: var(--text3); }
+.mn-plan-card__feats li.no::before { content: "✕"; position: absolute; left: 0; color: var(--text3); }
