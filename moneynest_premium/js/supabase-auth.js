@@ -174,7 +174,7 @@
     _rl.reset(`signin:${email}`);
     if (data.user) {
       if (data.session) _session = data.session;
-      await _syncProfileToLocal(data.user);
+      const profile = await _syncProfileToLocal(data.user);
       // Single-session enforcement: write a new session_id to profiles.
       // Any other tab/device polling will detect the mismatch and sign out.
       const newSessionId = crypto.randomUUID ? crypto.randomUUID() : `sid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -182,6 +182,17 @@
         await sb.from('profiles').update({ session_id: newSessionId }).eq('id', data.user.id);
         localStorage.setItem('mn_session_id', newSessionId);
       } catch (_) {}
+
+      // If this account still shows no paid plan, check in the
+      // background whether a real Stripe subscription already exists
+      // for this same email (e.g. purchased before the webhook could
+      // sync, or from a session that never wrote the entitlement
+      // correctly) — never blocks login, never shows an error if
+      // nothing is found; only surfaces a toast when it genuinely
+      // finds and restores something.
+      if (profile && profile.plan !== 'pro' && profile.plan !== 'local') {
+        _silentlyCheckForExistingSubscription(data.session?.access_token);
+      }
     }
     return data;
   }
@@ -208,6 +219,36 @@
         }
       }
     } catch (_) {}
+  }
+
+  // ── Silent post-login subscription check ─────────────────────
+  // Fire-and-forget: reuses the same restore-access endpoint the
+  // manual "Restaurar acceso" button calls, but runs automatically
+  // and silently right after a normal password login when the local
+  // profile still shows no paid plan. Never blocks login, never shows
+  // an error — most people in trial genuinely have no subscription to
+  // find, and that's expected, not a failure.
+  async function _silentlyCheckForExistingSubscription(accessToken) {
+    if (!accessToken) return;
+    try {
+      const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/restore-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return; // includes rate-limited (429) — silently skip, never alarms the user
+      const data = await res.json();
+      if (data?.restored && data.plan) {
+        // Re-sync so the UI reflects the newly-found plan immediately.
+        if (_session?.user) await _syncProfileToLocal(_session.user);
+        if (typeof window.toast === 'function') {
+          const label = data.plan === 'pro' ? 'MoneyNest Pro' : 'MoneyNest Local';
+          window.toast(`✓ Hemos encontrado tu suscripción de ${label} y la hemos activado.`, 'success');
+        }
+      }
+    } catch (_) {
+      // Silent by design — a network hiccup here must never surface as
+      // an error during a routine login.
+    }
   }
 
   async function signOut() {
@@ -400,6 +441,7 @@
       cloudEnabled:          serverPlan === 'pro',
       stripeCustomerId:      profile.stripe_customer_id || null,
     });
+    return profile;
   }
 
 
