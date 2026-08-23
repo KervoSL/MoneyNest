@@ -3963,7 +3963,8 @@ function defaultState() {
     catColors: {},
     categoriaEmojis: {},
     deudaHiddenStrats: [],
-    deudaEstrategiaActiva: null, // {key, appliedAt} — solo se establece cuando el usuario confirma explícitamente "Aplicar estrategia", nunca por defecto
+    deudaEstrategiaActiva: null, // {key, customId?, appliedAt} — solo se establece cuando el usuario confirma explícitamente "Activar estrategia", nunca por defecto. customId presente = estrategia personalizada; ausente = predefinida (key: conservador/moderado/agresivo)
+    customDebtStrategies: [], // Estrategias de deuda personalizadas creadas por el usuario — mismo sistema de persistencia que el resto de deudas
     theme: 'dark'
   }
 }
@@ -4120,6 +4121,18 @@ function load() {
     if (!Array.isArray(S.assets)) S.assets = []
     if (!Array.isArray(S.eventosFinancieros)) S.eventosFinancieros = []
     if (S.deudaEstrategiaActiva === undefined) S.deudaEstrategiaActiva = null
+    if (!Array.isArray(S.customDebtStrategies)) {
+      // Migrar desde el localStorage legacy (usuarios existentes) — una
+      // sola vez, hacia el sistema de persistencia principal.
+      S.customDebtStrategies = []
+      try {
+        const legacyArr = localStorage.getItem('mn_custom_debt_strategies')
+        if (legacyArr) {
+          const parsed = JSON.parse(legacyArr)
+          if (Array.isArray(parsed)) S.customDebtStrategies = parsed
+        }
+      } catch(_) {}
+    }
     ;(S.inversiones || []).forEach(inv => {
       if (!Array.isArray(inv.beneficiosRetirados)) return
       inv.beneficiosRetirados.forEach(b => {
@@ -5710,29 +5723,47 @@ function renderDeudas() {
   ]
 
   // Persist active strategy in S — never assumed by default. null means
-  // the user has never explicitly confirmed one yet.
-  const activeStrat = S.deudaEstrategiaActiva?.key || null
-  const activeStratData = strats.find(s=>s.key===activeStrat) || null
-  const {monthlyPayment: activePago, months: activeMonths} = activeStratData
-    ? calcDebtStrategy(pendiente, interesMedio, activeStratData.mul)
-    : { monthlyPayment: 0, months: 0 }
+  // the user has never explicitly confirmed one yet. customId presente
+  // = estrategia personalizada; ausente = una de las 3 predefinidas.
+  const activeCustomId = S.deudaEstrategiaActiva?.customId || null
+  const activeCustomStrat = activeCustomId ? (S.customDebtStrategies||[]).find(cs => cs.id === activeCustomId) : null
+  const activeStrat = !activeCustomId ? (S.deudaEstrategiaActiva?.key || null) : null
+  const activeStratData = activeCustomStrat
+    ? { key: 'custom', customId: activeCustomStrat.id, icon: activeCustomStrat.icon || '🎯', name: activeCustomStrat.name, color: 'var(--accent)' }
+    : (strats.find(s=>s.key===activeStrat) || null)
+  const {monthlyPayment: activePago, months: activeMonths} = activeCustomStrat
+    ? { monthlyPayment: Number(activeCustomStrat.monthlyPayment)||0, months: Number(activeCustomStrat.months)||0 }
+    : (activeStratData ? calcDebtStrategy(pendiente, interesMedio, activeStratData.mul) : { monthlyPayment: 0, months: 0 })
+  const activeMethod = activeCustomStrat ? (activeCustomStrat.method || 'avalanche') : (activeStrat === 'agresivo' ? 'avalanche' : 'snowball')
 
-  // Deuda prioritaria según la estrategia activa (o avalancha por defecto
-  // para el calculo de "próxima deuda" cuando aún no hay estrategia)
-  const priorityOrder = activeStrat === 'agresivo'
+  // Deuda prioritaria según el metodo de la estrategia activa (avalancha
+  // = mayor interes primero; bola de nieve = menor saldo primero). Si
+  // aun no hay estrategia activa, usa avalancha por defecto para el
+  // calculo de "próxima deuda".
+  const priorityOrder = activeMethod === 'avalanche'
     ? [...S.deudas].filter(d=>(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)>0.01).sort((a,b)=>(Number(b.interes)||0)-(Number(a.interes)||0))
     : [...S.deudas].filter(d=>(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)>0.01).sort((a,b)=>((Number(a.importeTotal)||0)-(Number(a.importePagado)||0))-((Number(b.importeTotal)||0)-(Number(b.importePagado)||0)))
   const deudaPrioritaria = priorityOrder[0] || null
 
-  // Confirma explícitamente una estrategia como ACTIVA — nunca registra
-  // ningún pago. Separado a propósito de "Registrar pagos" (Bloque 8).
-  window._confirmarEstrategiaDeuda = function(key) {
-    S.deudaEstrategiaActiva = { key, appliedAt: todayISO() }
+  // Activa explícitamente una estrategia (predefinida o personalizada)
+  // como la ACTIVA — nunca registra ningún pago. Separado a propósito
+  // de "Registrar pagos".
+  window.activarEstrategiaDeuda = function(key, customId) {
+    S.deudaEstrategiaActiva = customId ? { customId, appliedAt: todayISO() } : { key, appliedAt: todayISO() }
     save()
     render()
-    const s = strats.find(x=>x.key===key)
-    toast(`✓ ${t('estrategia_activa','Estrategia activa')}: ${s ? s.icon+' '+s.name : key}`)
+    let label = key
+    if (customId) {
+      const cs = (S.customDebtStrategies||[]).find(x => x.id === customId)
+      label = cs ? `${cs.icon||'🎯'} ${cs.name}` : 'Mi estrategia'
+    } else {
+      const s = strats.find(x=>x.key===key)
+      if (s) label = `${s.icon} ${s.name}`
+    }
+    toast(`✓ ${t('estrategia_activa','Estrategia activa')}: ${label}`)
   }
+  // Alias retrocompatible — mismo comportamiento, solo predefinidas.
+  window._confirmarEstrategiaDeuda = function(key) { window.activarEstrategiaDeuda(key, null) }
 
   // toggleStratMenu helper
   window.toggleStratMenu = function() {
@@ -5742,17 +5773,28 @@ function renderDeudas() {
 
   const stratCards = activeStratData ? (() => {
     const active = activeStratData
-    const others = strats.filter(s => s.key !== activeStrat)
-    const {monthlyPayment: aPago, months: aMeses} = calcDebtStrategy(pendiente, interesMedio, active.mul)
-    const changeOpts = others.map(x => {
+    const aPago = activePago, aMeses = activeMonths
+    const otherPresets = strats.filter(s => s.key !== activeStrat)
+    const otherCustoms = (S.customDebtStrategies||[]).filter(cs => cs.id !== activeCustomId)
+    const changeOptsPresets = otherPresets.map(x => {
       const {monthlyPayment: xPago, months: xMeses} = calcDebtStrategy(pendiente, interesMedio, x.mul)
-      return `<div onclick="document.getElementById('stratMenu').style.display='none';window._confirmarEstrategiaDeuda('${x.key}')"
+      return `<div onclick="document.getElementById('stratMenu').style.display='none';window.activarEstrategiaDeuda('${x.key}', null)"
         style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text2)"
         onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
         <span style="font-size:1.2rem">${x.icon}</span>
         <div><div style="font-weight:700;color:var(--text)">${x.name}</div><div style="font-size:.72rem;color:var(--text3)">${eur(xPago)}/mes · libre en ${fmtMonths(xMeses)}</div></div>
       </div>`
     }).join('')
+    const changeOptsCustoms = otherCustoms.map(cs => `<div onclick="document.getElementById('stratMenu').style.display='none';window.activarEstrategiaDeuda(null, '${cs.id}')"
+        style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text2)"
+        onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:1.2rem">${cs.icon||'🎯'}</span>
+        <div><div style="font-weight:700;color:var(--text)">${cs.name}</div><div style="font-size:.72rem;color:var(--text3)">${eur(cs.monthlyPayment)}/mes · libre en ${fmtMonths(cs.months)}</div></div>
+      </div>`).join('')
+    const changeOpts = changeOptsPresets + changeOptsCustoms
+    const activeDesc = active.customId
+      ? t('deuda_estrategia_personalizada_desc','Tu estrategia personalizada')
+      : active.desc
     return `<div class="debt-strategy-card debt-strategy-active"
       style="border-top:3px solid ${active.color};grid-column:1/-1;display:flex;align-items:center;gap:16px;text-align:left;padding:16px 20px;cursor:default;position:relative">
       <div style="font-size:2rem;flex-shrink:0">${active.icon}</div>
@@ -5761,7 +5803,7 @@ function renderDeudas() {
           <span style="font-size:.95rem;font-weight:800;color:${active.color}">${active.name}</span>
           <span style="background:${active.color}22;color:${active.color};font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px">✓ ${t('estrategia_activa','Estrategia activa')}</span>
         </div>
-        <div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">${active.desc}</div>
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">${activeDesc}</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
           <span style="font-size:.85rem;font-weight:700;color:var(--accent)">💳 ${eur(aPago)}/mes</span>
           <span style="font-size:.78rem;color:var(--text2)">⏱ Libre en <strong style="color:var(--text)">${fmtMonths(aMeses)}</strong></span>
@@ -5779,7 +5821,7 @@ function renderDeudas() {
     </div>`
   })() : `<div class="mn-insight" style="grid-column:1/-1">
     <span class="mn-insight-icon">👇</span>
-    <div class="mn-insight-body"><strong>${t('deuda_sin_estrategia','Aún no has aplicado ninguna estrategia')}</strong> — ${t('deuda_sin_estrategia_desc','elige una de las opciones de abajo y pulsa "Aplicar esta estrategia" para activarla.')}</div>
+    <div class="mn-insight-body"><strong>${t('deuda_sin_estrategia','Aún no has aplicado ninguna estrategia')}</strong> — ${t('deuda_sin_estrategia_desc','elige una de las opciones de abajo y pulsa "Activar esta estrategia" para activarla.')}</div>
   </div>`
 
   // Filtros
@@ -5921,17 +5963,22 @@ function renderDeudas() {
             : `<button class="btn btn-secondary btn-xs" style="width:100%;margin-top:8px" onclick="event.stopPropagation();window._confirmarEstrategiaDeuda('${s.key}')">${t('deuda_activar_estrategia','Activar esta estrategia')}</button>`}
         </div>`
       }).join('')}
-      <!-- Custom saved strategies, inline in the same grid -->
-      ${(window._customDebtStrategies||[]).map(cs => `
-        <div class="mn-strat-card" style="position:relative;border-color:var(--accent);background:var(--accent-dim)">
-          <span onclick="event.stopPropagation();window._deleteCustomStrategy('${cs.id}')" title="Borrar" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.15);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:.7rem;cursor:pointer;z-index:2">✕</span>
+      <!-- Custom saved strategies, inline in the same grid — MISMO diseño que las predefinidas -->
+      ${(S.customDebtStrategies||[]).map(cs => {
+        const isActive = cs.id === activeCustomId
+        return `
+        <div class="mn-strat-card ${isActive ? 'active' : ''}" style="position:relative">
+          <span onclick="event.stopPropagation();window._deleteCustomStrategy('${cs.id}')" title="Borrar" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--bg2);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:.7rem;cursor:pointer;z-index:2">✕</span>
           <div class="mn-strat-card-icon">${cs.icon||'🎯'}</div>
           <div class="mn-strat-card-name" title="${cs.name}">${cs.name}</div>
-          <div class="mn-strat-card-pay" style="color:var(--accent)">${eur(cs.monthlyPayment)}/${t('mes_lbl','mes')}</div>
+          <div class="mn-strat-card-pay">${eur(cs.monthlyPayment)}/${t('mes_lbl','mes')}</div>
           <div class="mn-strat-card-months">${fmtMonths(cs.months)}</div>
           <div class="mn-strat-card-date">${cs.date || '—'}</div>
-          <button class="btn btn-primary btn-xs" style="width:100%;margin-top:8px" onclick="event.stopPropagation();openApplyStrategyModal('${cs.id}')">⚡ ${t('aplicar','Aplicar')}</button>
-        </div>`).join('')}
+          ${isActive
+            ? `<div style="margin-top:8px;font-size:.65rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;text-align:center">✓ ${t('estrategia_activa','Activa')}</div>`
+            : `<button class="btn btn-secondary btn-xs" style="width:100%;margin-top:8px" onclick="event.stopPropagation();window.activarEstrategiaDeuda(null, '${cs.id}')">${t('deuda_activar_estrategia','Activar esta estrategia')}</button>`}
+        </div>`
+      }).join('')}
       <!-- Create Custom Strategy card -->
       <div class="mn-strat-card custom" onclick="openCustomDebtModal()">
         <div style="text-align:center">
@@ -17813,28 +17860,60 @@ window.saveCustomStrategy = function() {
     method: method,
   }
 
-  if (!Array.isArray(window._customDebtStrategies)) window._customDebtStrategies = []
-  window._customDebtStrategies.push(newStrategy)
-
-  // Persist to localStorage
-  try {
-    localStorage.setItem('mn_custom_debt_strategies', JSON.stringify(window._customDebtStrategies))
-  } catch(_) {}
+  if (!Array.isArray(S.customDebtStrategies)) S.customDebtStrategies = []
+  S.customDebtStrategies.push(newStrategy)
+  save()
 
   // Achievement: custom debt strategy
   if (window.MNGamification && window.MNGamification.checkAchievement) {
     window.MNGamification.checkAchievement('custom_debt');
   }
 
-  toast(`✅ ${t('estrategia_guardada','Estrategia guardada')}: ${name}`, 'success')
   closeCustomDebtModal()
-  setTimeout(() => renderDeudas(), 50)
+  setTimeout(() => { renderDeudas(); _showCustomStrategySuccessModal(newStrategy.id, name) }, 260)
+}
+
+// Modal de exito tras crear una estrategia personalizada — ofrece
+// activarla inmediatamente sin obligar al usuario a buscarla de nuevo.
+function _showCustomStrategySuccessModal(strategyId, name) {
+  document.getElementById('customStrategySuccessOverlay')?.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'customStrategySuccessOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+      <div class="modal-body" style="text-align:center;padding:30px 26px 24px">
+        <div style="font-size:2.2rem;margin-bottom:10px">🎉</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:6px">${t('estrategia_creada_titulo','Estrategia creada')}</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:22px">${t('estrategia_creada_desc','Ya puedes activarla como tu estrategia principal.')}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="window._closeCustomStrategySuccessModal();window.activarEstrategiaDeuda(null, '${strategyId}')">${t('btn_activar_ahora','Activar ahora')}</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="window._closeCustomStrategySuccessModal()">${t('btn_cerrar','Cerrar')}</button>
+        </div>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) window._closeCustomStrategySuccessModal() })
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
+}
+window._closeCustomStrategySuccessModal = function() {
+  const overlay = document.getElementById('customStrategySuccessOverlay')
+  if (overlay) { overlay.classList.remove('open'); overlay.remove() }
+  if (typeof window._popScrollLock === 'function') window._popScrollLock()
 }
 
 window._deleteCustomStrategy = function(id) {
-  if (!Array.isArray(window._customDebtStrategies)) return
-  window._customDebtStrategies = window._customDebtStrategies.filter(s => s.id !== id)
-  try { localStorage.setItem('mn_custom_debt_strategies', JSON.stringify(window._customDebtStrategies)) } catch(_) {}
+  if (!Array.isArray(S.customDebtStrategies)) return
+  const wasActive = S.deudaEstrategiaActiva?.customId === id
+  S.customDebtStrategies = S.customDebtStrategies.filter(s => s.id !== id)
+  if (wasActive) {
+    // Nunca dejar un estado vacio: cae a la estrategia predefinida
+    // moderada y recalcula todo.
+    S.deudaEstrategiaActiva = { key: 'moderado', appliedAt: todayISO() }
+    toast(t('deuda_estrategia_eliminada_activa','La estrategia activa se eliminó — se activó "Moderado" automáticamente'))
+  }
+  save()
   renderDeudas()
 }
 
@@ -17851,48 +17930,32 @@ window._restoreDefaultStrats = function() {
   renderDeudas()
 }
 
-// Load custom strategies on init (migrate legacy single-strategy format if present)
-;(function() {
-  try {
-    const savedArr = localStorage.getItem('mn_custom_debt_strategies')
-    if (savedArr) {
-      window._customDebtStrategies = JSON.parse(savedArr)
-    } else {
-      // Migrate legacy single strategy key
-      const legacy = localStorage.getItem('mn_custom_debt_strategy')
-      if (legacy) {
-        const parsed = JSON.parse(legacy)
-        parsed.id = parsed.id || ('cs_' + Date.now().toString(36))
-        window._customDebtStrategies = [parsed]
-        localStorage.setItem('mn_custom_debt_strategies', JSON.stringify(window._customDebtStrategies))
-        localStorage.removeItem('mn_custom_debt_strategy')
-      } else {
-        window._customDebtStrategies = []
-      }
-    }
-  } catch(_) { window._customDebtStrategies = [] }
-})()
-
 // ─── APLICAR PAGO AUTOMÁTICO SEGÚN ESTRATEGIA ─────────────────────
 window.openApplyStrategyModal = function(customId) {
   const old = document.getElementById('applyStrategyOverlay')
   if (old) old.remove()
 
-  // Determine payment amount + method from the given custom strategy, or the active preset
+  // Determine payment amount + method from: the explicit customId
+  // passed in (legacy call sites), or — the normal case — whichever
+  // strategy is REALLY active right now (S.deudaEstrategiaActiva),
+  // be it predefined or personalizada. Never falls back to the old
+  // in-memory window._deudaStrat.
   let monthlyBudget, method, strategyLabel
-  const customStrat = customId ? (window._customDebtStrategies||[]).find(s => s.id === customId) : null
+  const activeCustomId = customId || S.deudaEstrategiaActiva?.customId || null
+  const customStrat = activeCustomId ? (S.customDebtStrategies||[]).find(s => s.id === activeCustomId) : null
   if (customStrat) {
     monthlyBudget = Number(customStrat.monthlyPayment) || 0
     method = customStrat.method || 'avalanche'
     strategyLabel = customStrat.name
   } else {
+    const activeKey = S.deudaEstrategiaActiva?.key || 'moderado'
     const pend = S.deudas.reduce((a,d) => a + Math.max(0,(Number(d.importeTotal)||0)-(Number(d.importePagado)||0)), 0)
     const intMed = S.deudas.length ? S.deudas.reduce((a,d) => a+(Number(d.interes)||0),0)/S.deudas.length : 0
-    const mul = { conservador:0.6, moderado:1.0, agresivo:1.6 }[window._deudaStrat || 'moderado'] || 1.0
+    const mul = { conservador:0.6, moderado:1.0, agresivo:1.6 }[activeKey] || 1.0
     const calc = calcDebtStrategy(pend, intMed, mul)
     monthlyBudget = calc.monthlyPayment
-    method = 'avalanche'
-    strategyLabel = { conservador:'🐢 Conservador', moderado:'⚖️ Moderado', agresivo:'🚀 Agresivo' }[window._deudaStrat || 'moderado']
+    method = activeKey === 'agresivo' ? 'avalanche' : 'snowball'
+    strategyLabel = { conservador:'🐢 Conservador', moderado:'⚖️ Moderado', agresivo:'🚀 Agresivo' }[activeKey]
   }
 
   if (!monthlyBudget || monthlyBudget <= 0) {
@@ -17922,6 +17985,7 @@ window.openApplyStrategyModal = function(customId) {
   }).join('')
 
   const total = allocation.reduce((s,a) => s + a.importe, 0)
+  const cuentasOptions = S.cuentas.map(c => `<option value="${c.id}">${c.nombre} (${eur(c.saldo)})</option>`).join('')
 
   const overlay = document.createElement('div')
   overlay.className = 'modal-overlay'
@@ -17929,8 +17993,8 @@ window.openApplyStrategyModal = function(customId) {
   overlay.innerHTML = `
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <span class="modal-title">⚡ ${t('aplicar_pago_mensual','Aplicar pago mensual')}</span>
-        <button class="modal-close" onclick="document.getElementById('applyStrategyOverlay').remove();window._popScrollLock&&window._popScrollLock()">✕</button>
+        <span class="modal-title">💳 ${t('deuda_registrar_pagos','Registrar pagos de este mes')}</span>
+        <button class="modal-close" onclick="window._closeApplyStrategyModal()">✕</button>
       </div>
       <div class="modal-body">
         <div style="font-size:.82rem;color:var(--text2);margin-bottom:14px">
@@ -17941,33 +18005,85 @@ window.openApplyStrategyModal = function(customId) {
           <span style="font-size:.85rem;font-weight:700;color:var(--text2)">${t('total','Total')}</span>
           <span style="font-size:1.05rem;font-weight:900;color:var(--accent)">${eur(total)}</span>
         </div>
+        ${S.cuentas.length ? `
+        <div class="form-group" style="margin-top:14px">
+          <label style="font-size:.78rem">${t('deuda_cuenta_origen','Cuenta desde la que se descuenta (si eliges "usar disponible")')}</label>
+          <select id="applyStrategyCuenta">${cuentasOptions}</select>
+        </div>` : ''}
+        <div style="margin-top:16px;font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">${t('deuda_origen_dinero','¿De dónde sale este dinero?')}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+          <button class="mn-postsave-card mn-postsave-card--primary" style="--mn-ps-color:var(--accent);--mn-ps-dim:var(--accent-dim)" onclick="window._confirmApplyStrategy(true)">
+            <span class="mn-postsave-card__icon">💰</span>
+            <span class="mn-postsave-card__body">
+              <span class="mn-postsave-card__title">${t('deuda_usar_disponible','Usar dinero disponible')}</span>
+              <span class="mn-postsave-card__desc">${t('deuda_usar_disponible_desc','Este pago ya está incluido en tu dinero disponible.')}</span>
+            </span>
+            <span class="mn-postsave-card__arrow">→</span>
+          </button>
+          <button class="mn-postsave-card" onclick="window._confirmApplyStrategy(false)">
+            <span class="mn-postsave-card__icon">🌍</span>
+            <span class="mn-postsave-card__body">
+              <span class="mn-postsave-card__title">${t('deuda_pago_externo','Pago externo')}</span>
+              <span class="mn-postsave-card__desc">${t('deuda_pago_externo_desc','Este dinero todavía no está registrado en MoneyNest.')}</span>
+            </span>
+          </button>
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('applyStrategyOverlay').remove();window._popScrollLock&&window._popScrollLock()">${t('btn_cancelar','Cancelar')}</button>
-        <button class="btn btn-primary btn-sm" onclick="window._confirmApplyStrategy()">✅ ${t('confirmar_pagos','Confirmar pagos')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="window._closeApplyStrategyModal()">${t('btn_cancelar','Cancelar')}</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
-  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); window._popScrollLock && window._popScrollLock() } })
+  overlay.addEventListener('click', e => { if (e.target === overlay) window._closeApplyStrategyModal() })
   if (typeof window._pushScrollLock === 'function') window._pushScrollLock()
   setTimeout(() => overlay.classList.add('open'), 10)
 
   window._pendingAllocation = allocation
 }
 
-window._confirmApplyStrategy = function() {
+// Cierre centralizado del modal — SIEMPRE libera el scroll-lock, sin
+// importar por que camino se cierre (X, Cancelar, click fuera, o tras
+// confirmar un pago). Esta era la causa exacta del bug de scroll
+// bloqueado: _confirmApplyStrategy() removia el overlay pero nunca
+// llamaba a _popScrollLock().
+window._closeApplyStrategyModal = function() {
+  const overlay = document.getElementById('applyStrategyOverlay')
+  if (overlay) { overlay.classList.remove('open'); overlay.remove() }
+  if (typeof window._popScrollLock === 'function') window._popScrollLock()
+  window._pendingAllocation = null
+}
+
+window._confirmApplyStrategy = function(fromAvailable) {
   const allocation = window._pendingAllocation || []
   const today = todayISO()
   let anySaldada = false
+
+  const cuentaId = document.getElementById('applyStrategyCuenta')?.value || null
+  const cuenta = cuentaId ? getCuenta(cuentaId) : null
 
   allocation.forEach(a => {
     const idx = S.deudas.findIndex(x => x.id === a.id)
     if (idx < 0) return
     S.deudas[idx].importePagado = Math.min(Number(S.deudas[idx].importeTotal), (Number(S.deudas[idx].importePagado)||0) + a.importe)
     if (!S.deudas[idx].pagos) S.deudas[idx].pagos = []
-    S.deudas[idx].pagos.push({ fecha: today, importe: a.importe })
+    // origen: 'disponible' descuenta el saldo real de una cuenta;
+    // 'externo' registra igualmente el pago en el historial de la
+    // deuda pero nunca modifica ningun saldo de cuenta — el dinero
+    // aun no estaba contabilizado en MoneyNest.
+    S.deudas[idx].pagos.push({ fecha: today, importe: a.importe, origen: fromAvailable ? 'disponible' : 'externo', cuentaId: fromAvailable ? cuentaId : null })
     if (S.deudas[idx].importePagado >= Number(S.deudas[idx].importeTotal)) anySaldada = true
   })
+
+  // Opción A: el dinero SI sale del disponible real — reflejarlo en el
+  // saldo de la cuenta elegida (afecta Disponible y Patrimonio Neto de
+  // inmediato, vía el mismo calculo reactivo del resto de la app).
+  if (fromAvailable && cuenta) {
+    const total = allocation.reduce((s,a) => s + a.importe, 0)
+    cuenta.saldo = (Number(cuenta.saldo)||0) - total
+  }
+  // Opción B (externo): nunca se toca ningun saldo — el pago ya quedo
+  // registrado en S.deudas[...].pagos arriba, que es lo que mantiene
+  // el historial coherente sin duplicar el disponible.
 
   if (window.MNGamification) {
     MNGamification.checkAchievement('pago_deuda')
@@ -17977,13 +18093,11 @@ window._confirmApplyStrategy = function() {
   }
   if (anySaldada && window.MNConfetti) setTimeout(() => MNConfetti.fire('debt'), 300)
 
-  const overlay = document.getElementById('applyStrategyOverlay')
-  if (overlay) overlay.remove()
-  window._pendingAllocation = null
+  window._closeApplyStrategyModal()
 
   save()
   render()
-  toast(`✅ ${allocation.length} ${t('pagos_registrados','pagos registrados')}`)
+  toast(`✅ ${allocation.length} ${t('pagos_registrados','pagos registrados')}${fromAvailable ? '' : ' · ' + t('deuda_pago_externo_toast','pago externo, sin afectar tu disponible')}`)
 }
 
 // ─── PAGO MÚLTIPLE MANUAL ──────────────────────────────────────────
