@@ -83,16 +83,41 @@
       if (_onAuthChangeListeners.length) _onAuthChangeListeners.forEach(cb => { try { cb(event, session) } catch (_) {} });
     });
 
-    // Start single-session watchdog (every 90s)
-    if (_session) {
-      setInterval(_startSessionWatchdog, 90_000);
-    }
+    // Start single-session watchdog (every 90s) — must start both when
+    // a saved session is restored on page load AND right after a live
+    // signIn() during this same visit (previously this only ever fired
+    // for the page-load case, leaving a freshly-logged-in tab
+    // completely unmonitored until the next full reload).
+    if (_session) _startWatchdogInterval();
+  }
+
+  let _watchdogIntervalId = null;
+  function _startWatchdogInterval() {
+    if (_watchdogIntervalId) return; // already running
+    _watchdogIntervalId = setInterval(_startSessionWatchdog, 90_000);
+  }
+  function _stopWatchdogInterval() {
+    if (_watchdogIntervalId) { clearInterval(_watchdogIntervalId); _watchdogIntervalId = null; }
   }
 
 
   // ════════════════════════════════════════════════════════════════
   //  EMAIL / PASSWORD
   // ════════════════════════════════════════════════════════════════
+
+  // Shared by both signUp() and signIn(): writes a fresh session_id for
+  // this device and starts the watchdog. Without this in signUp() too,
+  // someone who registers and buys Local in that same session (never
+  // calling signIn() again) would go completely unprotected by the
+  // single-device enforcement until their next explicit login.
+  async function _claimDeviceSession(userId) {
+    const newSessionId = crypto.randomUUID ? crypto.randomUUID() : `sid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    try {
+      await sb.from('profiles').update({ session_id: newSessionId }).eq('id', userId);
+      localStorage.setItem('mn_session_id', newSessionId);
+    } catch (_) {}
+    _startWatchdogInterval();
+  }
 
   async function signUp(email, password, displayName) {
     if (!_rl.check(`signup:${email}`, 3, 10 * 60 * 1000)) {
@@ -150,6 +175,7 @@
       if (data.session) _session = data.session;
       // ✅ Crear sesión automáticamente para que el usuario pueda acceder sin confirmar email
       await _syncProfileToLocal(data.user);
+      await _claimDeviceSession(data.user.id);
     }
 
     _rl.reset(`signup:${email}`);
@@ -177,11 +203,7 @@
       const profile = await _syncProfileToLocal(data.user);
       // Single-session enforcement: write a new session_id to profiles.
       // Any other tab/device polling will detect the mismatch and sign out.
-      const newSessionId = crypto.randomUUID ? crypto.randomUUID() : `sid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      try {
-        await sb.from('profiles').update({ session_id: newSessionId }).eq('id', data.user.id);
-        localStorage.setItem('mn_session_id', newSessionId);
-      } catch (_) {}
+      await _claimDeviceSession(data.user.id);
 
       // If this account still shows no paid plan, check in the
       // background whether a real Stripe subscription already exists
@@ -198,24 +220,31 @@
   }
 
   // ── Single-session watchdog ──────────────────────────────────
-  // Polls every 90s; signs out if server session_id differs from local.
+  // Polls every 90s; signs out if server session_id differs from local
+  // — but ONLY enforces this for the Local plan (single device by
+  // design). Pro allows multiple simultaneous devices; trial is left
+  // unrestricted. The session_id itself is still always overwritten on
+  // every login regardless of plan (harmless bookkeeping), but the
+  // actual forced sign-out only ever happens for Local accounts.
   async function _startSessionWatchdog() {
-    if (!_session) return;
+    if (!_session) { _stopWatchdogInterval(); return; }
     const localId = localStorage.getItem('mn_session_id');
     if (!localId) return;
     try {
       const { data } = await sb
         .from('profiles')
-        .select('session_id')
+        .select('session_id, plan')
         .eq('id', _session.user.id)
         .maybeSingle();
-      if (data && data.session_id && data.session_id !== localId) {
+      if (!data) return;
+      if (data.plan !== 'local') return; // Pro/trial: no single-device restriction
+      if (data.session_id && data.session_id !== localId) {
         // Another device logged in — force sign out here
         await signOut();
         localStorage.removeItem('mn_session_id');
         if (window.MNAuthUI) window.MNAuthUI.showAuthModal('login');
         if (typeof window.toast === 'function') {
-          window.toast('⚠ Sesión cerrada: se ha iniciado sesión en otro dispositivo.', 'warn');
+          window.toast('⚠ Sesión cerrada: MoneyNest Local solo permite un dispositivo a la vez. Se ha iniciado sesión en otro dispositivo.', 'warn');
         }
       }
     } catch (_) {}
@@ -255,6 +284,7 @@
     await sb.auth.signOut();
     _session = null;
     _profile = null;
+    _stopWatchdogInterval();
   }
 
   async function resetPassword(email) {
