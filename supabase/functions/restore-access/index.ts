@@ -18,6 +18,8 @@ const supabase = createClient(
 const PRICE_TO_PLAN: Record<string, string> = {
   [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
   [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
+  'price_1U68YVFWll222KpaCJ6WrKWg': 'local', // live
+  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',   // live
 };
 
 const ALLOWED_ORIGINS = new Set([
@@ -74,6 +76,18 @@ Deno.serve(async (req) => {
   if (userErr || !userData?.user?.email) return json({ error: 'invalid_session' }, 401, cors);
   const userId = userData.user.id;
   const email = userData.user.email;
+
+  // Server-side rate limit — this endpoint makes real (costly) calls to
+  // Stripe's customer/subscription search on every invocation, so it's
+  // an easy target for hammering. 6 attempts per user per 10 minutes.
+  const { data: allowed, error: rlError } = await supabase.rpc('check_rate_limit', {
+    p_key: `restore-access:${userId}`,
+    p_max_attempts: 6,
+    p_window_seconds: 600,
+  });
+  if (!rlError && allowed === false) {
+    return json({ error: 'rate_limited', message: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' }, 429, cors);
+  }
 
   // Try both Stripe modes — whichever one has a real customer for this
   // verified email wins. Harmless no-op if a mode's secret isn't set.

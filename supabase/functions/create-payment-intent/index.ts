@@ -77,6 +77,20 @@ Deno.serve(async (req) => {
   const userId = userData.user.id;
   const email = userData.user.email;
 
+  // Server-side rate limit, shared across all invocations (unlike the
+  // client-side one, which lives only in browser memory and resets on
+  // every reload). Payment-intent creation talks to Stripe on every
+  // call, so this caps both abuse and accidental hammering: 8 attempts
+  // per user per 5 minutes.
+  const { data: allowed, error: rlError } = await supabase.rpc('check_rate_limit', {
+    p_key: `payment-intent:${userId}`,
+    p_max_attempts: 8,
+    p_window_seconds: 300,
+  });
+  if (!rlError && allowed === false) {
+    return json({ error: 'rate_limited', message: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' }, 429);
+  }
+
   let priceId: string, promoCode: string | undefined;
   try {
     const body = await req.json();

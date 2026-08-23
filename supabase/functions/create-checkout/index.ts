@@ -65,6 +65,17 @@ Deno.serve(async (req) => {
   const user = userData.user;
   const userEmail = user.email ?? '';
 
+  // Server-side rate limit, shared across all invocations (unlike a
+  // client-side counter, which resets on every page reload).
+  const { data: allowed, error: rlError } = await supabaseAdmin.rpc('check_rate_limit', {
+    p_key: `checkout:${user.id}`,
+    p_max_attempts: 8,
+    p_window_seconds: 300,
+  });
+  if (!rlError && allowed === false) {
+    return json({ error: 'rate_limited', message: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' }, 429, cors);
+  }
+
   let plan: string;
   try {
     const body = await req.json();
