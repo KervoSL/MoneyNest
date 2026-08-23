@@ -194,12 +194,25 @@ function confirmPlan(planKey) {
     </div>`;
 }
 
-function _doConfirmPlan(planKey) {
+async function _doConfirmPlan(planKey) {
   // CRITICAL RULE (never violated): pressing this button must NEVER
   // grant Local/Pro by itself. It only ever opens the real embedded
   // payment modal (MNPayment / stripe-payment.js) — the plan is
   // granted exclusively by stripe-webhook after Stripe confirms the
   // payment, never from this client code.
+
+  // Wait for MNSupabaseAuth to finish restoring any existing session
+  // before deciding whether to show the "create account" prompt.
+  // isLoggedIn() alone is only reliable AFTER init() has completed —
+  // reading it too early (e.g. right after the page loads, before the
+  // saved session has finished restoring) could incorrectly say "not
+  // logged in" even though the account was created moments earlier in
+  // this same browser. This never blocks noticeably in practice: by
+  // the time someone reaches this button, init() has almost always
+  // already resolved.
+  if (window.MNSupabaseAuth?.ready) {
+    try { await window.MNSupabaseAuth.ready() } catch (_) { /* handled by the check below */ }
+  }
 
   // A real purchase requires a real, authenticated identity (Stripe
   // Customer must be tied to a verified user) — an anonymous/local-only

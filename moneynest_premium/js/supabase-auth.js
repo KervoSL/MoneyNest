@@ -459,10 +459,16 @@
     getDisplayName,
     getAvatarUrl,
     onAuthChange,
+    // Resolves once init() has finished restoring any existing session
+    // (or confirmed there isn't one). Anything that needs to know
+    // isLoggedIn() reliably right after page load — not just after the
+    // user has been active a while — should await this first, since
+    // init() itself is async and getSession() can take a moment.
+    ready: () => _initPromise,
     // Low-level client (for edge cases)
     _sb: sb,
   };
 
   // Auto-init on load
-  init().catch(err => console.warn('[MNSupabaseAuth] init error:', err));
+  const _initPromise = init().catch(err => console.warn('[MNSupabaseAuth] init error:', err));
 })();
