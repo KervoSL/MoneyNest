@@ -4067,3 +4067,64 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
 .mn-plan-card__feats li.ok::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
 .mn-plan-card__feats li.no { color: var(--text3); }
 .mn-plan-card__feats li.no::before { content: "✕"; position: absolute; left: 0; color: var(--text3); }
+
+/* ── PRE-ONBOARDING DEMO (30 min, sin cuenta) ────────────────────
+   Banner fijo con la cuenta atras y el CTA de registro siempre
+   visible, y el tip contextual breve al visitar cada pagina. */
+.mn-preob-demo-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, #7C3AED, #6366F1);
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.mn-preob-demo-banner__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #FDE68A;
+  animation: mnPreObPulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes mnPreObPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.mn-preob-demo-banner__text strong { font-variant-numeric: tabular-nums; }
+.mn-preob-demo-banner__cta {
+  border: none; border-radius: 99px;
+  padding: 6px 14px;
+  background: #fff; color: #6D28D9;
+  font-size: .78rem; font-weight: 800;
+  cursor: pointer; font-family: inherit;
+  white-space: nowrap;
+}
+.mn-preob-demo-banner__cta:hover { opacity: .9; }
+@media (max-width: 560px) {
+  .mn-preob-demo-banner { flex-wrap: wrap; padding: 8px 12px; }
+  .mn-preob-demo-banner__text { font-size: .76rem; }
+}
+
+.mn-preob-demo-tip {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translate(-50%, 140%);
+  z-index: 9400;
+  display: flex; align-items: center; gap: 10px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 14px 12px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  box-shadow: 0 12px 32px rgba(0,0,0,.4);
+  font-size: .82rem;
+  color: var(--text);
+  transition: transform .3s cubic-bezier(0.22,1,0.36,1);
+}
+.mn-preob-demo-tip--in { transform: translate(-50%, 0); }
+.mn-preob-demo-tip button {
+  border: none; background: transparent; color: var(--text3);
+  cursor: pointer; font-size: .8rem; flex-shrink: 0; padding: 2px;
+}

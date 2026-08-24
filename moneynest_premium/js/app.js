@@ -4469,6 +4469,7 @@ function goTo(page) {
   if (contentEl) contentEl.scrollTop = 0
   _updateSidebarLang()
   updateDocTitle()
+  _maybeShowPreOnboardingPageTip(page)
   // Achievement tracking: page visits
   if (window.MNGamification && window.MNGamification.checkAchievement) {
     window.MNGamification.checkAchievement('page_visit');
@@ -14354,6 +14355,11 @@ function skipOnboarding() {
 // v2 suffix forces all existing users to see onboarding once more
 // (old 'mn7_ob_seen' flag is ignored — only 'mn7_ob_seen_v2' counts)
 const OB_FLAG_KEY  = 'mn7_ob_seen_v2'
+const PRE_OB_CHOICE_MADE_FLAG = 'mn7_preob_choice_made'
+const PRE_OB_DEMO_FLAG = 'mn7_preob_demo_active'
+const PRE_OB_DEMO_STARTED_AT = 'mn7_preob_demo_started_at'
+const PRE_OB_DEMO_DURATION_MS = 30 * 60 * 1000 // 30 minutos
+const PRE_OB_DEMO_SEEN_PAGES = 'mn7_preob_demo_seen_pages'
 const TUT_FLAG_KEY = 'mn7_tut_done'
 
 function _obFlagSeen()  { return localStorage.getItem(OB_FLAG_KEY)  === 'true' }
@@ -14361,12 +14367,194 @@ function _tutFlagDone() { return localStorage.getItem(TUT_FLAG_KEY) === 'true' }
 function _setObSeen()   { try { localStorage.setItem(OB_FLAG_KEY,  'true') } catch(e){} }
 function _setTutDone()  { try { localStorage.setItem(TUT_FLAG_KEY, 'true') } catch(e){} }
 
+// ════════════════════════════════════════════════════════════════
+// ─── PRE-ONBOARDING DEMO (30 min, sin cuenta) ────────────────────
+// Primera pantalla que ve cualquiera que abre MoneyNest por primera
+// vez: elegir entre explorar con datos de ejemplo (sin registrarse,
+// 30 minutos) o crear la cuenta directamente. Nunca reemplaza el
+// trial real de 24h con cuenta — es solo un vistazo previo, más corto
+// y sin ningún compromiso.
+// ════════════════════════════════════════════════════════════════
+
+function _showPreOnboardingChoiceScreen() {
+  document.getElementById('preObChoiceOverlay')?.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'preObChoiceOverlay'
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:#060B14;font-family:'Inter',sans-serif;
+  `
+  overlay.innerHTML = `
+    <div style="width:min(460px,100%);text-align:center">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:28px">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-dim, rgba(0,212,170,.15));display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M4 16L8 9l3 4 4-6 4 4" stroke="#00D4AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span style="font-size:1.2rem;font-weight:800;color:#fff">MoneyNest</span>
+      </div>
+      <div style="font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.3">Tu dinero, bajo control.</div>
+      <div style="font-size:.9rem;color:rgba(255,255,255,.55);margin-bottom:32px;line-height:1.6">Elige cómo quieres empezar.</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <button id="preObDemoBtn" style="display:flex;align-items:center;gap:14px;text-align:left;padding:18px 20px;border-radius:16px;border:1.5px solid rgba(0,212,170,.3);background:rgba(0,212,170,.06);cursor:pointer;font-family:inherit">
+          <span style="font-size:1.7rem;flex-shrink:0">🎮</span>
+          <span style="flex:1">
+            <span style="display:block;font-size:.95rem;font-weight:800;color:#fff">Explorar con datos de ejemplo</span>
+            <span style="display:block;font-size:.78rem;color:rgba(255,255,255,.55);margin-top:2px">30 minutos, sin crear cuenta</span>
+          </span>
+          <span style="color:rgba(255,255,255,.4);flex-shrink:0">→</span>
+        </button>
+        <button id="preObSignupBtn" style="display:flex;align-items:center;gap:14px;text-align:left;padding:18px 20px;border-radius:16px;border:none;background:#00D4AA;cursor:pointer;font-family:inherit">
+          <span style="font-size:1.7rem;flex-shrink:0">🚀</span>
+          <span style="flex:1">
+            <span style="display:block;font-size:.95rem;font-weight:800;color:#04150F">Crear mi cuenta</span>
+            <span style="display:block;font-size:.78rem;color:rgba(4,21,15,.7);margin-top:2px">Prueba gratis 24h con tus propios datos</span>
+          </span>
+          <span style="color:rgba(4,21,15,.6);flex-shrink:0">→</span>
+        </button>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+
+  document.getElementById('preObDemoBtn').onclick = () => {
+    localStorage.setItem(PRE_OB_CHOICE_MADE_FLAG, 'true')
+    overlay.remove()
+    _startPreOnboardingDemo()
+  }
+  document.getElementById('preObSignupBtn').onclick = () => {
+    localStorage.setItem(PRE_OB_CHOICE_MADE_FLAG, 'true')
+    overlay.remove()
+    checkOnboarding()
+  }
+}
+
+function _startPreOnboardingDemo() {
+  localStorage.setItem(PRE_OB_DEMO_FLAG, 'true')
+  localStorage.setItem(PRE_OB_DEMO_STARTED_AT, String(Date.now()))
+  localStorage.removeItem(PRE_OB_DEMO_SEEN_PAGES)
+  loadDemoData('standard', null)
+  save()
+  if (typeof window._gTimePeriod !== 'undefined') window._gTimePeriod = 'all'
+  goTo('dashboard')
+  _renderPreOnboardingDemoBanner()
+  _startPreOnboardingDemoTicker()
+  toast('🎮 Modo demo activado — tienes 30 minutos para explorar')
+}
+
+function _resumePreOnboardingDemo() {
+  const startedAt = Number(localStorage.getItem(PRE_OB_DEMO_STARTED_AT) || 0)
+  const elapsed = Date.now() - startedAt
+  if (!startedAt || elapsed >= PRE_OB_DEMO_DURATION_MS) {
+    _endPreOnboardingDemo('expired')
+    return
+  }
+  _renderPreOnboardingDemoBanner()
+  _startPreOnboardingDemoTicker()
+}
+
+let _preObDemoTickerId = null
+function _startPreOnboardingDemoTicker() {
+  if (_preObDemoTickerId) return
+  _preObDemoTickerId = setInterval(() => {
+    const startedAt = Number(localStorage.getItem(PRE_OB_DEMO_STARTED_AT) || 0)
+    const remaining = PRE_OB_DEMO_DURATION_MS - (Date.now() - startedAt)
+    if (remaining <= 0) {
+      _endPreOnboardingDemo('expired')
+      return
+    }
+    const el = document.getElementById('preObDemoTimer')
+    if (el) {
+      const mins = Math.floor(remaining / 60000)
+      const secs = Math.floor((remaining % 60000) / 1000)
+      el.textContent = `${mins}:${String(secs).padStart(2,'0')}`
+    }
+  }, 1000)
+}
+
+function _renderPreOnboardingDemoBanner() {
+  document.getElementById('preObDemoBanner')?.remove()
+  const banner = document.createElement('div')
+  banner.id = 'preObDemoBanner'
+  banner.className = 'mn-preob-demo-banner'
+  banner.innerHTML = `
+    <span class="mn-preob-demo-banner__dot"></span>
+    <span class="mn-preob-demo-banner__text">Modo demo · <strong id="preObDemoTimer">30:00</strong></span>
+    <button class="mn-preob-demo-banner__cta" onclick="_endPreOnboardingDemo('signup')">Crear cuenta gratis →</button>`
+  document.body.appendChild(banner)
+}
+
+function _endPreOnboardingDemo(reason) {
+  if (_preObDemoTickerId) { clearInterval(_preObDemoTickerId); _preObDemoTickerId = null }
+  document.getElementById('preObDemoBanner')?.remove()
+  document.getElementById('preObDemoTip')?.remove()
+  localStorage.removeItem(PRE_OB_DEMO_FLAG)
+  localStorage.removeItem(PRE_OB_DEMO_STARTED_AT)
+  localStorage.removeItem(PRE_OB_DEMO_SEEN_PAGES)
+  clearDemoData()
+  if (reason === 'expired') {
+    toast('⏱ Tu demo de 30 minutos ha terminado. ¡Crea tu cuenta para seguir!')
+  }
+  checkOnboarding()
+}
+
+// Brief contextual tip shown once per page the first time it's visited
+// during the pre-onboarding demo — the "tutorial al cambiar de
+// páginas" requested. Never shown outside this specific demo mode.
+const PRE_OB_PAGE_TIPS = {
+  dashboard:     '📊 Aquí ves el resumen de todo: patrimonio, ingresos y gastos del mes.',
+  ingresos:      '💰 Registra aquí cualquier entrada de dinero: nómina, ventas, lo que sea.',
+  gastos:        '💸 Anota tus gastos aquí — MoneyNest los organiza en categorías automáticamente.',
+  inversiones:   '📈 Sigue el rendimiento de tus inversiones y retira beneficios cuando quieras.',
+  deudas:        '💳 Planifica cómo pagar tus deudas con estrategias automáticas.',
+  objetivos:     '🎯 Define metas de ahorro y sigue tu progreso hacia ellas.',
+  presupuestos:  '📋 Pon límites mensuales por categoría y recibe avisos si te pasas.',
+  cuentas:       '🏦 Todas tus cuentas bancarias, tarjetas y efectivo en un solo lugar.',
+  patrimonio:    '🏠 Tu patrimonio neto: lo que tienes menos lo que debes.',
+  analisis:      '📉 Gráficos y estadísticas para entender tus hábitos financieros.',
+}
+function _maybeShowPreOnboardingPageTip(page) {
+  if (localStorage.getItem(PRE_OB_DEMO_FLAG) !== 'true') return
+  // Always clear any leftover tip from a previous page first — never
+  // leave a stale tip on screen that no longer matches the page the
+  // user is actually looking at now.
+  document.getElementById('preObDemoTip')?.remove()
+  const tip = PRE_OB_PAGE_TIPS[page]
+  if (!tip) return
+  let seen = []
+  try { seen = JSON.parse(localStorage.getItem(PRE_OB_DEMO_SEEN_PAGES) || '[]') } catch(_) {}
+  if (seen.includes(page)) return
+  seen.push(page)
+  try { localStorage.setItem(PRE_OB_DEMO_SEEN_PAGES, JSON.stringify(seen)) } catch(_) {}
+
+  const tipEl = document.createElement('div')
+  tipEl.id = 'preObDemoTip'
+  tipEl.className = 'mn-preob-demo-tip'
+  tipEl.innerHTML = `<span>${tip}</span><button onclick="document.getElementById('preObDemoTip')?.remove()">✕</button>`
+  document.body.appendChild(tipEl)
+  requestAnimationFrame(() => tipEl.classList.add('mn-preob-demo-tip--in'))
+  setTimeout(() => tipEl.remove(), 6000)
+}
+
 function checkOnboarding() {
   const flagValue = localStorage.getItem(OB_FLAG_KEY)
   console.log('[checkOnboarding] Flag value:', flagValue)
 
   if (_obFlagSeen()) {
     console.log('[checkOnboarding] Onboarding already completed - skipping')
+    return
+  }
+
+  // If a pre-onboarding demo is already running, never re-show the
+  // choice screen nor restart onboarding — just keep the demo going
+  // (its own timer/banner logic handles the rest).
+  if (isDemoMode() && localStorage.getItem(PRE_OB_DEMO_FLAG) === 'true') {
+    _resumePreOnboardingDemo()
+    return
+  }
+
+  // First time ever opening the app with no account and no demo yet:
+  // offer the choice instead of jumping straight into onboarding.
+  if (!localStorage.getItem(PRE_OB_CHOICE_MADE_FLAG)) {
+    _showPreOnboardingChoiceScreen()
     return
   }
 
