@@ -1502,8 +1502,15 @@
         MNAuthUI.renderAuthBadge('authPlanBadge');
         MNAuthUI.renderTrialPill('trialPillContainer');
         if (typeof updateSidebarLogo === 'function') updateSidebarLogo();
-        // After Google login, close onboarding if it was open
-        if ((event === 'SIGNED_IN') && session) {
+        // After Google login (or any other OAuth provider), close
+        // onboarding if it was open — but NEVER for a normal email/
+        // password signUp() completed inside the onboarding itself,
+        // which also fires SIGNED_IN and must instead let obNext()
+        // keep advancing through the remaining steps normally. This
+        // was the real cause of onboarding "skipping" straight to the
+        // dashboard right after creating a brand new account.
+        const provider = session?.user?.app_metadata?.provider;
+        if ((event === 'SIGNED_IN') && session && provider && provider !== 'email') {
           const ov = document.getElementById('onboardingOverlay');
           if (ov && ov.style.display !== 'none') {
             document.getElementById('obOtpOverlay')?.remove();
