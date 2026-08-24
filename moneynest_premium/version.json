@@ -1,13 +1,16 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "changelog": {
-    "title": "Novedades de la versión 1.2",
+    "title": "Novedades de la versión 1.3",
     "items": [
-      "Sistema de actualización automática — recibe las mejoras sin perder tus datos",
-      "Los importes ya aceptan coma y punto como separador decimal (5,35 o 5.35)",
-      "Los beneficios retirados de inversiones ahora son editables y eliminables",
-      "Nuevo flujo al añadir ingresos y gastos, con opción de crear otro rápidamente",
-      "Plan y facturación con su propio apartado, más claro y profesional"
+      "Plan y Facturación rediseñado: banner de prueba, tarjetas de plan claras, código promocional",
+      "Corregido el error que a veces pedía crear cuenta de nuevo al comprar",
+      "Nuevo modo demo de 30 minutos con datos de ejemplo, sin necesidad de crear cuenta",
+      "Iniciar sesión con un email que ya pagó activa el plan automáticamente",
+      "Límite de dispositivos: MoneyNest Local en un dispositivo, Pro en varios",
+      "Corregido: el Onboarding ya no se salta pasos al crear una cuenta nueva",
+      "Corregido: 'Importar datos' ya funciona correctamente",
+      "Seguridad reforzada en los pagos con límites de peticiones"
     ]
   }
 }
