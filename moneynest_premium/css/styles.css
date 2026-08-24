@@ -4073,38 +4073,40 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
    visible, y el tip contextual breve al visitar cada pagina. */
 .mn-preob-demo-banner {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: 12px; right: 12px;
   z-index: 9500;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 10px 16px;
-  background: linear-gradient(90deg, #7C3AED, #6366F1);
-  color: #fff;
-  font-size: .82rem;
-  font-weight: 700;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 99px;
+  background: var(--card, #12161F);
+  border: 1px solid var(--border2, rgba(255,255,255,.12));
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  color: var(--text2, rgba(255,255,255,.7));
+  font-size: .7rem;
+  font-weight: 600;
 }
 .mn-preob-demo-banner__dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #FDE68A;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #F59E0B;
   animation: mnPreObPulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }
 @keyframes mnPreObPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-.mn-preob-demo-banner__text strong { font-variant-numeric: tabular-nums; }
+.mn-preob-demo-banner__text strong { font-variant-numeric: tabular-nums; color: var(--text, #fff); }
 .mn-preob-demo-banner__cta {
   border: none; border-radius: 99px;
-  padding: 6px 14px;
-  background: #fff; color: #6D28D9;
-  font-size: .78rem; font-weight: 800;
+  padding: 4px 9px;
+  background: var(--accent, #00D4AA); color: #04150F;
+  font-size: .68rem; font-weight: 700;
   cursor: pointer; font-family: inherit;
   white-space: nowrap;
 }
-.mn-preob-demo-banner__cta:hover { opacity: .9; }
+.mn-preob-demo-banner__cta:hover { opacity: .88; }
 @media (max-width: 560px) {
-  .mn-preob-demo-banner { flex-wrap: wrap; padding: 8px 12px; }
-  .mn-preob-demo-banner__text { font-size: .76rem; }
+  .mn-preob-demo-banner { top: 8px; right: 8px; padding: 5px 8px; gap: 6px; }
+  .mn-preob-demo-banner__text { display: none; } /* solo el punto + boton en movil, aun mas discreto */
 }
 
 .mn-preob-demo-tip {

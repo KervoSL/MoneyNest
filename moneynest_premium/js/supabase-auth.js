@@ -153,6 +153,25 @@
       }
     }
 
+    // REAL production issue found: even though this app is designed to
+    // grant an instant session after signUp() (comment above), the
+    // actual Supabase Auth configuration has "Confirm email" turned ON
+    // — confirmed by querying auth.users directly and finding accounts
+    // with email_confirmed_at still null. When that setting is on,
+    // signUp() succeeds (the auth.users row IS created) but returns
+    // session: null until the person clicks the confirmation link in
+    // their inbox — no client-side retry can produce a session here,
+    // since there genuinely isn't one yet. This must be told to the
+    // caller explicitly, distinctly from email_exists, so the UI can
+    // show something useful ("check your inbox") instead of a generic
+    // "couldn't verify your account" that just invites retrying forever.
+    if (data.user && !data.session && Array.isArray(data.user.identities) && data.user.identities.length > 0) {
+      throw Object.assign(
+        new Error('Hemos creado tu cuenta, pero necesitas confirmarla. Revisa tu email y haz clic en el enlace de confirmación.'),
+        { code: 'email_confirmation_required' }
+      );
+    }
+
     // Supabase's anti-enumeration behavior: when the email already
     // belongs to a CONFIRMED account, signUp() can return success (no
     // `error`) with a `user` object but an EMPTY `identities` array —
@@ -193,6 +212,9 @@
       const msg = error.message || '';
       if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
         throw Object.assign(new Error('Email o contraseña incorrectos.'), { code: 'invalid_credentials' });
+      }
+      if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
+        throw Object.assign(new Error('Necesitas confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada.'), { code: 'email_confirmation_required' });
       }
       throw error;
     }

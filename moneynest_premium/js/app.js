@@ -13435,6 +13435,7 @@ async function obNext() {
       // retry silently in the background with those same credentials.
       if (!window.MNSupabaseAuth?.isLoggedIn()) {
         if (btn) { btn.disabled = true; btn.textContent = t('loading_verificando','Verificando tu cuenta…') }
+        let confirmationRequired = false
         try {
           await window.MNSupabaseAuth.signUp(obData.email, obData.password)
         } catch (err) {
@@ -13444,16 +13445,20 @@ async function obNext() {
             // in with the same credentials the user just typed
             // re-establishes it safely.
             try { await window.MNSupabaseAuth.signIn(obData.email, obData.password) } catch (_) { /* handled by the check below */ }
+          } else if (err?.code === 'email_confirmation_required') {
+            confirmationRequired = true
           }
           // Any other error: fall through to the isLoggedIn() check
           // below, which decides whether to proceed or show an error.
         }
-      }
 
-      if (!window.MNSupabaseAuth?.isLoggedIn()) {
-        if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
-        toast(t('ob_error_verificacion_cuenta','No se ha podido verificar tu cuenta. Inténtalo de nuevo.'), 'error')
-        return
+        if (!window.MNSupabaseAuth?.isLoggedIn()) {
+          if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
+          toast(confirmationRequired
+            ? t('ob_error_confirmar_email','Hemos creado tu cuenta, pero necesitas confirmarla. Revisa tu email y haz clic en el enlace de confirmación antes de comprar un plan.')
+            : t('ob_error_verificacion_cuenta','No se ha podido verificar tu cuenta. Inténtalo de nuevo.'), 'error')
+          return
+        }
       }
       if (btn) { btn.disabled = false; btn.textContent = t('btn_siguiente','Siguiente') }
 
@@ -14477,8 +14482,8 @@ function _renderPreOnboardingDemoBanner() {
   banner.className = 'mn-preob-demo-banner'
   banner.innerHTML = `
     <span class="mn-preob-demo-banner__dot"></span>
-    <span class="mn-preob-demo-banner__text">Modo demo · <strong id="preObDemoTimer">30:00</strong></span>
-    <button class="mn-preob-demo-banner__cta" onclick="_endPreOnboardingDemo('signup')">Crear cuenta gratis →</button>`
+    <span class="mn-preob-demo-banner__text">Demo · <strong id="preObDemoTimer">30:00</strong></span>
+    <button class="mn-preob-demo-banner__cta" onclick="_endPreOnboardingDemo('signup')">Crear cuenta</button>`
   document.body.appendChild(banner)
 }
 
@@ -14534,6 +14539,63 @@ function _maybeShowPreOnboardingPageTip(page) {
   setTimeout(() => tipEl.remove(), 6000)
 }
 
+// ── Bloquear acciones de escritura durante el demo pre-onboarding ──
+// El demo (sin cuenta) es solo para mirar — cualquier intento real de
+// guardar datos propios (añadir ingreso, gasto, deuda...) debe pedir
+// crear la cuenta en vez de modificar los datos de ejemplo. Esto NO
+// aplica al modo demo normal dentro de la app (activado desde
+// Configuración por un usuario que ya tiene cuenta), solo al demo que
+// se ve ANTES de registrarse.
+function _isPreOnboardingDemoActive() {
+  return localStorage.getItem(PRE_OB_DEMO_FLAG) === 'true'
+}
+
+function _showPreOnboardingBlockedModal() {
+  document.getElementById('preObBlockedOverlay')?.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'preObBlockedOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:380px" onclick="event.stopPropagation()">
+      <div class="modal-body" style="text-align:center;padding:28px 24px 22px">
+        <div style="font-size:2rem;margin-bottom:10px">🔒</div>
+        <div style="font-size:1.02rem;font-weight:800;color:var(--text);margin-bottom:6px">Esto ya es cosa tuya</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:20px;line-height:1.5">Para guardar tus propios datos necesitas crear una cuenta gratis — tarda menos de un minuto.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_endPreOnboardingDemo('signup')">Crear cuenta gratis</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove()">Seguir mirando</button>
+        </div>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+  requestAnimationFrame(() => overlay.classList.add('open'))
+}
+
+// Envuelve automáticamente cada función de guardado/creación listada:
+// si el pre-onboarding demo está activo, intercepta la llamada y
+// muestra el modal de bloqueo en vez de ejecutar la función real. Se
+// hace aquí, al final del archivo (todas ya están definidas), en vez
+// de tocar cada función individualmente — mismo resultado, sin
+// arriesgarse a olvidar alguna en el futuro.
+;(function _wrapWriteActionsForPreOnboardingDemo() {
+  const protectedFns = [
+    'guardarIngreso','guardarGasto','guardarDeuda','guardarInversion','guardarObjetivo',
+    'guardarPresupuesto','guardarCuenta','guardarAsset','guardarCliente','guardarProveedor',
+    'guardarDevengo','guardarImpuestos','confirmarAportar','confirmarLiquidacion',
+    'confirmarRevalorizacion','guardarEdicionBeneficio','saveQuickAdd','_confirmCreateCategory',
+    'saveCustomStrategy','_confirmApplyStrategy','_confirmMultiPago',
+  ]
+  protectedFns.forEach(name => {
+    const original = window[name]
+    if (typeof original !== 'function') return
+    window[name] = function(...args) {
+      if (_isPreOnboardingDemoActive()) { _showPreOnboardingBlockedModal(); return }
+      return original.apply(this, args)
+    }
+  })
+})()
+
 function checkOnboarding() {
   const flagValue = localStorage.getItem(OB_FLAG_KEY)
   console.log('[checkOnboarding] Flag value:', flagValue)
@@ -14552,9 +14614,12 @@ function checkOnboarding() {
   }
 
   // First time ever opening the app with no account and no demo yet:
-  // offer the choice instead of jumping straight into onboarding.
+  // jump straight into the demo experience — no choice screen (it
+  // looked bad and added friction). The subtle banner during the demo
+  // still offers "crear cuenta" at any time.
   if (!localStorage.getItem(PRE_OB_CHOICE_MADE_FLAG)) {
-    _showPreOnboardingChoiceScreen()
+    localStorage.setItem(PRE_OB_CHOICE_MADE_FLAG, 'true')
+    _startPreOnboardingDemo()
     return
   }
 
