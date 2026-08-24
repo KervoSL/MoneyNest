@@ -635,14 +635,20 @@ function _attachListeners(user) {
 
   // ── Cancel Pro ───────────────────────────────────────────────
   _on('mn-cancel-pro-btn', () => {
-    if (!confirm(_t('auth_confirmar_cancelar_pro','¿Seguro que quieres cancelar el Plan Pro? Tu plan volverá a Local sin bloqueos.'))) return;
-    document.dispatchEvent(new CustomEvent('mn:cancelPro', { detail: { source:'modal' } }));
-    _auth.cancelPro && _auth.cancelPro();
-    closeAuthModal();
-    renderAuthBadge();
-    renderTrialPill();
-    if (typeof updateSidebarLogo === 'function') updateSidebarLogo();
-    _toast(_t('auth_pro_cancelado','Plan Pro cancelado. Sigues con Plan Local.'));
+    const doCancel = () => {
+      document.dispatchEvent(new CustomEvent('mn:cancelPro', { detail: { source:'modal' } }));
+      _auth.cancelPro && _auth.cancelPro();
+      closeAuthModal();
+      renderAuthBadge();
+      renderTrialPill();
+      if (typeof updateSidebarLogo === 'function') updateSidebarLogo();
+      _toast(_t('auth_pro_cancelado','Plan Pro cancelado. Sigues con Plan Local.'));
+    };
+    if (typeof window.confirmar === 'function') {
+      window.confirmar(_t('auth_confirmar_cancelar_pro','¿Seguro que quieres cancelar el Plan Pro? Tu plan volverá a Local sin bloqueos.'), doCancel, { titulo: 'Cancelar Plan Pro', icono: '⚠️', btnLabel: 'Cancelar Pro' });
+    } else {
+      doCancel();
+    }
   });
 
   // ── Link payment ─────────────────────────────────────────────

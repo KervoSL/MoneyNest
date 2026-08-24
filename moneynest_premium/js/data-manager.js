@@ -758,36 +758,54 @@ window.dmConfirmImport = function() {
     return;
   }
 
-  const data = validation.data;
-
-  // Extra confirm for destructive actions
+  // Extra confirm for destructive actions — never a native confirm():
+  // many browsers block or silently ignore window.confirm() when the
+  // PWA runs installed in standalone mode (no browser chrome to host
+  // the dialog), which meant this always silently did nothing.
   if (option === 'replace' || option === 'new') {
     const confirmMsg = option === 'replace'
       ? _dm('dm_confirm_replace', '¿Reemplazar todos tus datos actuales? Esta acción no se puede deshacer.')
       : _dm('dm_confirm_new', '¿Crear nueva sesión con los datos importados? Tu sesión actual se perderá.');
-
-    if (!confirm(confirmMsg)) return;
+    confirmar(confirmMsg, () => _dmExecuteImport(), { titulo: _dm('dm_confirm_titulo','Confirmar importación'), icono: '📂', btnLabel: _dm('dm_confirm_btn','Importar') });
+    return;
   }
+
+  _dmExecuteImport();
+};
+
+function _dmExecuteImport() {
+  const { validation, option } = _importState;
+  const data = validation.data;
 
   try {
     if (option === 'replace') {
-      // Merge on top of defaultState to keep structure
+      // CRITICAL: S is declared with `let` in app.js, so it is NOT a
+      // window property — assigning window.S = ... here created a
+      // completely separate, orphaned global that render()/save() and
+      // every other function (which reference the lexical S directly)
+      // never read, silently discarding the imported data. Mutating
+      // the existing S object in place is what actually reaches the
+      // rest of the app.
       const base = (typeof defaultState === 'function') ? defaultState() : {};
-      window.S = Object.assign(base, data);
+      Object.keys(S).forEach(k => delete S[k]);
+      Object.assign(S, base, data);
       if (typeof save === 'function') save();
       if (typeof render === 'function') render();
       dmToast(_dm('dm_importado_replace', '✅ Datos importados y reemplazados correctamente'), 'success');
 
     } else if (option === 'merge') {
       const current = (typeof S !== 'undefined') ? JSON.parse(JSON.stringify(S)) : {};
-      window.S = _mergeData(current, data);
+      const merged = _mergeData(current, data);
+      Object.keys(S).forEach(k => delete S[k]);
+      Object.assign(S, merged);
       if (typeof save === 'function') save();
       if (typeof render === 'function') render();
       dmToast(_dm('dm_importado_merge', '🔀 Datos fusionados correctamente'), 'success');
 
     } else if (option === 'new') {
       const base = (typeof defaultState === 'function') ? defaultState() : {};
-      window.S = Object.assign(base, data);
+      Object.keys(S).forEach(k => delete S[k]);
+      Object.assign(S, base, data);
       if (typeof save === 'function') save();
       if (typeof render === 'function') render();
       dmToast(_dm('dm_importado_new', '✨ Nueva sesión creada con los datos importados'), 'success');
@@ -799,7 +817,7 @@ window.dmConfirmImport = function() {
     dmToast(_dm('dm_error_importar', '❌ Error al importar datos') + ': ' + e.message, 'error');
     console.error('[MoneyNest DM] Import error:', e);
   }
-};
+}
 
 // ══════════════════════════════════════════════════════════════
 // SAVE (quick local save with feedback)
@@ -854,15 +872,7 @@ window.dmSaveLocal = async function() {
 // ══════════════════════════════════════════════════════════════
 
 window.openDmPanel = function(id) {
-  // Import blocked on trial — only Local/Pro can import
-  if (id === 'dm-import-panel') {
-    const plan = (typeof window.MNAuth !== 'undefined') ? window.MNAuth.getUser().plan : 'trial';
-    if (plan === 'trial') {
-      dmToast(_dm('dm_importar_requiere_plan', '🔒 Importar datos requiere MoneyNest'), 'warn');
-      if (window.MNAuthUI) MNAuthUI.showAuthModal('plan');
-      return;
-    }
-  }
+  // Import/export are never plan-gated — build panel content fresh each time
   // Build panel content fresh each time
   if (id === 'dm-export-panel') buildExportPanel();
   if (id === 'dm-import-panel') buildImportPanel();
