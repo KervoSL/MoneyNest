@@ -32,20 +32,13 @@
   async function _ensureSession() {
     if (!window.MNSupabaseAuth) return false;
     if (window.MNSupabaseAuth.isLoggedIn()) return true;
-    // Fresh guest, never signed in explicitly — get them a real backend
-    // identity via anonymous auth so trial state is server-verified
-    // too, not just a client-side clock.
-    try {
-      const { data, error } = await window.MNSupabaseAuth._sb.auth.signInAnonymously();
-      if (error) {
-        console.warn('[MNEntitlements] anonymous sign-in unavailable:', error.message);
-        return false;
-      }
-      return !!data.session;
-    } catch (err) {
-      console.warn('[MNEntitlements] anonymous sign-in failed:', err);
-      return false;
-    }
+    // Anonymous sign-in is disabled at the project level (confirmed via
+    // production logs: dozens of "422 Anonymous sign-ins are disabled"
+    // errors on every page load/60s tick/tab focus, with zero chance of
+    // ever succeeding) — never attempt it. Fails closed exactly as
+    // before (no server state = no entitlement granted), just without
+    // the noisy, risky, and pointless network call.
+    return false;
   }
 
   async function refresh() {
