@@ -7243,8 +7243,12 @@ function _openDayDetail(dateISO) {
   document.body.appendChild(overlay)
   overlay.addEventListener('click', e => { if (e.target === overlay) _closeDayDetail() })
   setTimeout(() => overlay.classList.add('open'), 10)
+  _pushScrollLock()
 }
-function _closeDayDetail() { document.getElementById('calDayDetailOverlay')?.remove() }
+function _closeDayDetail() {
+  const overlay = document.getElementById('calDayDetailOverlay')
+  if (overlay) { overlay.remove(); _popScrollLock() }
+}
 
 // ── Create/edit event modal ──────────────────────────────────────
 function _openEventModal(eventId, defaultDate) {
@@ -14128,12 +14132,11 @@ function finishOnboarding() {
     toast(`${t('hola')} ${S.usuario.nombre || 'Usuario'}! 🎉`)
   }
 
-  // Modal de instalación PWA — aparece 15 segundos después de terminar el onboarding
-  setTimeout(() => {
-    if (window.MNInstall && typeof window.MNInstall.showOnboardingModal === 'function') {
-      window.MNInstall.showOnboardingModal()
-    }
-  }, 15000)
+  // Nota: el modal de instalación PWA ya NO se dispara automáticamente
+  // tras el onboarding — aparecía de forma inesperada 15s después,
+  // cubriendo toda la pantalla, y si no se notaba de inmediato parecía
+  // que la app se había quedado bloqueada. Sigue disponible en
+  // cualquier momento desde Configuración → Instalar app.
 }
 
 window._openStripePortal = async function() {
@@ -14562,14 +14565,15 @@ function _showPreOnboardingBlockedModal() {
         <div style="font-size:1.02rem;font-weight:800;color:var(--text);margin-bottom:6px">Esto ya es cosa tuya</div>
         <div style="font-size:.85rem;color:var(--text2);margin-bottom:20px;line-height:1.5">Para guardar tus propios datos necesitas crear una cuenta gratis — tarda menos de un minuto.</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_endPreOnboardingDemo('signup')">Crear cuenta gratis</button>
-          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove()">Seguir mirando</button>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_popScrollLock();_endPreOnboardingDemo('signup')">Crear cuenta gratis</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_popScrollLock()">Seguir mirando</button>
         </div>
       </div>
     </div>`
   document.body.appendChild(overlay)
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); _popScrollLock() } })
   requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
 }
 
 // Envuelve automáticamente cada función de guardado/creación listada:

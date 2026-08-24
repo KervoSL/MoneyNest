@@ -478,7 +478,7 @@
       ver_movimientos_btn: '📋 Ver movimientos',
       cobrado_btn: '✓ Cobrado',
       // Gastos / KPIs globales
-      total_lbl: 'Total', este_mes: 'este mes', este_anio: 'este año', periodo_lbl: 'período',
+      total_lbl: 'Total', periodo_lbl: 'período',
       vs_mes_ant: 'vs. mes ant.', primer_mes: 'Primer mes', mes_anterior: 'Mes anterior',
       btn_importar_datos_bancarios: 'Importar datos bancarios',
       importar_datos_bancarios_sub: 'Sube un extracto CSV o Excel (XLSX) de tu banco y crea tus movimientos automáticamente',
@@ -1061,7 +1061,7 @@
       cliente_nuevo: 'New Client',
       cliente_editar: 'Edit Client',
       // Gastos / KPIs globales
-      total_lbl: 'Total', este_mes: 'this month', este_anio: 'this year', periodo_lbl: 'period',
+      total_lbl: 'Total', periodo_lbl: 'period',
       vs_mes_ant: 'vs. prev. month', primer_mes: 'First month', mes_anterior: 'Previous month',
       // Importar datos bancarios
       btn_importar_datos_bancarios: 'Import bank data',
