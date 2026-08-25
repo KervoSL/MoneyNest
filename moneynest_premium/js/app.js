@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.6'
+const VERSION = '1.6.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -4486,14 +4486,6 @@ function goTo(page) {
   if (window.MNGamification && window.MNGamification.checkAchievement) {
     window.MNGamification.checkAchievement('page_visit');
   }
-  // Dynamic billing background
-  if (window.MNBillingUI) {
-    if (page === 'billing') {
-      setTimeout(() => window.MNBillingUI.initDynamicBg(), 0)
-    } else {
-      window.MNBillingUI.cleanupDynamicBg()
-    }
-  }
 }
 // render() is defined later after all renderXxx functions are declared
 function updateTopBar() {
@@ -5059,7 +5051,6 @@ window._showNotaTooltip = function(el) {
 }
 
 function renderIngresos() {
-  console.log('[renderIngresos] Called with period:', window._gTimePeriod, '| _ingMesFilter:', _ingMesFilter, '| Total ingresos:', S.ingresos.length)
   const m = currentMonth()
   const mp = prevMonth(m)
   // KPI total: active month filter → that month; otherwise use global period filter
@@ -5311,7 +5302,6 @@ function _gasBulkDelete() {
 }
 
 function renderGastos() {
-  console.log('[renderGastos] Called with period:', window._gTimePeriod, '| Total gastos:', S.gastos.length)
   const m = currentMonth()
   const mp = prevMonth(m)
   // Use global period filter
@@ -5336,7 +5326,6 @@ function renderGastos() {
       if (g.tipo === TX_TYPES.GOAL_TRANSFER) return false // internal — not a real expense
       const inPeriod = _gDateInPeriod(g.fecha)
       if (!inPeriod) {
-        console.log('[renderGastos] Filtered out:', g.concepto, '| Date:', g.fecha, '| Period:', window._gTimePeriod)
         return false
       }
       const q = _gasSearch.toLowerCase()
@@ -14675,11 +14664,7 @@ function _showPreOnboardingBlockedModal() {
 })()
 
 function checkOnboarding() {
-  const flagValue = localStorage.getItem(OB_FLAG_KEY)
-  console.log('[checkOnboarding] Flag value:', flagValue)
-
   if (_obFlagSeen()) {
-    console.log('[checkOnboarding] Onboarding already completed - skipping')
     return
   }
 
@@ -14701,7 +14686,6 @@ function checkOnboarding() {
     return
   }
 
-  console.log('[checkOnboarding] Starting onboarding flow...')
   obStep = 1
   obData = { nombre:'', email:'', password:'', mode:'personal', lang: _currentLang || 'es', theme: S?.theme || 'dark', startTutorial:false, loadDemo:false }
 
@@ -14712,7 +14696,6 @@ function checkOnboarding() {
     ov.style.display = 'flex'
     requestAnimationFrame(() => ov.classList.add('ob-visible'))
     _pushScrollLock()
-    console.log('[checkOnboarding] Onboarding overlay displayed')
   } else {
     console.error('[checkOnboarding] Onboarding overlay element not found!')
   }

@@ -1,11 +1,10 @@
 {
-  "version": "1.6",
+  "version": "1.6.1",
   "changelog": {
-    "title": "Novedades de la versión 1.6",
+    "title": "Novedades de la versión 1.6.1",
     "items": [
-      "El modo demo ya no se queda con datos desactualizados si llevas tiempo sin desactivarlo",
-      "Categorías de inversión personalizadas: ahora puedes marcar si son un activo variable, sin % fijo",
-      "Nueva opción al crear una inversión: no descontar el dinero si ya estaba invertido previamente"
+      "Limpieza interna del código: eliminados restos de código muerto y registros de depuración innecesarios",
+      "Sin cambios visibles — mejora la mantenibilidad de cara a futuras actualizaciones"
     ]
   }
 }
