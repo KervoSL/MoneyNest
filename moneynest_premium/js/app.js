@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.7'
+const VERSION = '1.7.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -14256,6 +14256,7 @@ async function _openStripeCustomerPortal(btn) {
       if (data.error === 'no_customer') {
         _showManagePlanPlaceholder()
       } else {
+        console.error('[_openStripeCustomerPortal] backend error:', data)
         if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación. Inténtalo de nuevo.'), 'error')
       }
       return
@@ -14283,6 +14284,13 @@ async function _loadRealSubscriptionStatus() {
       .from('subscriptions')
       .select('status, current_period_end, cancel_at_period_end')
       .eq('user_id', userId)
+      // Exclude abandoned/never-completed checkout attempts (e.g.
+      // trying Local, changing your mind, then buying Pro) — each one
+      // creates its own Stripe subscription object and its own row
+      // here, so without this filter an old incomplete attempt could
+      // outrank the real active/trialing subscription and show a
+      // completely unrelated renewal date.
+      .in('status', ['active', 'trialing', 'past_due'])
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
