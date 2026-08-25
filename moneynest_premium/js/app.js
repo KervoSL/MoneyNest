@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.6.1'
+const VERSION = '1.7'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7780,7 +7780,7 @@ function renderFacturacion() {
       <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
     </div>` : ''
 
-  // ── Restaurar acceso + código promocional ──
+  // ── Restaurar acceso ──
   const actionsHtml = `
     <div class="card">
       <div class="card-header">
@@ -7788,7 +7788,6 @@ function renderFacturacion() {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-ghost btn-sm" style="width:100%;text-align:left;justify-content:flex-start" onclick="_openRestoreAccessModal(window.MNAuth?.getUser?.() ?? null)">🔓 ${_aut('cfg_btn_restaurar_acceso','Restaurar acceso')}</button>
-        <button class="btn btn-ghost btn-sm" style="width:100%;text-align:left;justify-content:flex-start" onclick="MNAuthUI._doConfirmPlan('${isPro ? 'pro' : 'local'}')">🏷️ ${_aut('cfg_btn_codigo_promo','Introducir código promocional')}</button>
       </div>
     </div>
     <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px">${_aut('cfg_historial_pagos','Historial de pagos')}</div>
@@ -14321,7 +14320,7 @@ function _showManagePlanPlaceholder() {
       </div>
       <div class="modal-body" style="text-align:center;padding:10px 4px 20px">
         <div style="font-size:2rem;margin-bottom:10px">🔧</div>
-        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','La gestión completa de tu suscripción (cambiar método de pago, ver recibos, cancelar) estará disponible en cuanto conectemos el sistema de facturación.')}</div>
+        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','Aún no tienes ninguna suscripción de pago activa. En cuanto actives MoneyNest Local o Pro, podrás cambiar tu método de pago, ver tus recibos y cancelar desde aquí mismo.')}</div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_entendido','Entendido')}</button>
