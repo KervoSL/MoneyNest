@@ -194,6 +194,8 @@
       <div class="quick-add-type" id="qat-ingreso" onclick="setQuickType('ingreso')" data-i18n="quick_add_ingreso">💰 Ingreso</div>
     </div>
     <input class="quick-amount-input" id="quickAmount" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" oninput="_sanitizeAmountInput(this)">
+    <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;text-align:center" data-i18n="quick_add_cuenta">Cuenta</div>
+    <select id="quickAccountSelect" style="width:100%;margin-bottom:14px;background:var(--bg2)"></select>
     <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;text-align:center" data-i18n="quick_add_categoria">Categoría</div>
     <div class="quick-cat-row" id="quickCatRow"></div>
     <input type="text" id="quickConcepto" data-i18n-placeholder="quick_add_descripcion_ph" placeholder="Descripción (opcional)" style="width:100%;margin-bottom:14px;background:var(--bg2)">

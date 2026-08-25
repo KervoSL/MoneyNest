@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.4'
+const VERSION = '1.5'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -808,6 +808,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Límites por categoría',
     ob_skip: 'Omitir',
     quick_add_categoria: 'Categoría',
+    quick_add_cuenta: 'Cuenta',
     quick_add_descripcion_ph: 'Descripción (opcional)',
     quick_add_gasto: '💸 Gasto',
     quick_add_guardar: 'Guardar',
@@ -1325,6 +1326,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Budgets',
     ob_skip: 'Skip',
     quick_add_categoria: 'Category',
+    quick_add_cuenta: 'Account',
     quick_add_descripcion_ph: 'Description (optional)',
     quick_add_gasto: '💸 Expense',
     quick_add_guardar: 'Save',
@@ -1741,6 +1743,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Budget',
     ob_skip: 'Salta',
     quick_add_categoria: 'Categoria',
+    quick_add_cuenta: 'Conta',
     quick_add_descripcion_ph: 'Descrizione (facoltativo)',
     quick_add_gasto: '💸 Spesa',
     quick_add_guardar: 'Salva',
@@ -2157,6 +2160,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Budgets',
     ob_skip: 'Ignorer',
     quick_add_categoria: 'Catégorie',
+    quick_add_cuenta: 'Compte',
     quick_add_descripcion_ph: 'Description (optionnel)',
     quick_add_gasto: '💸 Dépense',
     quick_add_guardar: 'Enregistrer',
@@ -2573,6 +2577,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Budgets',
     ob_skip: 'Überspringen',
     quick_add_categoria: 'Kategorie',
+    quick_add_cuenta: 'Konto',
     quick_add_descripcion_ph: 'Beschreibung (optional)',
     quick_add_gasto: '💸 Ausgabe',
     quick_add_guardar: 'Speichern',
@@ -2989,6 +2994,7 @@ const TRANSLATIONS = {
     nav_sub_presupuestos: 'Orçamentos',
     ob_skip: 'Pular',
     quick_add_categoria: 'Categoria',
+    quick_add_cuenta: 'Conto',
     quick_add_descripcion_ph: 'Descrição (opcional)',
     quick_add_gasto: '💸 Despesa',
     quick_add_guardar: 'Salvar',
@@ -16569,12 +16575,28 @@ function openQuickAdd() {
   document.getElementById('quickAmount').value = ''
   document.getElementById('quickConcepto').value = ''
   setQuickType('gasto')
+  _populateQuickAccountSelect()
   document.getElementById('quickAddModal').classList.add('open')
   setTimeout(() => {
     document.getElementById('quickAmount').focus()
     document.dispatchEvent(new CustomEvent('mn:quickadd:open'))
     if (window.MNPremiumFeatures) window.MNPremiumFeatures.initQuickAddPredictor()
   }, 120)
+}
+
+// Rellena el selector de cuenta del agregado rapido con las cuentas
+// reales del usuario, preseleccionando la ultima que se uso (guardada
+// en localStorage) para que funcione como "cuenta por defecto" sin
+// necesitar una pantalla de configuracion separada — si nunca se ha
+// usado ninguna, cae a la primera cuenta existente.
+function _populateQuickAccountSelect() {
+  const sel = document.getElementById('quickAccountSelect')
+  if (!sel) return
+  const cuentas = S.cuentas || []
+  if (!cuentas.length) { sel.innerHTML = `<option value="">${t('sin_cuentas','Sin cuentas')}</option>`; return }
+  const lastUsedId = localStorage.getItem('mn_quickadd_last_account')
+  const defaultId = (lastUsedId && cuentas.some(c => c.id === lastUsedId)) ? lastUsedId : cuentas[0].id
+  sel.innerHTML = cuentas.map(c => `<option value="${c.id}" ${c.id===defaultId?'selected':''}>${c.nombre}</option>`).join('')
 }
 
 function closeQuickAdd() {
@@ -16608,13 +16630,15 @@ function saveQuickAdd() {
   const concepto = document.getElementById('quickConcepto').value.trim() || (_qaCat || (_qaType==='gasto'?'Gasto':'Ingreso'))
   const cat = _qaCat || (_qaType==='gasto' ? 'Otro' : 'Otro')
   const fecha = todayISO()
+  const cuentaId = document.getElementById('quickAccountSelect')?.value || (S.cuentas[0]?.id || '')
+  const cuenta = S.cuentas.find(c => c.id === cuentaId)
+  if (cuentaId) localStorage.setItem('mn_quickadd_last_account', cuentaId)
   if (_qaType === 'gasto') {
-    S.gastos.push({ id:uid(), concepto, importe, categoria:cat, fecha, recurrente:false })
-    // Deduct from first account
-    if (S.cuentas.length) S.cuentas[0].saldo = (Number(S.cuentas[0].saldo)||0) - importe
+    S.gastos.push({ id:uid(), concepto, importe, categoria:cat, fecha, cuentaId, recurrente:false })
+    if (cuenta) cuenta.saldo = (Number(cuenta.saldo)||0) - importe
   } else {
-    S.ingresos.push({ id:uid(), concepto, importe, categoria:cat, fecha, status:'cobrado' })
-    if (S.cuentas.length) S.cuentas[0].saldo = (Number(S.cuentas[0].saldo)||0) + importe
+    S.ingresos.push({ id:uid(), concepto, importe, categoria:cat, fecha, cuentaId, status:'cobrado' })
+    if (cuenta) cuenta.saldo = (Number(cuenta.saldo)||0) + importe
   }
   save()
   updateStreak()
