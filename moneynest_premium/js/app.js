@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.8'
+const VERSION = '1.9'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7629,6 +7629,11 @@ function renderConfiguracion() {
         <div class="stat-row"><span class="stat-key">📉 ${t('page_deudas')}</span><span class="stat-val">${S.deudas.length}</span></div>
         <div class="stat-row"><span class="stat-key">🎯 ${t('page_objetivos')}</span><span class="stat-val">${S.objetivos.length}</span></div>
 
+        <div style="margin-top:14px;display:flex;gap:14px;font-size:.78rem">
+          <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--text2)">🔒 ${_aut ? _aut('cfg_link_privacidad','Política de Privacidad') : 'Política de Privacidad'}</a>
+          <a href="./terms.html" target="_blank" rel="noopener" style="color:var(--text2)">📄 ${_aut ? _aut('cfg_link_terminos','Términos de Servicio') : 'Términos de Servicio'}</a>
+        </div>
+
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary btn-sm" onclick="lanzarTutorial()">${t('cfg_ver_tutorial')}</button>
           <button class="btn btn-ghost btn-sm" onclick="if(confirm('¿Repetir el onboarding inicial? Se recargará la página.')){localStorage.removeItem('${OB_FLAG_KEY}');localStorage.removeItem('${TUT_FLAG_KEY}');location.reload()}" title="Volver a ver el onboarding completo">🔄 Repetir onboarding</button>
@@ -12933,6 +12938,10 @@ function _obRightHTML(step) {
       </div>`}
       <div class="ob-field-error" id="obAccountError" style="display:none"></div>
     </div>
+
+    ${!isLogin ? `<div style="font-size:.72rem;color:rgba(255,255,255,.35);text-align:center;margin-top:12px;line-height:1.5">
+      ${t('ob_legal_notice','Al crear tu cuenta aceptas los')} <a href="./terms.html" target="_blank" rel="noopener" style="color:var(--accent)">${t('ob_legal_terms','Términos de Servicio')}</a> ${t('ob_legal_and','y la')} <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--accent)">${t('ob_legal_privacy','Política de Privacidad')}</a>.
+    </div>` : ''}
 
     <div class="ob-actions-row" style="margin-top:16px">
       <button class="ob-next-btn" onclick="obNext()">

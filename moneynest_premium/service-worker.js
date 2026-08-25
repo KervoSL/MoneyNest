@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v16 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v16'
+/* ─── MoneyNest Service Worker v17 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v17'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,9 @@ const LOCAL_ASSETS = [
   './js/supabase-auth.js',
   './js/entitlements.js',
   './js/data.js',
+  './privacy.html',
+  './terms.html',
+  './js/error-logging.js',
   './js/app.js',
   './js/i18n-patch.js',
   './js/app-i18n-patch.js',

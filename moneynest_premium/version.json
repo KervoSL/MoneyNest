@@ -1,10 +1,10 @@
 {
-  "version": "1.8",
+  "version": "1.9",
   "changelog": {
-    "title": "Novedades de la versión 1.8",
+    "title": "Novedades de la versión 1.9",
     "items": [
-      "Nuevo: avisos de facturas y suscripciones próximas a cobrarse (Configuración → Notificaciones)",
-      "Corregido un precio antiguo obsoleto en el aviso de fin de prueba"
+      "Añadidos la Política de Privacidad y los Términos de Servicio, con enlaces desde el registro, el pago y Configuración",
+      "Nuevo sistema interno de monitorización de errores para detectar y corregir fallos más rápido"
     ]
   }
 }

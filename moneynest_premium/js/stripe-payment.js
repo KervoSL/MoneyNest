@@ -64,6 +64,9 @@ window.MNPayment = (() => {
               <div id="mnPoElement"></div>
             </div>
             <div class="mnpo-error" id="mnPoError" style="display:none"></div>
+            <div style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.4));text-align:center;margin-bottom:10px;line-height:1.5">
+              ${_spt('payment_legal_notice','Al confirmar el pago aceptas los')} <a href="./terms.html" target="_blank" rel="noopener" style="color:var(--accent,#00D4AA)">${_spt('payment_legal_terms','Términos de Servicio')}</a> ${_spt('payment_legal_and','y la')} <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--accent,#00D4AA)">${_spt('payment_legal_privacy','Política de Privacidad')}</a>.
+            </div>
             <button class="mnpo-pay-btn" id="mnPoPayBtn">
               <span id="mnPoPayBtnText">${_spt('payment_confirm','Confirmar pago')}</span>
               <span class="mnpo-pay-spinner" id="mnPoSpinner" style="display:none"></span>

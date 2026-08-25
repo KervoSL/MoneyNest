@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidad — MoneyNest</title>
+<style>
+  :root{
+    --bg:#0A0E17; --card:#111827; --text:#E8EFF7; --text2:rgba(232,239,247,.65);
+    --text3:rgba(232,239,247,.4); --accent:#00D4AA; --border:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;
+    line-height:1.65;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+  .top img,.top .logo{width:32px;height:32px}
+  .top strong{font-size:1.1rem}
+  h1{font-size:1.5rem;font-weight:800;margin:0 0 6px}
+  .updated{color:var(--text3);font-size:.82rem;margin-bottom:28px}
+  .notice{
+    background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25);
+    border-radius:12px; padding:14px 16px; font-size:.82rem; color:rgba(245,158,11,.9);
+    margin-bottom:32px;
+  }
+  h2{font-size:1.05rem;font-weight:700;margin:32px 0 10px;color:var(--text)}
+  p,li{color:var(--text2);font-size:.92rem}
+  ul{padding-left:20px}
+  li{margin-bottom:6px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .fill{color:var(--accent);font-weight:700}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:16px 0}
+  code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <svg class="logo" width="32" height="32" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#00D4AA" fill-opacity="0.15"/><path d="M5 15L9 9l3 3 4-5" stroke="#00D4AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <strong>MoneyNest</strong>
+  </div>
+
+  <h1>Política de Privacidad</h1>
+  <div class="updated">Última actualización: <span class="fill">[FECHA]</span></div>
+
+  <div class="notice">
+    ⚠️ Este documento es un borrador de partida redactado para reflejar exactamente lo que hace la aplicación. Antes de publicarlo como definitivo, debe revisarlo un profesional legal — no sustituye asesoramiento jurídico.
+  </div>
+
+  <p>En MoneyNest nos tomamos en serio la privacidad de tus datos financieros. Este documento explica qué información recogemos, cómo la usamos, dónde se almacena y qué derechos tienes sobre ella.</p>
+
+  <h2>1. Quién es el responsable del tratamiento</h2>
+  <div class="card">
+    <p style="margin:0"><span class="fill">[NOMBRE LEGAL / RAZÓN SOCIAL]</span><br>
+    NIF/CIF: <span class="fill">[NIF O CIF]</span><br>
+    Domicilio: <span class="fill">[DIRECCIÓN FISCAL]</span><br>
+    Contacto: <span class="fill">[EMAIL DE CONTACTO/DPO]</span></p>
+  </div>
+
+  <h2>2. Qué datos recogemos</h2>
+  <ul>
+    <li><strong>Datos de cuenta:</strong> email y nombre, al crear tu cuenta.</li>
+    <li><strong>Datos financieros que tú introduces:</strong> ingresos, gastos, inversiones, deudas, objetivos, presupuestos y cuentas que registras dentro de la app. Nunca accedemos a tu banco directamente ni recogemos estos datos por otra vía — los introduces tú.</li>
+    <li><strong>Datos de pago:</strong> si contratas un plan de pago, el pago lo procesa <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener">Stripe</a> directamente. MoneyNest nunca ve ni almacena el número de tu tarjeta.</li>
+    <li><strong>Datos técnicos básicos:</strong> idioma, tema visual elegido, y registros de error si algo falla, para poder solucionarlo.</li>
+  </ul>
+
+  <h2>3. Dónde se almacenan tus datos</h2>
+  <p>Esto depende del plan que uses:</p>
+  <ul>
+    <li><strong>MoneyNest Local:</strong> tus datos financieros se guardan únicamente en tu propio dispositivo (almacenamiento local del navegador). No los enviamos a ningún servidor.</li>
+    <li><strong>MoneyNest Pro:</strong> además de en tu dispositivo, tus datos se sincronizan de forma cifrada con nuestra base de datos en la nube, gestionada por <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a> (alojada en la Unión Europea), para que puedas acceder desde varios dispositivos.</li>
+  </ul>
+
+  <h2>4. Con quién compartimos datos</h2>
+  <p>No vendemos tus datos a nadie. Solo los compartimos con los proveedores estrictamente necesarios para que la app funcione:</p>
+  <ul>
+    <li><strong>Stripe</strong> — procesamiento de pagos.</li>
+    <li><strong>Supabase</strong> — base de datos y autenticación (solo si usas el plan Pro).</li>
+    <li><strong>Vercel</strong> — alojamiento de la aplicación.</li>
+  </ul>
+  <p>Cada uno de ellos trata tus datos únicamente para prestarnos su servicio, bajo sus propias políticas de privacidad y con las garantías exigidas por el RGPD.</p>
+
+  <h2>5. Cuánto tiempo conservamos tus datos</h2>
+  <p>Mientras tu cuenta esté activa. Si eliminas tu cuenta, tus datos se borran de nuestros sistemas en un plazo máximo de <span class="fill">[PLAZO, ej. 30 días]</span>, salvo que la ley nos obligue a conservar algún dato (por ejemplo, facturas, por motivos fiscales).</p>
+
+  <h2>6. Tus derechos</h2>
+  <p>De acuerdo con el RGPD, en cualquier momento puedes:</p>
+  <ul>
+    <li>Acceder a los datos que tenemos sobre ti.</li>
+    <li>Pedir que los corrijamos si son incorrectos.</li>
+    <li>Pedir que los eliminemos ("derecho al olvido").</li>
+    <li>Exportar tus datos en un formato legible (ya disponible dentro de la propia app, en Configuración → Exportar).</li>
+    <li>Oponerte al tratamiento u oponerte a que se sigan usando.</li>
+  </ul>
+  <p>Para ejercer cualquiera de estos derechos, escríbenos a <span class="fill">[EMAIL DE CONTACTO]</span>. También tienes derecho a presentar una reclamación ante la <a href="https://www.aepd.es" target="_blank" rel="noopener">Agencia Española de Protección de Datos</a>.</p>
+
+  <h2>7. Seguridad</h2>
+  <p>Tus datos en el plan Pro viajan y se almacenan cifrados. El acceso a la base de datos está protegido mediante autenticación y reglas de acceso que garantizan que solo tú puedes ver tus propios datos.</p>
+
+  <h2>8. Menores de edad</h2>
+  <p>MoneyNest no está dirigido a menores de 16 años. Si detectamos que un menor ha creado una cuenta sin el consentimiento de sus tutores, la eliminaremos.</p>
+
+  <h2>9. Cambios en esta política</h2>
+  <p>Si actualizamos este documento de forma relevante, te lo notificaremos dentro de la propia app.</p>
+
+  <p style="margin-top:40px"><a href="./index.html">← Volver a MoneyNest</a></p>
+</div>
+</body>
+</html>
