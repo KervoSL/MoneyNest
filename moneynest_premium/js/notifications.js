@@ -135,11 +135,71 @@
       setTimeout(() => {
         sendNotification(
           _nt('notif_trial_title', 'Tu prueba de MoneyNest expira pronto ⏳'),
-          _nt('notif_trial_body',  'Desbloquea MoneyNest por 5€ y conserva todos tus datos.'),
+          _nt('notif_trial_body',  'Elige tu plan para conservar todos tus datos.'),
           null, 'trial-expiry'
         );
       }, delay);
     } catch {}
+  }
+
+  // ─── Upcoming bills (recurring expenses about to charge) ──────────
+  // Uses the existing MNRecurring system (already tracks nextExecution
+  // for anything the user marked as recurring — rent, subscriptions,
+  // etc.) rather than building a separate/duplicate schedule.
+  const UPCOMING_WINDOW_DAYS = 3;
+  const SEEN_BILLS_KEY = 'mn_notif_seen_bills';
+
+  function _getSeenBills() {
+    try { return JSON.parse(localStorage.getItem(SEEN_BILLS_KEY) || '{}'); } catch { return {}; }
+  }
+  function _markBillSeen(tag) {
+    const seen = _getSeenBills();
+    seen[tag] = Date.now();
+    // Keep this small: drop anything older than 30 days so it never grows unbounded.
+    const cutoff = Date.now() - 30 * 86400000;
+    Object.keys(seen).forEach(k => { if (seen[k] < cutoff) delete seen[k]; });
+    try { localStorage.setItem(SEEN_BILLS_KEY, JSON.stringify(seen)); } catch {}
+  }
+
+  function checkUpcomingBills() {
+    const prefs = getPrefs();
+    if (!prefs.recurring) return;
+    if (!window.MNRecurring || typeof MNRecurring.getRecurrings !== 'function') return;
+    try {
+      const items = MNRecurring.getRecurrings();
+      const now = Date.now();
+      const seen = _getSeenBills();
+      items.forEach(item => {
+        if (item.activa === false) return;
+        if (item.type !== 'gasto') return; // only bills/expenses, not income like salary
+        const next = Number(item.proximaEjecucion);
+        if (!next) return;
+        // Compare calendar dates (not exact millisecond differences) so
+        // something due later today is correctly labeled "hoy", not
+        // "mañana" — Math.ceil() of any small positive ms fraction of a
+        // day always rounds up to 1, which would mislabel same-day bills.
+        const startOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); };
+        const daysLeft = Math.round((startOfDay(next) - startOfDay(now)) / 86400000);
+        if (daysLeft < 0 || daysLeft > UPCOMING_WINDOW_DAYS) return;
+        // One notification per (item, scheduled date) — never repeat for
+        // the same upcoming charge once it's already been shown.
+        const tag = `bill-${item.id}-${next}`;
+        if (seen[tag]) return;
+        const whenLabel = daysLeft === 0
+          ? _nt('notif_hoy', 'hoy')
+          : daysLeft === 1
+            ? _nt('notif_manana', 'mañana')
+            : _nt('notif_en_n_dias', 'en {n} días').replace('{n}', daysLeft);
+        sendNotification(
+          `${item.emoji || '💸'} ${_nt('notif_factura_proxima', 'Factura próxima')} — ${item.nombre || ''}`,
+          _nt('notif_factura_body', '{importe} se cobrará {cuando}.').replace('{importe}', _eur(item.importe)).replace('{cuando}', whenLabel),
+          null, tag
+        );
+        _markBillSeen(tag);
+      });
+    } catch (e) {
+      console.warn('[MNNotifications] checkUpcomingBills error:', e);
+    }
   }
 
   // ─── Streak notification ──────────────────────────────────────────
@@ -201,7 +261,7 @@
         ${permBanner}
         ${_toggle(_nt('notif_pref_budget','Alertas de presupuesto'), 'budget', prefs.budget)}
         ${_toggle(_nt('notif_pref_streak','Recordatorios de racha'), 'streak', prefs.streak)}
-        ${_toggle(_nt('notif_pref_recurring','Transacciones recurrentes'), 'recurring', prefs.recurring)}
+        ${_toggle(_nt('notif_pref_recurring','Facturas y suscripciones próximas'), 'recurring', prefs.recurring)}
         ${_toggle(_nt('notif_pref_trial','Aviso expiración trial'), 'trial', prefs.trial)}
         <button onclick="MNNotifications._sendTest()" style="margin-top:12px;padding:8px 16px;border-radius:9px;border:1px solid var(--border2,rgba(255,255,255,.1));background:transparent;color:var(--text2,rgba(255,255,255,.5));font-size:.78rem;cursor:pointer;font-family:inherit">
           ${_nt('notif_test_btn','Enviar notificación de prueba')}
@@ -257,14 +317,16 @@
   }
 
   // ─── Auto listeners ───────────────────────────────────────────────
-  window.addEventListener('mn:data:saved', () => checkBudgetAlerts());
+  window.addEventListener('mn:data:saved', () => { checkBudgetAlerts(); checkUpcomingBills(); });
 
   scheduleTrialExpiry();
+  checkUpcomingBills(); // also check once on load, not just after a save
 
   window.MNNotifications = {
     requestPermission,
     sendNotification,
     checkBudgetAlerts,
+    checkUpcomingBills,
     scheduleTrialExpiry,
     renderSettingsUI,
     _setPref,

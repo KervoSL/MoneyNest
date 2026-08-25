@@ -1,10 +1,10 @@
 {
-  "version": "1.7.1",
+  "version": "1.8",
   "changelog": {
-    "title": "Novedades de la versión 1.7.1",
+    "title": "Novedades de la versión 1.8",
     "items": [
-      "Corregido: 'Gestionar suscripción' podía fallar realmente para cuentas con intentos de compra abandonados previos",
-      "La fecha de renovación mostrada ahora siempre refleja tu suscripción activa real"
+      "Nuevo: avisos de facturas y suscripciones próximas a cobrarse (Configuración → Notificaciones)",
+      "Corregido un precio antiguo obsoleto en el aviso de fin de prueba"
     ]
   }
 }
