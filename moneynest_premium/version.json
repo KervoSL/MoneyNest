@@ -1,16 +1,11 @@
 {
-  "version": "1.3",
+  "version": "1.4",
   "changelog": {
-    "title": "Novedades de la versión 1.3",
+    "title": "Novedades de la versión 1.4",
     "items": [
-      "Plan y Facturación rediseñado: banner de prueba, tarjetas de plan claras, código promocional",
-      "Corregido el error que a veces pedía crear cuenta de nuevo al comprar",
-      "Nuevo modo demo de 30 minutos con datos de ejemplo, sin necesidad de crear cuenta",
-      "Iniciar sesión con un email que ya pagó activa el plan automáticamente",
-      "Límite de dispositivos: MoneyNest Local en un dispositivo, Pro en varios",
-      "Corregido: el Onboarding ya no se salta pasos al crear una cuenta nueva",
-      "Corregido: 'Importar datos' ya funciona correctamente",
-      "Seguridad reforzada en los pagos con límites de peticiones"
+      "Actualizaciones ahora en un solo aviso, con lo que cambia y 'Actualizar ahora' o 'Recordármelo más tarde'",
+      "Datos del modo demo siempre actualizados a la fecha real, nunca desfasados",
+      "Varios ajustes y correcciones menores"
     ]
   }
 }

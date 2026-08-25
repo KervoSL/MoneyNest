@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.3'
+const VERSION = '1.4'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -13880,26 +13880,30 @@ function loadDemoData(scenario, nombreOverride) {
   ]
 
   // ── DEUDAS ────────────────────────────────────────────────────
+  // Vencimientos relativos a hoy (no fechas fijas) — así el demo sigue
+  // teniendo sentido narrativo (hipoteca a largo plazo, coche a medio
+  // plazo, tarjeta ya vencida/problemática) sin importar cuándo se use.
   S.deudas = [
-    { id:'dd1', nombre:'Hipoteca — Piso Madrid 75m²', importeTotal:188000, importePagado:42000, interes:2.65, categoria:'Hipoteca',         vencimiento:'2052-06-01', pagos:[] },
-    { id:'dd2', nombre:'Préstamo coche — Seat León',   importeTotal:18000,  importePagado:11200, interes:4.9,  categoria:'Préstamo personal', vencimiento:'2026-12-01', pagos:[] },
-    { id:'dd3', nombre:'Tarjeta Visa Oro BBVA',        importeTotal:3200,   importePagado:1400,  interes:22,   categoria:'Tarjeta crédito',   vencimiento:'2025-12-01', pagos:[] },
-    { id:'dd4', nombre:'Préstamo estudios máster',     importeTotal:10000,  importePagado:6500,  interes:3.1,  categoria:'Préstamo personal', vencimiento:'2027-09-01', pagos:[] },
+    { id:'dd1', nombre:'Hipoteca — Piso Madrid 75m²', importeTotal:188000, importePagado:42000, interes:2.65, categoria:'Hipoteca',         vencimiento:d(mes(310),'01'), pagos:[] },
+    { id:'dd2', nombre:'Préstamo coche — Seat León',   importeTotal:18000,  importePagado:11200, interes:4.9,  categoria:'Préstamo personal', vencimiento:d(mes(4),'01'), pagos:[] },
+    { id:'dd3', nombre:'Tarjeta Visa Oro BBVA',        importeTotal:3200,   importePagado:1400,  interes:22,   categoria:'Tarjeta crédito',   vencimiento:d(mes(-2),'01'), pagos:[] },
+    { id:'dd4', nombre:'Préstamo estudios máster',     importeTotal:10000,  importePagado:6500,  interes:3.1,  categoria:'Préstamo personal', vencimiento:d(mes(13),'01'), pagos:[] },
     { id:'dd5', nombre:'Préstamo personal amigo',      importeTotal:2000,   importePagado:2000,  interes:0,    categoria:'Préstamo personal', pagos:[] },
     { id:'dd6', nombre:'Tarjeta crédito antigua',      importeTotal:1500,   importePagado:1500,  interes:0,    categoria:'Tarjeta crédito',   pagos:[] },
   ]
 
   // ── OBJETIVOS ─────────────────────────────────────────────────
+  // fechaObjetivo tambien relativa a hoy por el mismo motivo.
   S.objetivos = [
-    { id:'do1', nombre:'Fondo emergencia 12 meses', objetivo:48000, actual:22300, categoria:'Emergencia', color:'#00D4AA', emoji:'🛡️', fechaObjetivo:'2027-12-01',
+    { id:'do1', nombre:'Fondo emergencia 12 meses', objetivo:48000, actual:22300, categoria:'Emergencia', color:'#00D4AA', emoji:'🛡️', fechaObjetivo:d(mes(16),'01'),
       aportaciones:[{importe:2000,fecha:d(mes(-5),'01')},{importe:1800,fecha:d(mes(-4),'01')},{importe:2200,fecha:d(mes(-3),'01')},{importe:1900,fecha:d(mes(-2),'01')},{importe:2100,fecha:d(mes(-1),'01')}] },
-    { id:'do2', nombre:'Viaje Japón + Corea del Sur', objetivo:8500, actual:4200, categoria:'Viaje', color:'#6366F1', emoji:'✈️', fechaObjetivo:'2026-10-01',
+    { id:'do2', nombre:'Viaje Japón + Corea del Sur', objetivo:8500, actual:4200, categoria:'Viaje', color:'#6366F1', emoji:'✈️', fechaObjetivo:d(mes(2),'01'),
       aportaciones:[{importe:800,fecha:d(mes(-4),'15')},{importe:900,fecha:d(mes(-3),'15')},{importe:850,fecha:d(mes(-2),'15')},{importe:800,fecha:d(mes(-1),'15')}] },
-    { id:'do3', nombre:'Tesla Model Y 2026', objetivo:65000, actual:18000, categoria:'Coche', color:'#F43F5E', emoji:'🚗', fechaObjetivo:'2028-09-01',
+    { id:'do3', nombre:'Tesla Model Y 2026', objetivo:65000, actual:18000, categoria:'Coche', color:'#F43F5E', emoji:'🚗', fechaObjetivo:d(mes(25),'01'),
       aportaciones:[{importe:3000,fecha:d(mes(-6),'01')},{importe:3000,fecha:d(mes(-5),'01')},{importe:3000,fecha:d(mes(-4),'01')},{importe:3000,fecha:d(mes(-3),'01')},{importe:3000,fecha:d(mes(-2),'01')},{importe:3000,fecha:d(mes(-1),'01')}] },
-    { id:'do4', nombre:'Inversión inicial vivienda', objetivo:60000, actual:38000, categoria:'Casa', color:'#8B5CF6', emoji:'🏠', fechaObjetivo:'2027-06-01',
+    { id:'do4', nombre:'Inversión inicial vivienda', objetivo:60000, actual:38000, categoria:'Casa', color:'#8B5CF6', emoji:'🏠', fechaObjetivo:d(mes(10),'01'),
       aportaciones:[{importe:4000,fecha:d(mes(-5),'01')},{importe:4000,fecha:d(mes(-4),'01')},{importe:3500,fecha:d(mes(-3),'01')},{importe:3500,fecha:d(mes(-2),'01')},{importe:4000,fecha:d(mes(-1),'01')}] },
-    { id:'do5', nombre:'MacBook Pro M4 Max', objetivo:4200, actual:4200, categoria:'Tecnología', color:'#F59E0B', emoji:'💻', fechaObjetivo:'2026-03-01',
+    { id:'do5', nombre:'MacBook Pro M4 Max', objetivo:4200, actual:4200, categoria:'Tecnología', color:'#F59E0B', emoji:'💻', fechaObjetivo:d(mes(-5),'01'),
       aportaciones:[{importe:1400,fecha:d(mes(-3),'10')},{importe:1400,fecha:d(mes(-2),'10')},{importe:1400,fecha:d(mes(-1),'10')}] },
     { id:'do6', nombre:'Colchón inicial 3 meses', objetivo:12000, actual:12000, categoria:'Emergencia', color:'#10B981', emoji:'🏦', fechaObjetivo:d(mes(-8),'01'),
       aportaciones:[{importe:4000,fecha:d(mes(-11),'01')},{importe:4000,fecha:d(mes(-10),'01')},{importe:4000,fecha:d(mes(-9),'01')}] },
@@ -17451,30 +17455,52 @@ async function _fetchAppVersionInfo() {
 }
 
 async function _showUpdateBanner(registration) {
-  if (document.getElementById('mnUpdateBanner')) return // already showing
+  if (document.getElementById('mnUpdateOverlay')) return // already showing
   const info = await _fetchAppVersionInfo()
 
-  const el = document.createElement('div')
-  el.id = 'mnUpdateBanner'
-  el.className = 'mn-update-banner'
-  el.innerHTML = `
-    <div class="mn-update-banner__icon">🚀</div>
-    <div class="mn-update-banner__body">
-      <div class="mn-update-banner__title">${_aut ? _aut('update_titulo','Actualización disponible') : 'Actualización disponible'}</div>
-      <div class="mn-update-banner__sub">${info?.version ? `MoneyNest ${info.version} ya está lista.` : 'Hay una nueva versión de MoneyNest lista.'} <span class="mn-update-banner__badge">🔒 Datos conservados</span></div>
-    </div>
-    <div class="mn-update-banner__actions">
-      <button class="mn-update-banner__later" id="mnUpdateLaterBtn">Más tarde</button>
-      <button class="mn-update-banner__now" id="mnUpdateNowBtn">Actualizar ahora</button>
+  const overlay = document.createElement('div')
+  overlay.id = 'mnUpdateOverlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-body" style="text-align:center;padding:32px 26px 24px">
+        <div style="font-size:2.2rem;margin-bottom:8px">🚀</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:4px">${_aut ? _aut('update_titulo','Actualización disponible') : 'Actualización disponible'}</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:4px">${info?.version ? `MoneyNest ${info.version} ya está lista` : 'Hay una nueva versión de MoneyNest lista'}</div>
+        <div style="display:inline-block;font-size:.72rem;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:99px;margin-bottom:18px">🔒 Tus datos se conservan</div>
+        <div style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+          ${(info?.changelog?.items||[]).map(item => `
+            <div style="display:flex;gap:10px;align-items:flex-start;font-size:.85rem;color:var(--text)">
+              <span style="color:var(--accent);flex-shrink:0">✓</span>
+              <span>${item}</span>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary btn-sm" style="width:100%" id="mnUpdateNowBtn">Actualizar ahora</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" id="mnUpdateLaterBtn">Recordármelo más tarde</button>
+        </div>
+      </div>
     </div>`
-  document.body.appendChild(el)
-  requestAnimationFrame(() => el.classList.add('mn-update-banner--in'))
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
 
   document.getElementById('mnUpdateLaterBtn').onclick = () => {
-    el.classList.remove('mn-update-banner--in')
-    setTimeout(() => el.remove(), 300)
+    overlay.classList.remove('open')
+    _popScrollLock()
+    setTimeout(() => overlay.remove(), 250)
+    // Never mark the version as seen here — the waiting worker stays
+    // waiting, so this same modal reappears next visit until the
+    // person actually updates.
   }
-  document.getElementById('mnUpdateNowBtn').onclick = () => _applyUpdate(registration)
+  document.getElementById('mnUpdateNowBtn').onclick = () => {
+    // Mark the version as acknowledged BEFORE reloading, so
+    // _maybeShowChangelog() never shows the same "what's new" content
+    // a second time right after the page comes back with the new
+    // version already active — this modal already covered it.
+    if (info?.version) localStorage.setItem('mn_last_seen_version', info.version)
+    _applyUpdate(registration)
+  }
 }
 
 function _applyUpdate(registration) {
