@@ -398,11 +398,19 @@
           <div class="form-group custom-cat-field" id="invCatCustom">
             <label data-i18n="modal_inv_nueva_cat_lbl">Nueva categoría</label>
             <input type="text" id="invCatCustomInput" data-i18n-placeholder="ph_cat_custom" placeholder="Nombre de la categoría">
+            <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:400;font-size:.85rem;cursor:pointer">
+              <input type="checkbox" id="invCatCustomVolatile" style="width:auto;margin:0" onchange="toggleInvRoi()">
+              <span data-i18n="modal_inv_cat_volatil_lbl">Es un activo variable (cripto, acciones...), sin % fijo esperado</span>
+            </label>
           </div>
           <div class="form-group">
             <label data-i18n="modal_inv_cuenta_lbl">Cuenta de origen *</label>
             <select id="invCuenta" onchange="mostrarSaldoCuenta()"></select>
             <div class="form-hint" id="invCuentaSaldoHint" style="color:var(--accent)">Selecciona una cuenta para ver el saldo disponible</div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:400;font-size:.85rem;cursor:pointer" id="invNoDeductRow">
+              <input type="checkbox" id="invNoDeduct" style="width:auto;margin:0">
+              <span data-i18n="modal_inv_no_descontar_lbl">Ya tenía este dinero invertido — no descontar de la cuenta</span>
+            </label>
           </div>
         </div>
       </div>

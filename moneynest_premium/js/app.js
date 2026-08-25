@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.5'
+const VERSION = '1.6'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -751,6 +751,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'Nueva categoría',
     modal_inv_rentabilidad_hint: 'Solo para activos con retorno predecible',
     modal_inv_rentabilidad_lbl: 'Rentabilidad esperada (%)',
+    modal_inv_cat_volatil_lbl: 'Es un activo variable (cripto, acciones...), sin % fijo esperado', modal_inv_no_descontar_lbl: 'Ya tenía este dinero invertido — no descontar de la cuenta',
     modal_liquidar_cuenta_lbl: 'Cuenta donde ingresar',
     modal_liquidar_info: '✓ El capital se devolverá a la cuenta · La ganancia se registrará como ingreso · La pérdida se registrará como gasto',
     modal_liquidar_rentabilidad_lbl: 'O rentabilidad real (%)',
@@ -1269,6 +1270,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'New category',
     modal_inv_rentabilidad_hint: 'Only for assets with predictable return',
     modal_inv_rentabilidad_lbl: 'Expected return (%)',
+    modal_inv_cat_volatil_lbl: 'This is a variable asset (crypto, stocks...), no fixed % expected', modal_inv_no_descontar_lbl: "I already had this money invested — don't deduct from account",
     modal_liquidar_cuenta_lbl: 'Account to deposit to',
     modal_liquidar_info: '✓ Capital will be returned · Gain recorded as income · Loss recorded as expense',
     modal_liquidar_rentabilidad_lbl: 'Or actual return (%)',
@@ -1686,6 +1688,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'Nuova categoria',
     modal_inv_rentabilidad_hint: 'Solo per asset con rendimento prevedibile',
     modal_inv_rentabilidad_lbl: 'Rendimento atteso (%)',
+    modal_inv_cat_volatil_lbl: 'È un asset variabile (cripto, azioni...), senza % fisso previsto', modal_inv_no_descontar_lbl: 'Avevo già questo denaro investito — non detrarre dal conto',
     modal_liquidar_cuenta_lbl: 'Conto per depositare',
     modal_liquidar_info: '✓ Il capitale sarà restituito · Guadagno registrato come entrata · Perdita registrata come spesa',
     modal_liquidar_rentabilidad_lbl: 'O rendimento reale (%)',
@@ -2103,6 +2106,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'Nouvelle catégorie',
     modal_inv_rentabilidad_hint: 'Uniquement pour les actifs à rendement prévisible',
     modal_inv_rentabilidad_lbl: 'Rendement attendu (%)',
+    modal_inv_cat_volatil_lbl: "C'est un actif variable (crypto, actions...), sans % fixe attendu", modal_inv_no_descontar_lbl: "J'avais déjà cet argent investi — ne pas déduire du compte",
     modal_liquidar_cuenta_lbl: 'Compte de dépôt',
     modal_liquidar_info: '✓ Le capital sera retourné · Gain enregistré comme revenu · Perte enregistrée comme dépense',
     modal_liquidar_rentabilidad_lbl: 'Ou rendement réel (%)',
@@ -2520,6 +2524,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'Neue Kategorie',
     modal_inv_rentabilidad_hint: 'Nur für Assets mit vorhersehbarer Rendite',
     modal_inv_rentabilidad_lbl: 'Erwartete Rendite (%)',
+    modal_inv_cat_volatil_lbl: 'Dies ist ein variabler Vermögenswert (Krypto, Aktien...), ohne festen erwarteten Prozentsatz', modal_inv_no_descontar_lbl: 'Ich hatte dieses Geld bereits investiert — nicht vom Konto abziehen',
     modal_liquidar_cuenta_lbl: 'Konto zum Einzahlen',
     modal_liquidar_info: '✓ Kapital wird zurückgegeben · Gewinn als Einkommen erfasst · Verlust als Ausgabe erfasst',
     modal_liquidar_rentabilidad_lbl: 'Oder tatsächliche Rendite (%)',
@@ -2937,6 +2942,7 @@ const TRANSLATIONS = {
     modal_inv_nueva_cat_lbl: 'Nova categoria',
     modal_inv_rentabilidad_hint: 'Apenas para ativos com retorno previsível',
     modal_inv_rentabilidad_lbl: 'Retorno esperado (%)',
+    modal_inv_cat_volatil_lbl: 'É um ativo variável (cripto, ações...), sem % fixo esperado', modal_inv_no_descontar_lbl: 'Já tinha esse dinheiro investido — não descontar da conta',
     modal_liquidar_cuenta_lbl: 'Conta para depositar',
     modal_liquidar_info: '✓ Capital será devolvido · Ganho registrado como receita · Perda registrada como despesa',
     modal_liquidar_rentabilidad_lbl: 'Ou retorno real (%)',
@@ -9104,6 +9110,10 @@ function resetInvForm() {
   document.getElementById('invRentabilidad').value = ''
   document.getElementById('invFecha').value = todayISO()
   document.getElementById('invNotas').value = ''
+  const noDeductChk = document.getElementById('invNoDeduct')
+  if (noDeductChk) noDeductChk.checked = false
+  const noDeductRow = document.getElementById('invNoDeductRow')
+  if (noDeductRow) noDeductRow.style.display = 'flex' // visible when creating
   // cuenta required - saldo update is automatic
   poblarSelect('invCat','inversion')
   poblarCuentaSelect('invCuenta')
@@ -9116,8 +9126,23 @@ function toggleInvRoi() {
   const sel   = document.getElementById('invCat')
   const group = document.getElementById('invRoiGroup')
   if (!sel || !group) return
-  const cat     = sel.value
-  const volatile_ = VOLATILE_CATS.includes(cat) || cat === '__custom__'
+  const cat = sel.value
+  let volatile_
+  if (cat === '__custom__') {
+    // Mientras se escribe el nombre de una categoria nueva, respeta el
+    // checkbox — antes siempre se asumia "volatil" (oculto) sin dejar
+    // elegir, asi que cualquier categoria personalizada con retorno
+    // predecible nunca podia mostrar el campo mientras se creaba.
+    volatile_ = document.getElementById('invCatCustomVolatile')?.checked ?? true
+  } else if (!VOLATILE_CATS.includes(cat)) {
+    // Categoria personalizada ya creada anteriormente (no esta en la
+    // lista fija de categorias volatiles predefinidas): recordar si se
+    // marco como volatil en su momento (si no hay registro, asume que
+    // no lo es — mismo comportamiento que categorias con % predecible).
+    volatile_ = (S.categoriasInvVolatilesCustom || []).includes(cat)
+  } else {
+    volatile_ = VOLATILE_CATS.includes(cat)
+  }
   group.style.display = volatile_ ? 'none' : 'block'
   if (volatile_) {
     const inp = document.getElementById('invRentabilidad')
@@ -9128,6 +9153,8 @@ function editarInversion(id) {
   const i = S.inversiones.find(x=>x.id===id)
   if (!i) return
   resetInvForm()
+  const noDeductRow = document.getElementById('invNoDeductRow')
+  if (noDeductRow) noDeductRow.style.display = 'none' // never shown when editing an existing investment
   document.getElementById('invId').value = id
   document.getElementById('invModalTitle').textContent = t('btn_editar') + ' ' + t('page_inversiones')
   document.getElementById('invNombre').value    = i.nombre||''
@@ -9152,7 +9179,13 @@ function guardarInversion() {
 
   if (!id && !cuentaId && S.cuentas.length > 0) { toast(t('err_selecciona_cuenta'),'error'); _unlock(); return }
 
+  const wasCustomCat = document.getElementById('invCat')?.value === '__custom__'
   const cat = getOrCreateCat('invCat','invCatCustomInput','inversion') || S.categorias.inversion[0]
+  if (wasCustomCat && cat) {
+    const isVolatileCustom = document.getElementById('invCatCustomVolatile')?.checked
+    if (!Array.isArray(S.categoriasInvVolatilesCustom)) S.categoriasInvVolatilesCustom = []
+    if (isVolatileCustom && !S.categoriasInvVolatilesCustom.includes(cat)) S.categoriasInvVolatilesCustom.push(cat)
+  }
   const rentabilidad = parseAmount(document.getElementById('invRentabilidad').value)||0
   const fecha = document.getElementById('invFecha').value||todayISO()
   const notas = document.getElementById('invNotas').value.trim()
@@ -9162,15 +9195,19 @@ function guardarInversion() {
       const idx = S.inversiones.findIndex(x=>x.id===id)
       if (idx>=0) S.inversiones[idx] = {...S.inversiones[idx],nombre,importe,rentabilidad,categoria:cat,fecha,notas,cuentaId}
     } else {
-      S.inversiones.push({id:uid(),nombre,importe,rentabilidad,categoria:cat,fecha,notas,cuentaId,cerrada:false})
-      const cuentaOrigen = getCuenta(cuentaId)
-      if (cuentaOrigen) cuentaOrigen.saldo = (Number(cuentaOrigen.saldo)||0) - importe
+      const noDeduct = document.getElementById('invNoDeduct')?.checked || false
+      S.inversiones.push({id:uid(),nombre,importe,rentabilidad,categoria:cat,fecha,notas,cuentaId,cerrada:false,noDeduct})
+      if (!noDeduct) {
+        const cuentaOrigen = getCuenta(cuentaId)
+        if (cuentaOrigen) cuentaOrigen.saldo = (Number(cuentaOrigen.saldo)||0) - importe
+      }
     }
     save(); if (window.MNGamification) MNGamification.checkAchievement('inversion_added'); closeModal('inversionModal'); _unlock(); render(); toast(t('toast_inversion_guardada'))
   }
 
-  // Warn if operation would leave account in negative balance
-  if (!id && cuentaId) {
+  // Warn if operation would leave account in negative balance — never
+  // applies when the money isn't actually being deducted.
+  if (!id && cuentaId && !document.getElementById('invNoDeduct')?.checked) {
     const cuentaInv = getCuenta(cuentaId)
     if (cuentaInv && (Number(cuentaInv.saldo)||0) < importe) {
       confirmar(
@@ -9191,8 +9228,10 @@ function borrarInversion(id) {
     ? t('confirm_eliminar_inversion')
     : t('confirm_eliminar_inversion') + ' "' + inv.nombre + '"'
   confirmar(msg, ()=>{
-    // Devolver capital a la cuenta si la inversión estaba abierta
-    if (!inv.cerrada && inv.cuentaId) {
+    // Devolver capital a la cuenta si la inversión estaba abierta —
+    // nunca si se marcó "no descontar" al crearla (el dinero nunca
+    // salió de esa cuenta, así que tampoco debe volver a entrar).
+    if (!inv.cerrada && inv.cuentaId && !inv.noDeduct) {
       const cuenta = getCuenta(inv.cuentaId)
       if (cuenta) {
         cuenta.saldo = (Number(cuenta.saldo)||0) + (Number(inv.importe)||0)
@@ -13726,8 +13765,28 @@ function runCinematicIntro(onComplete) {
 
 // ─── DEMO DATA ────────────────────────────────────────────────
 const DEMO_FLAG = 'mn7_demo_mode'
+const DEMO_DATA_MONTH_KEY = 'mn7_demo_data_month'
 const REAL_DATA_BACKUP_KEY = 'mn7_real_data_backup'
 function isDemoMode() { try { return localStorage.getItem(DEMO_FLAG) === 'true' } catch(e){ return false } }
+
+// Si el modo demo lleva activo desde un mes calendario anterior sin
+// regenerarse (nadie pulsó "Desactivar demo" ni salió del
+// pre-onboarding demo), los datos generados aquella vez se quedarían
+// congelados con fechas cada vez más viejas — sin ingresos/gastos ni
+// vencimientos que reflejen el mes real en curso. Se comprueba en
+// cada arranque de la app y se regenera automáticamente si hace falta,
+// preservando la sesión de demo activa (nunca la cierra ni pide
+// confirmación, ya que son datos de ejemplo, no datos reales del
+// usuario).
+function _maybeRefreshStaleDemoData() {
+  try {
+    if (localStorage.getItem(DEMO_FLAG) !== 'true') return
+    const generatedMonth = localStorage.getItem(DEMO_DATA_MONTH_KEY)
+    const currentMonth = new Date().toISOString().slice(0,7)
+    if (generatedMonth === currentMonth) return // still fresh, nothing to do
+    loadDemoData('standard', null)
+  } catch (_) {}
+}
 
 function loadDemoData(scenario, nombreOverride) {
   try {
@@ -13744,6 +13803,11 @@ function loadDemoData(scenario, nombreOverride) {
       try { localStorage.setItem(REAL_DATA_BACKUP_KEY, JSON.stringify(S)) } catch(e){}
     }
     localStorage.setItem(DEMO_FLAG, 'true')
+    // Recuerda en qué mes calendario se generaron estos datos — permite
+    // detectar más adelante (en cada arranque de la app) si el demo
+    // lleva activo desde un mes anterior sin regenerarse, y refrescarlo
+    // automáticamente en vez de dejarlo con fechas cada vez más viejas.
+    localStorage.setItem(DEMO_DATA_MONTH_KEY, new Date().toISOString().slice(0,7))
     if (window.MNGamification) MNGamification.checkAchievement('demo_mode')
     // Guardar el nombre real del usuario antes de entrar al modo demo
     if (S.usuario.nombre && S.usuario.nombre !== 'Demo' && S.usuario.nombre !== 'Usuario') {
@@ -16749,6 +16813,7 @@ function init() {
   if (!access.ok) return // bloquearApp() ya fue llamado internamente
   // ──────────────────────────────────────────────────────────
   try { load() } catch(e) { S = defaultState() }
+  _maybeRefreshStaleDemoData()
   try { loadLang() } catch(e) {}
   // Guarantee every required field exists — defensive after any crash or corrupt data
   if (!S || typeof S !== 'object') S = defaultState()
