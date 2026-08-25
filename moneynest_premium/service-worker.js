@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v8 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v8'
+/* ─── MoneyNest Service Worker v9 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v9'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,33 @@ const LOCAL_ASSETS = [
   './css/billing.css',
   './css/data-manager.css',
   './css/premium-ux.css',
+  './js/auth.js',
+  './js/supabase-auth.js',
+  './js/entitlements.js',
+  './js/data.js',
   './js/app.js',
+  './js/i18n-patch.js',
+  './js/app-i18n-patch.js',
+  './js/mn-email.js',
+  './components/auth-ui.js',
+  './js/stripe-config.js',
+  './js/stripe-payment.js',
+  './js/billing.js',
+  './js/billing-ui.js',
+  './js/auth-ui.js',
+  './js/billing-i18n-patch.js',
+  './js/data-manager.js',
+  './js/sync.js',
+  './js/gamification-guides.js',
+  './js/gamification.js',
+  './js/bank-import.js',
+  './js/recurring.js',
+  './js/notifications.js',
+  './js/kpi-animator.js',
+  './js/premium-empty-states.js',
+  './js/premium-features.js',
+  './js/premium-ux.js',
+  './js/install-prompt.js',
 ]
 const REMOTE_ASSETS = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
