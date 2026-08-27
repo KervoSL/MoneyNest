@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.9.1'
+const VERSION = '1.9.2'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -13276,7 +13276,12 @@ function obGoBankImport() {
   }, 50)
 }
 
+let _lastTrackedObStep = null
 function obRender(direction) {
+  if (_lastTrackedObStep !== obStep) {
+    _lastTrackedObStep = obStep
+    window.MNAnalytics?.track('onboarding_step_reached', { step: obStep })
+  }
   const bar = document.getElementById('obGlobalBar')
   if (bar) {
     bar.style.transition = 'width .4s cubic-bezier(.4,0,.2,1)'
@@ -14239,6 +14244,7 @@ function activateDemoWithConfig() {
 
 
 function finishOnboarding() {
+  window.MNAnalytics?.track('onboarding_completed', { plan: obData.plan || 'trial' })
   if (obData.nombre) S.usuario.nombre = obData.nombre
   S.usuario.mode = 'personal'
 
@@ -14602,6 +14608,7 @@ function _startPreOnboardingDemo() {
   _renderPreOnboardingDemoBanner()
   _startPreOnboardingDemoTicker()
   toast('🎮 Modo demo activado — tienes 30 minutos para explorar')
+  window.MNAnalytics?.track('preonboarding_demo_started')
 }
 
 function _resumePreOnboardingDemo() {
@@ -14710,6 +14717,7 @@ function _isPreOnboardingDemoActive() {
 }
 
 function _showPreOnboardingBlockedModal() {
+  window.MNAnalytics?.track('preonboarding_demo_blocked_action')
   document.getElementById('preObBlockedOverlay')?.remove()
   const overlay = document.createElement('div')
   overlay.id = 'preObBlockedOverlay'
@@ -14721,7 +14729,7 @@ function _showPreOnboardingBlockedModal() {
         <div style="font-size:1.02rem;font-weight:800;color:var(--text);margin-bottom:6px">Esto ya es cosa tuya</div>
         <div style="font-size:.85rem;color:var(--text2);margin-bottom:20px;line-height:1.5">Para guardar tus propios datos necesitas crear una cuenta gratis — tarda menos de un minuto.</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_popScrollLock();_endPreOnboardingDemo('signup')">Crear cuenta gratis</button>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_popScrollLock();window.MNAnalytics?.track('preonboarding_signup_clicked',{from:'blocked_action'});_endPreOnboardingDemo('signup')">Crear cuenta gratis</button>
           <button class="btn btn-ghost btn-sm" style="width:100%" onclick="document.getElementById('preObBlockedOverlay').remove();_popScrollLock()">Seguir mirando</button>
         </div>
       </div>

@@ -195,6 +195,7 @@ function confirmPlan(planKey) {
 }
 
 async function _doConfirmPlan(planKey) {
+  window.MNAnalytics?.track('plan_selected', { plan: planKey })
   // CRITICAL RULE (never violated): pressing this button must NEVER
   // grant Local/Pro by itself. It only ever opens the real embedded
   // payment modal (MNPayment / stripe-payment.js) — the plan is
@@ -236,6 +237,7 @@ async function _doConfirmPlan(planKey) {
     return;
   }
   closePlanModal();
+  window.MNAnalytics?.track('payment_modal_opened', { plan: planKey })
   MNPayment.open(priceId, email);
 }
 

@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v18 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v18'
+/* ─── MoneyNest Service Worker v19 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v19'
 const LOCAL_ASSETS = [
   './',
   './index.html',

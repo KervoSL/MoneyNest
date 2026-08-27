@@ -1,9 +1,9 @@
 {
-  "version": "1.9.1",
+  "version": "1.9.2",
   "changelog": {
-    "title": "Novedades de la versión 1.9.1",
+    "title": "Novedades de la versión 1.9.2",
     "items": [
-      "Nuevo: eliminar tu cuenta por completo desde Configuración (cancela tu plan y borra todos tus datos de nuestros servidores)"
+      "Nuevo sistema interno de analítica de uso, para entender mejor cómo se usa la app y seguir mejorándola"
     ]
   }
 }

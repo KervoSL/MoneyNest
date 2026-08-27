@@ -332,6 +332,7 @@ window.MNPayment = (() => {
   }
 
   function _showError(msg) {
+    window.MNAnalytics?.track('payment_failed', { message: String(msg).slice(0, 100) })
     const el = document.getElementById('mnPoError');
     el.textContent    = msg;
     el.style.display  = 'block';
@@ -344,6 +345,7 @@ window.MNPayment = (() => {
 
   function _showSuccess(priceId) {
     const isLocal = priceId === MNStripeConfig.prices.local;
+    window.MNAnalytics?.track('payment_succeeded', { plan: isLocal ? 'local' : 'pro' })
     const split = document.querySelector('#mnPaymentSheet .mnpo-split');
     if (split) split.style.display = 'none';
     document.getElementById('mnPoSuccess').style.display = 'flex';
