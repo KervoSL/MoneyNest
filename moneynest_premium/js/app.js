@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.9'
+const VERSION = '1.9.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7576,6 +7576,9 @@ function renderConfiguracion() {
           </button>
           <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
           <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
+          <div style="font-size:.72rem;color:var(--text3);margin:2px 0 8px">${t('cfg_borrar_todo_hint','Borra tus datos financieros, pero mantiene tu cuenta y tu plan activos.')}</div>
+          <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
+          <div style="font-size:.72rem;color:var(--text3);margin-top:2px">${t('cfg_eliminar_cuenta_hint','Elimina tu cuenta por completo, tu plan y todos tus datos. No se puede deshacer.')}</div>
         </div>
       </div>
 
@@ -10523,6 +10526,80 @@ function borrarTodo() {
     updateSidebarLogo()
     toast(t('toast_datos_eliminados'))
   }, {titulo:t('confirm_borrar_todo_titulo'),icono:'⚠️',btnLabel:t('confirm_borrar_todo_btn')})
+}
+
+// Real, irreversible account deletion — cancels any active Stripe
+// subscription and deletes the Supabase auth user + profile entirely
+// (unlike borrarTodo(), which intentionally only clears local
+// financial data and keeps the account). Double confirmation given
+// how destructive and permanent this is: a warning modal, then typing
+// a confirmation word.
+function confirmarEliminarCuenta() {
+  if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
+    toast(t('cfg_eliminar_cuenta_sin_sesion','Necesitas haber iniciado sesión para eliminar tu cuenta.'), 'error')
+    return
+  }
+  confirmar(
+    t('confirm_eliminar_cuenta_real','Esto eliminará tu cuenta, tu plan y todos tus datos de nuestros servidores de forma permanente. No se puede deshacer.'),
+    () => _promptDeleteAccountWord(),
+    { titulo: t('cfg_eliminar_cuenta','Eliminar mi cuenta'), icono: '🗑️', btnLabel: t('confirm_eliminar_cuenta_btn','Sí, continuar') }
+  )
+}
+
+function _promptDeleteAccountWord() {
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.id = 'deleteAccountWordOverlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:380px">
+      <div class="modal-body" style="padding:24px 22px;text-align:center">
+        <div style="font-size:1.8rem;margin-bottom:8px">⚠️</div>
+        <div style="font-weight:800;margin-bottom:10px">${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-bottom:16px">${t('cfg_eliminar_escribe','Escribe ELIMINAR para confirmar.')}</div>
+        <input type="text" id="deleteAccountWordInput" class="form-input" style="text-align:center;text-transform:uppercase" autocomplete="off">
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="document.getElementById('deleteAccountWordOverlay').remove();_popScrollLock()">${t('btn_cancelar','Cancelar')}</button>
+          <button class="btn btn-danger btn-sm" style="flex:1" id="deleteAccountConfirmBtn" onclick="_executeAccountDeletion()">${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
+        </div>
+      </div>
+    </div>`
+  document.body.appendChild(overlay)
+  requestAnimationFrame(() => overlay.classList.add('open'))
+  _pushScrollLock()
+  setTimeout(() => document.getElementById('deleteAccountWordInput')?.focus(), 100)
+}
+
+async function _executeAccountDeletion() {
+  const input = document.getElementById('deleteAccountWordInput')
+  if ((input?.value || '').trim().toUpperCase() !== 'ELIMINAR') {
+    toast(t('cfg_eliminar_palabra_incorrecta','Escribe exactamente ELIMINAR para confirmar.'), 'error')
+    return
+  }
+  const btn = document.getElementById('deleteAccountConfirmBtn')
+  if (btn) { btn.disabled = true; btn.textContent = t('loading_eliminando','Eliminando…') }
+  try {
+    const session = window.MNSupabaseAuth.getSession()
+    const token = session?.access_token
+    const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || !data.ok) {
+      console.error('[_executeAccountDeletion] backend error:', data)
+      toast(t('cfg_eliminar_error','No se pudo eliminar la cuenta. Inténtalo de nuevo o escríbenos.'), 'error')
+      if (btn) { btn.disabled = false; btn.textContent = t('cfg_eliminar_cuenta','Eliminar mi cuenta') }
+      return
+    }
+    document.getElementById('deleteAccountWordOverlay')?.remove()
+    _forceReleaseScrollLock()
+    localStorage.clear()
+    location.reload()
+  } catch (err) {
+    console.error('[_executeAccountDeletion] error:', err)
+    toast(t('cfg_eliminar_error','No se pudo eliminar la cuenta. Inténtalo de nuevo o escríbenos.'), 'error')
+    if (btn) { btn.disabled = false; btn.textContent = t('cfg_eliminar_cuenta','Eliminar mi cuenta') }
+  }
 }
 
 
