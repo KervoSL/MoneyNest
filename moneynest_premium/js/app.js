@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.11.1'
+const VERSION = '1.12'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -5200,7 +5200,7 @@ function renderIngresos() {
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ${t('page_ingresos')}</div><div class="page-sub">${ingPeriodLabel} · ${S.ingresos.filter(i=>i.status!=='pending').length} cobrados · ${pendingIngs.length} pendientes</div></div>
     <div class="section-actions">
       <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
-      <button class="btn btn-primary btn-sm" onclick="openModal('ingresoModal');resetIngresoForm()">${t('btn_nuevo_ingreso','+ Nuevo ingreso')}</button>
+      <button class="btn btn-primary btn-sm" onclick="MNTxWizard.open('ingreso')">${t('btn_nuevo_ingreso','+ Nuevo ingreso')}</button>
     </div>
   </div>
 
@@ -5408,7 +5408,7 @@ function renderGastos() {
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> ${t('page_gastos')}</div><div class="page-sub">${_gPeriodLabel()} · ${t('control_salidas')}</div></div>
     <div class="section-actions">
       <button class="btn btn-secondary btn-sm" onclick="window.MNBankImport&&MNBankImport.open()" style="background:var(--accent-dim);border-color:rgba(0,212,170,.35);color:var(--accent)">🏦 ${t('btn_importar_datos_bancarios','Importar datos bancarios')}</button>
-      <button class="btn btn-primary btn-sm" onclick="openModal('gastoModal');resetGastoForm()">${t('btn_nuevo_gasto')}</button>
+      <button class="btn btn-primary btn-sm" onclick="MNTxWizard.open('gasto')">${t('btn_nuevo_gasto')}</button>
     </div>
   </div>
 
@@ -6967,7 +6967,7 @@ function _reviewCount() {
 
 const REVISION_PAGE_SIZE = 50 // reuse simple incremental rendering so hundreds/thousands of pending groups never render at once
 let _revisionRenderLimit = REVISION_PAGE_SIZE
-let _revisionMode = 'normal' // 'normal' | 'quick'
+let _revisionMode = 'quick' // 'normal' | 'quick'
 let _revisionQuickTipo = 'gasto'
 let _revisionQuickCategory = ''
 
@@ -7004,8 +7004,8 @@ function renderRevision() {
 
   const modeTabs = `
     <div class="mnbi-cat-tabs" style="margin-bottom:14px">
-      <button type="button" class="mnbi-cat-tab ${_revisionMode==='normal'?'active':''}" onclick="_setRevisionMode('normal')">📋 ${t('revision_modo_normal','Uno a uno')}</button>
       <button type="button" class="mnbi-cat-tab ${_revisionMode==='quick'?'active':''}" onclick="_setRevisionMode('quick')">⚡ ${t('revision_modo_rapido','Categoría rápida')}</button>
+      <button type="button" class="mnbi-cat-tab ${_revisionMode==='normal'?'active':''}" onclick="_setRevisionMode('normal')">📋 ${t('revision_modo_normal','Uno a uno')}</button>
     </div>`
 
   const quickBar = _revisionMode === 'quick' ? (() => {

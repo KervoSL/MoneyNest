@@ -1,9 +1,11 @@
 {
-  "version": "1.11.1",
+  "version": "1.12",
   "changelog": {
-    "title": "Novedades de la versión 1.11.1",
+    "title": "Novedades de la versión 1.12",
     "items": [
-      "Corregido un fallo de fondo en el sistema de actualización que podía hacer que pulsar 'Actualizar ahora' no aplicara realmente los cambios más recientes"
+      "Nuevo: crear un ingreso o gasto ahora es un asistente guiado paso a paso (importe → nombre y categoría → fecha y detalles)",
+      "En Revisión, 'Categoría rápida' ahora es el modo principal",
+      "Editar un ingreso o gasto existente sigue funcionando igual que siempre"
     ]
   }
 }
