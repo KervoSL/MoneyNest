@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.10.1'
+const VERSION = '1.11'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -5650,7 +5650,7 @@ function renderInversiones() {
       <div class="page-sub">${t('inv_page_sub','Cartera de inversiones')}</div>
     </div>
     <div class="section-actions">
-      <button class="btn btn-primary btn-sm" onclick="openModal('inversionModal');resetInvForm()">${t('btn_nueva_inversion','+ Nueva inversión')}</button>
+      <button class="btn btn-primary btn-sm" onclick="MNInvWizard.open()">${t('btn_nueva_inversion','+ Nueva inversión')}</button>
     </div>
   </div>
 

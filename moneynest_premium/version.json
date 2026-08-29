@@ -1,11 +1,11 @@
 {
-  "version": "1.10.1",
+  "version": "1.11",
   "changelog": {
-    "title": "Novedades de la versión 1.10.1",
+    "title": "Novedades de la versión 1.11",
     "items": [
-      "Corregido: liquidar una inversión ya no vuelve a contar los beneficios que ya habías retirado antes",
-      "Ahora se puede liquidar una inversión por 0€ (útil para cuentas fondeadas perdidas por completo)",
-      "Las inversiones liquidadas se muestran en una sección plegable al final, en vez de mezcladas con las abiertas"
+      "Nuevo: crear una inversión ahora es un asistente guiado paso a paso",
+      "Nuevo: puedes vincular un gasto ya registrado con una inversión (útil para cuentas fondeadas, exámenes de trading, etc.), en vez de contarlo dos veces",
+      "Editar una inversión existente sigue funcionando igual que siempre"
     ]
   }
 }
