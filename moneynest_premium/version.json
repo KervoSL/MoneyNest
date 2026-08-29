@@ -1,9 +1,10 @@
 {
-  "version": "1.9.2",
+  "version": "1.9.3",
   "changelog": {
-    "title": "Novedades de la versión 1.9.2",
+    "title": "Novedades de la versión 1.9.3",
     "items": [
-      "Nuevo sistema interno de analítica de uso, para entender mejor cómo se usa la app y seguir mejorándola"
+      "Corregido: el botón de cambiar contraseña ya no aparecía para cuentas que iniciaron sesión con Google o Apple",
+      "Limpieza interna: eliminado código de racha duplicado que nunca se ejecutaba"
     ]
   }
 }

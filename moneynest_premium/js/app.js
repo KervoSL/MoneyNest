@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.9.2'
+const VERSION = '1.9.3'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -101,6 +101,22 @@ function initUser() {
   return user
 }
 
+const TRIAL_MOVEMENT_LIMIT = 100
+let _lastTrialWarningShownAt = null
+
+// Cuenta ingresos + gastos directamente de localStorage (SK = 'mn7_data')
+// en vez de leer la variable global S, porque checkAccess() se ejecuta
+// en init() ANTES de load() — en ese punto S todavia no existe.
+function _countTrialMovements() {
+  try {
+    const raw = localStorage.getItem(SK)
+    if (!raw) return 0
+    const data = JSON.parse(raw)
+    return (Array.isArray(data.ingresos) ? data.ingresos.length : 0) +
+           (Array.isArray(data.gastos)   ? data.gastos.length   : 0)
+  } catch { return 0 }
+}
+
 function checkAccess() {
   const user = getUser()
   if (user.plan === 'locked_local') {
@@ -108,10 +124,10 @@ function checkAccess() {
     return { ok: false, reason: 'locked_local' }
   }
   if (user.plan === 'trial') {
-    if (user.trialEndsAt && Date.now() > user.trialEndsAt) {
+    if (_countTrialMovements() >= TRIAL_MOVEMENT_LIMIT) {
       patchUser({ plan: 'locked_local' })
       bloquearApp(user)
-      return { ok: false, reason: 'trial_expired' }
+      return { ok: false, reason: 'trial_limit_reached' }
     }
     return { ok: true, reason: null }
   }
@@ -151,10 +167,10 @@ function bloquearApp(user) {
     <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif;overflow-y:auto">
       <div style="position:relative;width:min(720px,100%);margin:auto 0;padding:8px 0">
         <div style="text-align:center;margin-bottom:28px">
-          <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#A5B4FC;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px">⏳ Prueba gratuita finalizada</span>
+          <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#A5B4FC;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px">🎉 Prueba gratuita completada</span>
           <div style="font-size:1.7rem;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-.02em">Elige tu plan de MoneyNest</div>
           <div style="font-size:.9rem;color:rgba(255,255,255,0.55);line-height:1.6">
-            Tu período de prueba gratuita de 24h ha concluido.<br>Tus datos siguen intactos — elige un plan para seguir usando MoneyNest.
+            Has registrado ${TRIAL_MOVEMENT_LIMIT} movimientos en tu prueba gratuita.<br>Tus datos siguen intactos — elige un plan para seguir usando MoneyNest.
           </div>
         </div>
 
@@ -4098,6 +4114,25 @@ function save() {
   try { localStorage.setItem(SK, JSON.stringify(S)) } catch(e) {}
   try { updateDocTitle() } catch(e) {}
   try { document.dispatchEvent(new CustomEvent('mn:saved')) } catch(e) {}
+  // Trial usage limit: check right after every save too, not just on
+  // app load — otherwise someone could keep adding movements past 100
+  // indefinitely until their next page reload.
+  try {
+    const user = getUser()
+    if (user.plan === 'trial') {
+      const total = S.ingresos.length + S.gastos.length
+      if (total >= TRIAL_MOVEMENT_LIMIT) {
+        patchUser({ plan: 'locked_local' })
+        bloquearApp(user)
+        return
+      }
+      const remaining = TRIAL_MOVEMENT_LIMIT - total
+      if (remaining > 0 && remaining <= 10 && remaining !== _lastTrialWarningShownAt) {
+        _lastTrialWarningShownAt = remaining
+        toast(`⏳ Te quedan ${remaining} movimientos en tu prueba gratuita`, 'warn')
+      }
+    }
+  } catch(e) {}
   // Confetti: primer mes con cashflow positivo
   try {
     const _cfKey = 'mn_cf_celebrated'
@@ -7525,6 +7560,7 @@ function renderConfiguracion() {
           <input type="text" id="cfgNombre" value="${S.usuario.nombre||''}" placeholder="${t('cfg_nombre')}">
         </div>
         <button class="btn btn-primary btn-sm" onclick="guardarPerfil()">${t('cfg_guardar')}</button>
+        ${((window.MNSupabaseAuth?.isLoggedIn?.() ?? false) && !window.MNSupabaseAuth?.getProvider?.()) ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="window.MNAuthUI?.showAuthModal?.('update-password')">🔑 ${t('cfg_btn_cambiar_password','Cambiar contraseña')}</button>` : ''}
       </div>
 
       </div>
@@ -7733,7 +7769,7 @@ function renderFacturacion() {
       <div class="mn-plan-card__icon">⏱</div>
       <div class="mn-plan-card__name">${_aut('plan_trial_name','Free Trial')}</div>
       <div class="mn-plan-card__price">${_aut('cfg_gratis','Gratis')}</div>
-      <div class="mn-plan-card__period">${_aut('cfg_trial_periodo','Acceso 24 horas')}</div>
+      <div class="mn-plan-card__period">${_aut('cfg_trial_periodo','Hasta 100 movimientos')}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">${_aut('plan_feat_todas_pantallas','Todas las pantallas')}</li>
         <li class="ok">${_aut('plan_feat_datos_locales','Datos locales')}</li>

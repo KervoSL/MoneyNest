@@ -1414,24 +1414,7 @@
     }
     s.lastOpenDate = today;
     _saveStreak(s);
-    showStreakBadge(s.streak);
     _checkStreakAchievements();
-  }
-
-  function showStreakBadge(streak) {
-    if (streak < 3) return;
-    // Inject badge near the topbar if container exists
-    const container = document.getElementById('streakBadgeContainer') || document.querySelector('.topbar-right') || document.querySelector('.sidebar-footer');
-    if (!container) return;
-    let badge = document.getElementById('mn-streak-badge');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'mn-streak-badge';
-      badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:#F59E0B;cursor:default;padding:3px 8px;background:rgba(245,158,11,0.12);border-radius:99px;border:1px solid rgba(245,158,11,0.3)';
-      container.appendChild(badge);
-    }
-    badge.textContent = `🔥 ${streak}`;
-    badge.title = `${streak} días de racha`;
   }
 
   // ─── Auto-check on data save ──────────────────────────────────────
