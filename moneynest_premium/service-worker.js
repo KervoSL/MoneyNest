@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v23 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v23'
+/* ─── MoneyNest Service Worker v24 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v24'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -55,7 +55,20 @@ const REMOTE_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
-      cache.addAll(LOCAL_ASSETS).then(() =>
+      // Each LOCAL_ASSETS fetch explicitly bypasses the browser's own
+      // HTTP cache (cache: 'reload') — cache.addAll() alone doesn't
+      // guarantee this, and without it a stale HTTP-cached copy of
+      // e.g. js/app.js could get pre-cached into a brand new
+      // CACHE_NAME during an update, defeating the whole update
+      // mechanism silently (the SW correctly detects a new version,
+      // but re-caches the same old file contents).
+      Promise.all(
+        LOCAL_ASSETS.map(url =>
+          fetch(url, { cache: 'reload' })
+            .then(r => { if (r.ok) return cache.put(url, r) })
+            .catch(() => {})
+        )
+      ).then(() =>
         Promise.allSettled(
           REMOTE_ASSETS.map(url =>
             fetch(url, { mode: 'cors' })
@@ -113,7 +126,7 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.open(CACHE_NAME).then(cache => cache.match(event.request)).then(cached => {
       if (cached) return cached
       return fetch(event.request).then(response => {
         if (!response || response.status !== 200 || response.type === 'opaque') return response
@@ -121,7 +134,7 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
         return response
       }).catch(() => {
-        if (event.request.mode === 'navigate') return caches.match('./index.html')
+        if (event.request.mode === 'navigate') return caches.open(CACHE_NAME).then(cache => cache.match('./index.html'))
         return new Response('', { status: 503 })
       })
     })

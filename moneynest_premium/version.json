@@ -1,11 +1,9 @@
 {
-  "version": "1.11",
+  "version": "1.11.1",
   "changelog": {
-    "title": "Novedades de la versión 1.11",
+    "title": "Novedades de la versión 1.11.1",
     "items": [
-      "Nuevo: crear una inversión ahora es un asistente guiado paso a paso",
-      "Nuevo: puedes vincular un gasto ya registrado con una inversión (útil para cuentas fondeadas, exámenes de trading, etc.), en vez de contarlo dos veces",
-      "Editar una inversión existente sigue funcionando igual que siempre"
+      "Corregido un fallo de fondo en el sistema de actualización que podía hacer que pulsar 'Actualizar ahora' no aplicara realmente los cambios más recientes"
     ]
   }
 }
