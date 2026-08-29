@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.12'
+const VERSION = '1.12.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -163,6 +163,18 @@ function isTrialExpired() {
 function isGuest() { return getUser().plan === 'locked_local'; }
 
 function bloquearApp(user) {
+  // Preserve the real #authModal element (cloned) before wiping the
+  // whole body below — showAuthModal() (components/auth-ui.js) looks
+  // it up by id and silently does nothing if it's missing. Without
+  // this, clicking a plan here while not yet fully logged in (the
+  // common case right when the trial limit hits, before the session
+  // restore has necessarily resolved) called _doConfirmPlan ->
+  // showAuthModal('register'), which found no #authModal and returned
+  // with zero visible effect and zero console errors — exactly "gets
+  // stuck, no modal opens".
+  const existingAuthModal = document.getElementById('authModal')
+  const authModalClone = existingAuthModal ? existingAuthModal.cloneNode(true) : null
+
   document.body.innerHTML = `
     <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif;overflow-y:auto">
       <div style="position:relative;width:min(720px,100%);margin:auto 0;padding:8px 0">
@@ -249,6 +261,8 @@ function bloquearApp(user) {
     e.preventDefault()
     _openRestoreAccessModal(user)
   })
+
+  if (authModalClone) document.body.appendChild(authModalClone)
 }
 
 function _openRestoreAccessModal(user) {

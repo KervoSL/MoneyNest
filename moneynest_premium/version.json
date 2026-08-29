@@ -1,11 +1,9 @@
 {
-  "version": "1.12",
+  "version": "1.12.1",
   "changelog": {
-    "title": "Novedades de la versión 1.12",
+    "title": "Novedades de la versión 1.12.1",
     "items": [
-      "Nuevo: crear un ingreso o gasto ahora es un asistente guiado paso a paso (importe → nombre y categoría → fecha y detalles)",
-      "En Revisión, 'Categoría rápida' ahora es el modo principal",
-      "Editar un ingreso o gasto existente sigue funcionando igual que siempre"
+      "Corregido un fallo grave: al acabar la prueba gratuita, elegir un plan podía quedarse sin abrir nada si aún no se había restaurado la sesión"
     ]
   }
 }
