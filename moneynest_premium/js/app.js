@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.9.3'
+const VERSION = '1.10'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -420,6 +420,10 @@ const TRANSLATIONS = {
     revision_titulo: 'Revisión', revision_sub: 'Estas transacciones necesitan tu atención.',
     revision_vacio_titulo: 'Todo revisado', revision_vacio_sub: 'Perfecto. No tienes movimientos pendientes de revisar.',
     revision_recordar: 'Recordar esta decisión', categoria_lbl: 'Categoría', sin_categoria: 'Sin categoría',
+    revision_modo_normal: 'Uno a uno', revision_modo_rapido: 'Categoría rápida',
+    revision_quick_hint: '1. Elige un tipo y una categoría · 2. Toca cada grupo que sea de esa categoría',
+    revision_quick_activa: 'Categoría activa', revision_quick_toca: 'toca los grupos de abajo para asignarla',
+    revision_quick_asignar: 'Toca para asignar', toast_categorizado_grupo: '{n} movimientos categorizados ✓',
     toast_categorizado: 'Categorizado ✓', cargar_mas: 'Cargar más', restantes: 'restantes',
     revision_banner_singular: 'cosa necesita', revision_banner_plural: 'cosas necesitan', revision_banner_atencion: 'tu atención', revisar_ahora: 'Revisar',
     nav_calendario: 'Calendario', nav_sub_calendario: 'Actividad día a día',
@@ -958,6 +962,10 @@ const TRANSLATIONS = {
     revision_titulo: 'Review', revision_sub: 'These transactions need your attention.',
     revision_vacio_titulo: 'All reviewed', revision_vacio_sub: 'Nice work. No pending transactions to review.',
     revision_recordar: 'Remember this decision', categoria_lbl: 'Category', sin_categoria: 'No category',
+    revision_modo_normal: 'One by one', revision_modo_rapido: 'Quick category',
+    revision_quick_hint: '1. Pick a type and category · 2. Tap each group that belongs to it',
+    revision_quick_activa: 'Active category', revision_quick_toca: 'tap the groups below to assign it',
+    revision_quick_asignar: 'Tap to assign', toast_categorizado_grupo: '{n} transactions categorized ✓',
     toast_categorizado: 'Categorized ✓', cargar_mas: 'Load more', restantes: 'remaining',
     revision_banner_singular: 'item needs', revision_banner_plural: 'items need', revision_banner_atencion: 'your attention', revisar_ahora: 'Review',
     nav_calendario: 'Calendar', nav_sub_calendario: 'Day-by-day activity',
@@ -6911,17 +6919,59 @@ function _getReviewItems() {
   const ingresos = (S.ingresos||[]).filter(_txNeedsReview).map(tx => ({ ...tx, _tipo: 'ingreso' }))
   return [...gastos, ...ingresos].sort((a, b) => (b.fecha||'').localeCompare(a.fecha||''))
 }
+
+// Groups pending items by merchant (tx.merchant, the same normalized
+// key the bank importer already computes) so "McDonald's" appears once
+// with a count, not once per individual charge — mirrors the importer
+// wizard's "Por comercio" view instead of building a second, different
+// grouping mechanism. Items with no merchant (manually-flagged ones,
+// for instance) each get their own single-item "group" so nothing is
+// ever hidden.
+function _getReviewGroups() {
+  const items = _getReviewItems()
+  const byKey = {}
+  const order = []
+  items.forEach(tx => {
+    const key = tx.merchant || `__single_${tx._tipo}_${tx.id}`
+    if (!byKey[key]) { byKey[key] = { key, tipo: tx._tipo, items: [], total: 0, label: tx.merchant ? null : tx.concepto }; order.push(key) }
+    byKey[key].items.push(tx)
+    byKey[key].total += (tx._tipo === 'ingreso' ? 1 : -1) * (Number(tx.importe) || 0)
+  })
+  return order.map(k => byKey[k])
+}
 function _reviewCount() {
   return (S.gastos||[]).filter(_txNeedsReview).length + (S.ingresos||[]).filter(_txNeedsReview).length
 }
 
-const REVISION_PAGE_SIZE = 50 // reuse simple incremental rendering so hundreds/thousands of pending items never render at once
+const REVISION_PAGE_SIZE = 50 // reuse simple incremental rendering so hundreds/thousands of pending groups never render at once
 let _revisionRenderLimit = REVISION_PAGE_SIZE
+let _revisionMode = 'normal' // 'normal' | 'quick'
+let _revisionQuickTipo = 'gasto'
+let _revisionQuickCategory = ''
+
+function _setRevisionMode(mode) {
+  _revisionMode = mode === 'quick' ? 'quick' : 'normal'
+  _revisionQuickCategory = ''
+  renderRevision()
+}
+function _setRevisionQuickTipo(tipo) {
+  _revisionQuickTipo = tipo === 'ingreso' ? 'ingreso' : 'gasto'
+  _revisionQuickCategory = ''
+  renderRevision()
+}
+function _setRevisionQuickCategory(cat) {
+  if (cat === '__new__') {
+    _openCreateCategoryModal(_revisionQuickTipo, (nombre) => { _revisionQuickCategory = nombre; renderRevision() })
+    return
+  }
+  _revisionQuickCategory = cat
+  renderRevision()
+}
 
 function renderRevision() {
-  const items = _getReviewItems()
-  const visibleItems = items.slice(0, _revisionRenderLimit)
-  const hasMore = items.length > _revisionRenderLimit
+  const groups = _getReviewGroups()
+  const visibleGroups = groups.slice(0, _revisionRenderLimit)
+  const hasMore = groups.length > _revisionRenderLimit
 
   const emptyHtml = `
     <div class="empty" style="padding:60px 20px;text-align:center">
@@ -6930,100 +6980,177 @@ function renderRevision() {
       <div class="empty-sub" style="color:var(--text2);margin-top:4px">${t('revision_vacio_sub','Perfecto. No tienes movimientos pendientes de revisar.')}</div>
     </div>`
 
+  const modeTabs = `
+    <div class="mnbi-cat-tabs" style="margin-bottom:14px">
+      <button type="button" class="mnbi-cat-tab ${_revisionMode==='normal'?'active':''}" onclick="_setRevisionMode('normal')">📋 ${t('revision_modo_normal','Uno a uno')}</button>
+      <button type="button" class="mnbi-cat-tab ${_revisionMode==='quick'?'active':''}" onclick="_setRevisionMode('quick')">⚡ ${t('revision_modo_rapido','Categoría rápida')}</button>
+    </div>`
+
+  const quickBar = _revisionMode === 'quick' ? (() => {
+    const cats = _revisionQuickTipo === 'ingreso' ? (S.categorias.ingreso||[]) : (S.categorias.gasto||[])
+    return `
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">${t('revision_quick_hint','1. Elige un tipo y una categoría · 2. Toca cada grupo que sea de esa categoría')}</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button type="button" class="btn btn-sm ${_revisionQuickTipo==='gasto'?'btn-primary':'btn-ghost'}" style="flex:1" onclick="_setRevisionQuickTipo('gasto')">🔴 ${t('cat_type_gasto','Gasto')}</button>
+        <button type="button" class="btn btn-sm ${_revisionQuickTipo==='ingreso'?'btn-primary':'btn-ghost'}" style="flex:1" onclick="_setRevisionQuickTipo('ingreso')">🟢 ${t('cat_type_ingreso','Ingreso')}</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${cats.map(c => `<button type="button" onclick="_setRevisionQuickCategory('${c.replace(/'/g,"\\'")}')" style="padding:6px 12px;border-radius:99px;font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px solid ${_revisionQuickCategory===c?'var(--accent)':'var(--border2)'};background:${_revisionQuickCategory===c?'var(--accent-dim)':'var(--bg2)'};color:${_revisionQuickCategory===c?'var(--accent)':'var(--text2)'}">${catEmoji(c)} ${tCat(c)}</button>`).join('')}
+        <button type="button" onclick="_setRevisionQuickCategory('__new__')" style="padding:6px 12px;border-radius:99px;font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px dashed var(--border2);background:transparent;color:var(--text2)">➕ ${t('bi_nueva_categoria','Nueva categoría...')}</button>
+      </div>
+      ${_revisionQuickCategory ? `<div style="margin-top:10px;font-size:.8rem;color:var(--accent);font-weight:700">✓ ${t('revision_quick_activa','Categoría activa')}: ${catEmoji(_revisionQuickCategory)} ${tCat(_revisionQuickCategory)} — ${t('revision_quick_toca','toca los grupos de abajo para asignarla')}</div>` : ''}
+    </div>`
+  })() : ''
+
   const _analisisTarget = (currentPage === 'analisis') ? document.getElementById('analisisTabContent') : document.getElementById('content')
   if (!_analisisTarget) return
   _analisisTarget.innerHTML = `
   <div class="section-header">
     <div>
       <div class="page-h1">🔔 ${t('revision_titulo','Revisión')}</div>
-      <div class="page-sub">${items.length ? t('revision_sub','Estas transacciones necesitan tu atención.') : ''}</div>
+      <div class="page-sub">${groups.length ? t('revision_sub','Estas transacciones necesitan tu atención.') : ''}</div>
     </div>
   </div>
-  ${items.length ? `
-    <div id="revisionList">${visibleItems.map(_revisionItemHtml).join('')}</div>
+  ${groups.length ? `
+    ${modeTabs}
+    ${quickBar}
+    <div id="revisionList">${visibleGroups.map(g => _revisionGroupHtml(g)).join('')}</div>
     ${hasMore ? `
       <div style="text-align:center;margin-top:16px">
         <button class="btn btn-ghost btn-sm" onclick="_revisionRenderLimit+=${REVISION_PAGE_SIZE};renderRevision()">
-          ${t('cargar_mas','Cargar más')} (${items.length - _revisionRenderLimit} ${t('restantes','restantes')})
+          ${t('cargar_mas','Cargar más')} (${groups.length - _revisionRenderLimit} ${t('restantes','restantes')})
         </button>
       </div>` : ''}
   ` : emptyHtml}`
 }
 
-function _revisionItemHtml(tx) {
-  const isIngreso = tx._tipo === 'ingreso'
+function _revisionGroupHtml(g) {
+  const isIngreso = g.tipo === 'ingreso'
   const cats = isIngreso ? (S.categorias.ingreso||[]) : (S.categorias.gasto||[])
   const signColor = isIngreso ? 'var(--green)' : 'var(--red)'
   const sign = isIngreso ? '+' : '−'
   const typeLabel = isIngreso ? `🟢 ${t('cat_type_ingreso','Ingreso')}` : `🔴 ${t('cat_type_gasto','Gasto')}`
-  const domId = `${tx._tipo}-${tx.id}`
+  const count = g.items.length
+  const title = g.label || prettyMerchantLabel(g.key)
+  const dateRange = count > 1
+    ? `${fmtDate(g.items[g.items.length-1].fecha)} – ${fmtDate(g.items[0].fecha)}`
+    : fmtDate(g.items[0].fecha)
+
+  // Quick mode: the whole card becomes one big button that assigns the
+  // active category to every transaction in the group on a single tap
+  // — no per-row selects, no separate "apply" step.
+  if (_revisionMode === 'quick') {
+    const disabled = isIngreso !== (g.tipo === 'ingreso') // never mixes gasto/ingreso groups into the wrong tab
+    const clickable = _revisionQuickCategory && g.tipo === _revisionQuickTipo
+    return `
+    <div class="card" id="revGroup-${g.key}" style="margin-bottom:8px;padding:14px 16px;${clickable ? 'cursor:pointer' : 'opacity:.45'}" ${clickable ? `onclick="_applyRevisionQuickToGroup('${g.key}')"` : ''}>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:700;font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
+          <div style="font-size:.75rem;color:var(--text2);margin-top:2px">${typeLabel} · ${count} ${count===1?t('bi_movimiento','movimiento'):t('bi_movimientos','movimientos')} · ${dateRange}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-weight:800;font-size:1rem;color:${signColor}">${sign}${eur(Math.abs(g.total))}</div>
+          ${clickable ? `<div style="font-size:.7rem;color:var(--accent);margin-top:2px">👆 ${t('revision_quick_asignar','Toca para asignar')}</div>` : ''}
+        </div>
+      </div>
+    </div>`
+  }
+
+  // Normal mode: one select per group, applied to every item in it at once.
   return `
-    <div class="card" id="revItem-${domId}" style="margin-bottom:10px;padding:14px 16px">
+    <div class="card" id="revGroup-${g.key}" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
         <div style="min-width:0;flex:1">
-          <div style="font-weight:700;font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.concepto||'—'}</div>
-          <div style="font-size:.75rem;color:var(--text2);margin-top:2px">${typeLabel} · ${fmtDate(tx.fecha)}</div>
+          <div style="font-weight:700;font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
+          <div style="font-size:.75rem;color:var(--text2);margin-top:2px">${typeLabel} · ${count} ${count===1?t('bi_movimiento','movimiento'):t('bi_movimientos','movimientos')} · ${dateRange}</div>
         </div>
-        <div style="font-weight:800;font-size:1rem;color:${signColor};flex-shrink:0">${sign}${eur(tx.importe)}</div>
+        <div style="font-weight:800;font-size:1rem;color:${signColor};flex-shrink:0">${sign}${eur(Math.abs(g.total))}</div>
       </div>
       <div style="margin-top:10px">
         <label style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);display:block;margin-bottom:4px">${t('categoria_lbl','Categoría')}</label>
-        <select id="revCat-${domId}" style="width:100%;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.85rem" onchange="_categorizeFromRevision('${tx._tipo}','${tx.id}', this.value)">
+        <select id="revCat-${g.key}" style="width:100%;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:.85rem" onchange="_categorizeGroupFromRevision('${g.key}', this.value)">
           <option value="" selected>${t('sin_categoria','Sin categoría')}</option>
           ${cats.map(c => `<option value="${c.replace(/"/g,'&quot;')}">${catEmoji(c)} ${tCat(c)}</option>`).join('')}
           <option value="__new__">➕ ${t('bi_nueva_categoria','Nueva categoría...')}</option>
         </select>
       </div>
       <div class="form-check" style="margin-top:8px">
-        <input type="checkbox" id="revRemember-${domId}" checked>
-        <label for="revRemember-${domId}" style="font-size:.75rem;color:var(--text2)">${t('revision_recordar','Recordar esta decisión')}</label>
+        <input type="checkbox" id="revRemember-${g.key}" checked>
+        <label for="revRemember-${g.key}" style="font-size:.75rem;color:var(--text2)">${t('revision_recordar','Recordar esta decisión')}</label>
       </div>
     </div>`
+}
+
+// Turns a normalized merchant key like "MCDONALDS" into a readable
+// title-cased label ("Mcdonalds") for display — the raw key is
+// uppercase/normalized on purpose for matching, not for showing.
+function prettyMerchantLabel(key) {
+  if (typeof prettyMerchant === 'function') { try { return prettyMerchant(key) } catch(_) {} }
+  return String(key).charAt(0) + String(key).slice(1).toLowerCase()
 }
 
 // Opening "+ Nueva categoría..." from a select briefly leaves it on
 // that sentinel value — revert it visually while the shared category
 // modal is open, exactly like every other "+ Categoría personalizada"
 // entry point in the app.
-function _categorizeFromRevision(tipo, id, categoria) {
-  const sel = document.getElementById(`revCat-${tipo}-${id}`)
+function _categorizeGroupFromRevision(groupKey, categoria) {
+  const g = _getReviewGroups().find(x => x.key === groupKey)
+  if (!g) return
   if (categoria === '__new__') {
+    const sel = document.getElementById(`revCat-${groupKey}`)
     if (sel) sel.value = ''
-    _openCreateCategoryModal(tipo, (nombre) => { _applyRevisionCategory(tipo, id, nombre) })
+    _openCreateCategoryModal(g.tipo, (nombre) => { _applyRevisionCategoryToGroup(groupKey, nombre) })
     return
   }
   if (!categoria) return
-  _applyRevisionCategory(tipo, id, categoria)
+  _applyRevisionCategoryToGroup(groupKey, categoria)
 }
 
-function _applyRevisionCategory(tipo, id, categoria) {
-  const list = tipo === 'ingreso' ? S.ingresos : S.gastos
-  const tx = list.find(x => x.id === id)
-  if (!tx) return
-  tx.categoria = categoria
-  tx._needsReview = false
+// Quick mode: tapping a group card applies whichever category is
+// currently active, with the "remember this merchant" learning always
+// on (there's no per-group checkbox in this fast flow — the whole
+// point of quick mode is skipping per-item decisions).
+function _applyRevisionQuickToGroup(groupKey) {
+  if (!_revisionQuickCategory) return
+  _applyRevisionCategoryToGroup(groupKey, _revisionQuickCategory, true)
+}
+
+function _applyRevisionCategoryToGroup(groupKey, categoria, forceRemember) {
+  const g = _getReviewGroups().find(x => x.key === groupKey)
+  if (!g) return
+  const rememberEl = document.getElementById(`revRemember-${groupKey}`)
+  const shouldRemember = forceRemember || (rememberEl ? rememberEl.checked : true)
+
+  g.items.forEach(tx => {
+    const list = tx._tipo === 'ingreso' ? S.ingresos : S.gastos
+    const real = list.find(x => x.id === tx.id)
+    if (!real) return
+    real.categoria = categoria
+    real._needsReview = false
+  })
 
   // Learning: reuse the bank importer's existing merchant→category map
   // instead of a second, disconnected mechanism — only when the user
   // opts in and there's a normalized merchant to safely associate the
   // decision with.
-  const rememberEl = document.getElementById(`revRemember-${tipo}-${id}`)
-  if (rememberEl && rememberEl.checked && tx.merchant && window.MNBankImport && MNBankImport.loadMerchantMap) {
+  if (shouldRemember && g.key && !g.key.startsWith('__single_') && window.MNBankImport && MNBankImport.loadMerchantMap) {
     try {
-      const map = MNBankImport.loadMerchantMap(tipo)
-      map[tx.merchant] = categoria
-      MNBankImport.saveMerchantMap(map, tipo)
+      const map = MNBankImport.loadMerchantMap(g.tipo)
+      map[g.key] = categoria
+      MNBankImport.saveMerchantMap(map, g.tipo)
     } catch (e) { /* learning is a best-effort convenience, never block categorization */ }
   }
 
   save()
-  // Remove just this item from the DOM — no full reload, no losing the
+  // Remove just this group from the DOM — no full reload, no losing the
   // scroll position/state of the rest of the review list.
-  const el = document.getElementById(`revItem-${tipo}-${id}`)
+  const el = document.getElementById(`revGroup-${groupKey}`)
   if (el) el.remove()
   _updateRevisionBadges()
-  toast(t('toast_categorizado','Categorizado ✓'))
-  if (!_getReviewItems().length) renderRevision() // show the empty state once nothing is left
+  toast(g.items.length > 1 ? t('toast_categorizado_grupo','{n} movimientos categorizados ✓').replace('{n}', g.items.length) : t('toast_categorizado','Categorizado ✓'))
+  if (!_getReviewGroups().length) renderRevision() // show the empty state once nothing is left
 }
 
 // Keeps the Dashboard/sidebar "needs attention" badge in sync without

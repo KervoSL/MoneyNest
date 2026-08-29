@@ -1,10 +1,10 @@
 {
-  "version": "1.9.3",
+  "version": "1.10",
   "changelog": {
-    "title": "Novedades de la versión 1.9.3",
+    "title": "Novedades de la versión 1.10",
     "items": [
-      "Corregido: el botón de cambiar contraseña ya no aparecía para cuentas que iniciaron sesión con Google o Apple",
-      "Limpieza interna: eliminado código de racha duplicado que nunca se ejecutaba"
+      "La página de Revisión ahora agrupa movimientos del mismo comercio en vez de mostrarlos uno por uno",
+      "Nuevo: modo 'Categoría rápida' en Revisión — elige una categoría y toca todos los grupos que le correspondan al instante"
     ]
   }
 }
