@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.10'
+const VERSION = '1.10.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -5535,12 +5535,12 @@ function renderInversiones() {
     return true
   })
 
-  const cards = filtradas.map(inv=>{
+  const cardsData = filtradas.map(inv=>{
     const volatile_ = isVolatile(inv)
     const roi = calcROI(inv)
     const ganancia = inv.cerrada ? Number(inv.ganancia)||0 : (volatile_ ? 0 : Number(inv.importe)*(Number(inv.rentabilidad)||0)/100)
     const totalConGanancia = Number(inv.importe) + ganancia
-    return `
+    return { cerrada: !!inv.cerrada, html: `
     <div class="inv-card ${inv.cerrada?'cerrada':''}">
       <div class="inv-name">${inv.nombre||'—'}</div>
       <div class="inv-meta">
@@ -5619,8 +5619,29 @@ function renderInversiones() {
         <button class="btn-edit" onclick="editarInversion('${inv.id}')">${t('btn_editar')}</button>
         <button class="btn-del" onclick="borrarInversion('${inv.id}')">${t('btn_eliminar')}</button>
       </div>
-    </div>`
-  }).join('') || (window.mnEmptyStates ? window.mnEmptyStates.inversiones(_invFiltro!=='todas'||!!_invCat) : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📈</div><div class="empty-title">${_invFiltro!=='todas'||_invCat?'Sin resultados':'Tu cartera está vacía'}</div></div>`)
+    </div>` }
+  })
+
+  const cardsAbiertasArr = cardsData.filter(c => !c.cerrada)
+  const cardsCerradasArr = cardsData.filter(c => c.cerrada)
+  // Only split into an "open grid + collapsed liquidated section" when
+  // browsing everything — if the user already filtered explicitly to
+  // "Abiertas" or "Liquidadas" there's nothing to collapse, they asked
+  // to see exactly that list.
+  const splitView = _invFiltro === 'todas'
+  const cardsAbiertas = cardsAbiertasArr.map(c=>c.html).join('')
+  const cardsCerradasHtml = cardsCerradasArr.map(c=>c.html).join('')
+  const cards = cardsData.map(c=>c.html).join('') || (window.mnEmptyStates ? window.mnEmptyStates.inversiones(_invFiltro!=='todas'||!!_invCat) : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📈</div><div class="empty-title">${_invFiltro!=='todas'||_invCat?'Sin resultados':'Tu cartera está vacía'}</div></div>`)
+  const cerradasExpanded = !!window._invCerradasExpanded
+  const cerradasSectionHtml = (splitView && cardsCerradasArr.length) ? `
+    <div class="card" style="margin-top:16px;cursor:pointer" onclick="window._invCerradasExpanded=!window._invCerradasExpanded;renderInversiones()">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="card-title" style="margin:0">🗄️ ${t('inv_liquidadas_seccion','Inversiones liquidadas')} (${cardsCerradasArr.length})</div>
+        <span style="color:var(--text2);font-size:.85rem;transform:rotate(${cerradasExpanded?'180deg':'0deg'});transition:transform .15s">▾</span>
+      </div>
+    </div>
+    ${cerradasExpanded ? `<div class="inv-grid" style="margin-top:12px">${cardsCerradasHtml}</div>` : ''}
+  ` : ''
 
   document.getElementById('content').innerHTML = `
   <div class="section-header">
@@ -5703,7 +5724,8 @@ function renderInversiones() {
     </div>
   </div>
 
-  <div class="inv-grid">${cards}</div>`
+  <div class="inv-grid">${splitView ? (cardsAbiertas || (window.mnEmptyStates ? window.mnEmptyStates.inversiones(false) : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📈</div><div class="empty-title">Tu cartera está vacía</div></div>`)) : cards}</div>
+  ${cerradasSectionHtml}`
 
   setTimeout(()=>renderChartInvROI(),50)
 }
@@ -9518,8 +9540,13 @@ function confirmarLiquidacion() {
   const id = document.getElementById('liqInvId').value
   const inv = S.inversiones.find(x=>x.id===id)
   if (!inv) { toast('Inversión no encontrada','error'); return }
-  const valorFinal = parseAmount(document.getElementById('liqValor').value)
-  if (!valorFinal || valorFinal <= 0) { toast(t('err_valor_salida'),'error'); return }
+  const valorRaw = document.getElementById('liqValor').value
+  const valorFinal = parseAmount(valorRaw)
+  // Reject an empty/invalid field, but explicitly ALLOW 0 — a burned
+  // funded-account challenge or a total write-off is a legitimate exit
+  // value, and there was previously no way to enter it (0 is falsy in
+  // JS, so "!valorFinal" wrongly rejected it too).
+  if (valorRaw === '' || valorRaw === null || isNaN(valorFinal) || valorFinal < 0) { toast(t('err_valor_salida'),'error'); return }
   const ganancia = valorFinal - Number(inv.importe)
   const roiReal = inv.importe ? (ganancia/Number(inv.importe))*100 : 0
   const cuentaId = document.getElementById('liqCuenta').value
@@ -9530,24 +9557,28 @@ function confirmarLiquidacion() {
   // 1) Return full value to account
   cuenta.saldo = (Number(cuenta.saldo)||0) + valorFinal
 
-  // 2) Register only the REMAINING gain (total gain minus already-withdrawn benefits).
-  // beneficiosRetirados were already booked as income when withdrawn — don't double-count.
+  // 2) Register the gain/loss of THIS liquidation only. Profits already
+  // withdrawn via "retirar beneficio" were already booked as their own
+  // income entries at the time — they must NEVER be subtracted again
+  // here. valorFinal is what's left in the position right now (e.g. 0
+  // for a burned funded-trading account), not a running total that
+  // needs previously-withdrawn amounts backed out of it.
   const beneficiosRetirados = (inv.beneficiosRetirados || []).reduce((sum, b) => sum + Number(b.importe), 0)
-  const gananciaFinal = ganancia - beneficiosRetirados // Only book the portion not yet realized
+  const gananciaFinal = ganancia
 
   if (gananciaFinal > 0) {
     S.ingresos.push({
       id: uid(), concepto: '💰 Ganancia final: ' + inv.nombre,
       importe: gananciaFinal, categoria: 'Dividendos',
       fecha: todayISO(), cuentaId,
-      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente: ${eur(beneficiosRetirados)}` : ''}`
+      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente (no incluido aquí): ${eur(beneficiosRetirados)}` : ''}`
     })
   } else if (gananciaFinal < 0) {
     S.gastos.push({
       id: uid(), concepto: '📉 Pérdida final: ' + inv.nombre,
       importe: Math.abs(gananciaFinal), categoria: 'Otro',
       fecha: todayISO(), cuentaId,
-      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente: ${eur(beneficiosRetirados)}` : ''}`
+      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente (no incluido aquí): ${eur(beneficiosRetirados)}` : ''}`
     })
   }
 

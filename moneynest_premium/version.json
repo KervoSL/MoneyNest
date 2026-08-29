@@ -1,10 +1,11 @@
 {
-  "version": "1.10",
+  "version": "1.10.1",
   "changelog": {
-    "title": "Novedades de la versión 1.10",
+    "title": "Novedades de la versión 1.10.1",
     "items": [
-      "La página de Revisión ahora agrupa movimientos del mismo comercio en vez de mostrarlos uno por uno",
-      "Nuevo: modo 'Categoría rápida' en Revisión — elige una categoría y toca todos los grupos que le correspondan al instante"
+      "Corregido: liquidar una inversión ya no vuelve a contar los beneficios que ya habías retirado antes",
+      "Ahora se puede liquidar una inversión por 0€ (útil para cuentas fondeadas perdidas por completo)",
+      "Las inversiones liquidadas se muestran en una sección plegable al final, en vez de mezcladas con las abiertas"
     ]
   }
 }
