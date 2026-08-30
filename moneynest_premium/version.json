@@ -1,9 +1,9 @@
 {
-  "version": "1.12.2",
+  "version": "1.12.3",
   "changelog": {
-    "title": "Novedades de la versión 1.12.2",
+    "title": "Novedades de la versión 1.12.3",
     "items": [
-      "Corregido un fallo grave: al acabar la prueba gratuita, el pago o el registro se abrían pero quedaban ocultos detrás de la pantalla — ahora se ven correctamente"
+      "Pequeña mejora de fiabilidad: al abrir la app, la confirmación de tu plan actual espera correctamente a que tu sesión esté lista antes de decidir qué mostrarte"
     ]
   }
 }

@@ -31,6 +31,17 @@
 
   async function _ensureSession() {
     if (!window.MNSupabaseAuth) return false;
+    // Wait for the session restore to actually finish before deciding —
+    // without this, the very first refresh() (fired immediately on
+    // script load, see the bottom of this file) could run before
+    // supabase-auth.js's own async init() resolved, making isLoggedIn()
+    // wrongly report false for someone who really is logged in with a
+    // paid plan. That would fail this refresh 'closed' (no entitlement)
+    // for that brief window, potentially showing purchase buttons as
+    // still active on a page that renders before the next refresh tick.
+    if (typeof window.MNSupabaseAuth.ready === 'function') {
+      try { await window.MNSupabaseAuth.ready(); } catch (_) { /* still check isLoggedIn below either way */ }
+    }
     if (window.MNSupabaseAuth.isLoggedIn()) return true;
     // Anonymous sign-in is disabled at the project level (confirmed via
     // production logs: dozens of "422 Anonymous sign-ins are disabled"
