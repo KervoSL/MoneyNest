@@ -1,9 +1,10 @@
 {
-  "version": "1.13",
+  "version": "1.14",
   "changelog": {
-    "title": "Novedades de la versión 1.13",
+    "title": "Novedades de la versión 1.14",
     "items": [
-      "Corregido: los asistentes de nueva inversión y nuevo ingreso/gasto podían verse sin ningún estilo (botones sin color, texto plano) si no habías usado antes el importador de banco en esa sesión — ahora siempre se ven correctamente"
+      "Nuevo: crear una deuda ahora es un asistente guiado paso a paso, igual que inversiones e ingresos/gastos",
+      "Editar una deuda existente sigue funcionando igual que siempre"
     ]
   }
 }

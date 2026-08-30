@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v29 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v29'
+/* ─── MoneyNest Service Worker v30 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v30'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const LOCAL_ASSETS = [
   './js/error-logging.js',
   './js/investment-wizard.js',
   './js/transaction-wizard.js',
+  './js/debt-wizard.js',
   './js/app.js',
   './js/i18n-patch.js',
   './js/app-i18n-patch.js',

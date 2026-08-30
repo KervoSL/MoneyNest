@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.13'
+const VERSION = '1.14'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -5981,7 +5981,7 @@ function renderDeudas() {
       <div class="page-sub">${t('deudas_page_sub','Seguimiento, reducción y estrategia de pago')}</div>
     </div>
     <div class="section-actions">
-      <button class="btn btn-primary btn-sm" onclick="openModal('deudaModal');resetDeudaForm()">${t('btn_nueva_deuda','+ Nueva deuda')}</button>
+      <button class="btn btn-primary btn-sm" onclick="MNDebtWizard.open()">${t('btn_nueva_deuda','+ Nueva deuda')}</button>
     </div>
   </div>
 
