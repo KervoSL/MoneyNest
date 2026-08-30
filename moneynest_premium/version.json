@@ -1,9 +1,9 @@
 {
-  "version": "1.12.1",
+  "version": "1.12.2",
   "changelog": {
-    "title": "Novedades de la versión 1.12.1",
+    "title": "Novedades de la versión 1.12.2",
     "items": [
-      "Corregido un fallo grave: al acabar la prueba gratuita, elegir un plan podía quedarse sin abrir nada si aún no se había restaurado la sesión"
+      "Corregido un fallo grave: al acabar la prueba gratuita, el pago o el registro se abrían pero quedaban ocultos detrás de la pantalla — ahora se ven correctamente"
     ]
   }
 }

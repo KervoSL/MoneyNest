@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.12.1'
+const VERSION = '1.12.2'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -176,7 +176,7 @@ function bloquearApp(user) {
   const authModalClone = existingAuthModal ? existingAuthModal.cloneNode(true) : null
 
   document.body.innerHTML = `
-    <div style="position:fixed;inset:0;z-index:99999;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif;overflow-y:auto">
+    <div style="position:fixed;inset:0;z-index:9000;background:#0A0E17;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif;overflow-y:auto">
       <div style="position:relative;width:min(720px,100%);margin:auto 0;padding:8px 0">
         <div style="text-align:center;margin-bottom:28px">
           <span style="display:inline-block;padding:5px 14px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#A5B4FC;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px">🎉 Prueba gratuita completada</span>
