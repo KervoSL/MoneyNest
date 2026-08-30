@@ -12,17 +12,11 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// Both plans are annual subscriptions: Local 6,99€/año, Pro 14,99€/año.
-// Unlike create-checkout/create-payment-intent (which only ever talk
-// to ONE mode, matching whichever secret key is configured), this
-// webhook validates against BOTH live and test signing secrets and
-// must resolve price IDs from EITHER mode — so both are always in the
-// map, not just a same-mode fallback.
 const PRICE_TO_PLAN: Record<string, string> = {
-  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local', // test
-  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',   // test
-  'price_1U68YVFWll222KpaCJ6WrKWg': 'local', // live
-  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',   // live
+  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
+  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
+  'price_1U68YVFWll222KpaCJ6WrKWg': 'local',
+  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',
 };
 
 const CORS = {
@@ -52,6 +46,24 @@ function resolvePlan(sub: Stripe.Subscription): string | null {
   return priceId ? PRICE_TO_PLAN[priceId] ?? null : null;
 }
 
+// CRITICAL SECURITY CHECK: a subscription is created (and reaches
+// Stripe, emitting customer.subscription.created) the moment the
+// payment modal is opened — payment_behavior: 'default_incomplete'
+// means it exists in Stripe with status 'trialing' (for Pro's 7-day
+// trial) BEFORE the person has entered or confirmed any card. Without
+// this check, simply opening the Pro payment modal — never typing a
+// card, never pressing pay, even closing the tab immediately — was
+// enough to get Pro granted for free, since the webhook activated the
+// plan on subscription creation alone. A subscription only proves a
+// real payment method was attached once it has default_payment_method
+// set (trialing case) or is already 'active'/'past_due' (non-trial
+// case, meaning at least one invoice was actually charged).
+function hasConfirmedPaymentMethod(sub: Stripe.Subscription): boolean {
+  if (sub.status === 'active' || sub.status === 'past_due') return true;
+  if (sub.status === 'trialing') return !!sub.default_payment_method;
+  return false;
+}
+
 async function logEvent(stripeEventId: string, eventType: string, payload: unknown, userId: string | null, error?: string) {
   await supabase.from('billing_events').insert({
     stripe_event_id: stripeEventId, event_type: eventType, payload,
@@ -59,7 +71,7 @@ async function logEvent(stripeEventId: string, eventType: string, payload: unkno
   });
 }
 
-// ── Subscription activation (both Local and Pro) / cancellation ────
+// ── Subscription activation (both Local and Pro) / cancellation ──────
 
 async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe) {
   const userId = sub.metadata?.user_id || null;
@@ -67,6 +79,22 @@ async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe
   if (!userId || !plan) {
     throw new Error(`cannot resolve user_id/plan for subscription ${sub.id} (metadata: ${JSON.stringify(sub.metadata)})`);
   }
+
+  // Cancellations/failures always propagate immediately regardless of
+  // payment-method confirmation — never skip those.
+  const isEnding = sub.status === 'canceled' || sub.status === 'unpaid' || sub.status === 'incomplete_expired';
+
+  if (!isEnding && !hasConfirmedPaymentMethod(sub)) {
+    // Real subscription object exists in Stripe, but no payment method
+    // has actually been confirmed yet (e.g. the payment modal was
+    // opened and then abandoned, or the card form was never
+    // completed). Do NOT grant the plan — just record that this
+    // happened, for visibility, and wait for a later event
+    // (setup_intent.succeeded, or a subscription.updated once the
+    // method is attached) to confirm it for real.
+    return;
+  }
+
   const { start, end } = periodDates(sub);
   const custId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id ?? '';
 
@@ -83,7 +111,7 @@ async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe
   });
   if (error) throw error;
 
-  if (sub.status === 'canceled' || sub.status === 'unpaid' || sub.status === 'incomplete_expired') {
+  if (isEnding) {
     await reevaluateAfterLoss(userId, sub.id);
   }
 }
@@ -103,7 +131,7 @@ async function reevaluateAfterLoss(userId: string, endedSubscriptionId: string) 
     .eq('id', userId);
 }
 
-// ── Handlers ────────────────────────────────────────────────────
+// ── Handlers ────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
   if (session.mode !== 'subscription' || !session.subscription) return;
@@ -149,6 +177,23 @@ async function activateFromPaymentIntent(pi: Stripe.PaymentIntent, stripe: Strip
   if (!subId) return;
   const sub = await stripe.subscriptions.retrieve(subId);
   await activateFromSubscription(sub, stripe);
+}
+
+// This is what actually proves a real card was attached when starting
+// a Pro trial (create-payment-intent uses payment_behavior:
+// 'default_incomplete' with a pending_setup_intent for that case) —
+// the subscription itself reaches 'trialing' before this succeeds, so
+// activation must wait for this event rather than subscription
+// creation alone.
+async function handleSetupIntentSucceeded(si: Stripe.SetupIntent, stripe: Stripe) {
+  const custId = typeof si.customer === 'string' ? si.customer : si.customer?.id;
+  if (!custId) return;
+  const subs = await stripe.subscriptions.list({ customer: custId, status: 'trialing', limit: 5 });
+  for (const sub of subs.data) {
+    if (sub.pending_setup_intent === si.id || sub.default_payment_method) {
+      await activateFromSubscription(sub, stripe);
+    }
+  }
 }
 
 async function handleTrialWillEnd(sub: Stripe.Subscription) {
@@ -212,6 +257,9 @@ Deno.serve(async (req) => {
         break;
       case 'payment_intent.succeeded':
         await activateFromPaymentIntent(event.data.object as Stripe.PaymentIntent, stripeForThisEvent);
+        break;
+      case 'setup_intent.succeeded':
+        await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent, stripeForThisEvent);
         break;
       case 'customer.subscription.trial_will_end':
         await handleTrialWillEnd(event.data.object as Stripe.Subscription);
