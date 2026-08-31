@@ -52,12 +52,30 @@ function periodDates(sub: Stripe.Subscription) {
   };
 }
 
+// CRITICAL SECURITY CHECK — same rule as stripe-webhook's
+// hasConfirmedPaymentMethod(). A subscription reaches Stripe with
+// status 'trialing' the moment a payment modal is opened
+// (payment_behavior: 'default_incomplete'), before any card is ever
+// entered or confirmed. Without this check, restore-access — which
+// runs on every sign-in, on any device — could re-grant a plan from
+// an abandoned/incomplete trial subscription that was already
+// correctly revoked elsewhere, completely bypassing the same
+// protection the webhook enforces. This is exactly what let a
+// previously-corrected account come back as 'pro' after simply
+// signing in again on another phone, with zero billing_events trail
+// since this path never went through the webhook at all.
+function hasConfirmedPaymentMethod(sub: Stripe.Subscription): boolean {
+  if (sub.status === 'active' || sub.status === 'past_due') return true;
+  if (sub.status === 'trialing') return !!sub.default_payment_method;
+  return false;
+}
+
 async function findActiveSubscription(stripe: Stripe, email: string) {
   const customers = await stripe.customers.list({ email, limit: 10 });
   for (const customer of customers.data) {
     if (customer.deleted) continue;
     const subs = await stripe.subscriptions.list({ customer: customer.id, status: 'all', limit: 10 });
-    const active = subs.data.find(s => s.status === 'active' || s.status === 'trialing');
+    const active = subs.data.find(s => hasConfirmedPaymentMethod(s));
     if (active) return { customer, subscription: active };
   }
   return null;
