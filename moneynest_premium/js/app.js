@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.15'
+const VERSION = '1.16'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -5623,7 +5623,8 @@ function renderInversiones() {
       </div>`
       })()}
       <div class="action-row">
-        ${!inv.cerrada?`<button class="btn btn-accent btn-xs" onclick="abrirRevalorizar('${inv.id}')">📊 Revalorizar</button>`:''}
+        ${!inv.cerrada?`<button class="btn btn-accent btn-xs" onclick="abrirRevalorizar('${inv.id}','revalorizacion')">${t('btn_revalorizar','📊 Revalorizar')}</button>`:''}
+        ${!inv.cerrada?`<button class="btn btn-accent btn-xs" onclick="abrirRevalorizar('${inv.id}','beneficio')">${t('btn_retirar_beneficio','💰 Retirar beneficio')}</button>`:''}
         ${!inv.cerrada?`<button class="btn btn-primary btn-xs" onclick="abrirLiquidar('${inv.id}')">💰 Liquidar</button>`:''}
         <button class="btn-edit" onclick="editarInversion('${inv.id}')">${t('btn_editar')}</button>
         <button class="btn-del" onclick="borrarInversion('${inv.id}')">${t('btn_eliminar')}</button>
@@ -9556,38 +9557,44 @@ function confirmarLiquidacion() {
   // value, and there was previously no way to enter it (0 is falsy in
   // JS, so "!valorFinal" wrongly rejected it too).
   if (valorRaw === '' || valorRaw === null || isNaN(valorFinal) || valorFinal < 0) { toast(t('err_valor_salida'),'error'); return }
-  const ganancia = valorFinal - Number(inv.importe)
-  const roiReal = inv.importe ? (ganancia/Number(inv.importe))*100 : 0
   const cuentaId = document.getElementById('liqCuenta').value
   if (!cuentaId) { toast(t('err_cuenta_origen'),'error'); return }
   const cuenta = getCuenta(cuentaId)
   if (!cuenta) { toast(t('err_cuenta_no_encontrada'),'error'); return }
 
+  // TRUE total profit/loss, for stats/ROI/charts: every euro ever
+  // extracted from this position (profits already withdrawn earlier +
+  // what's left now) minus what originally went in. Using only this
+  // final moment's delta (valorFinal - importe) would silently ignore
+  // money already realized and withdrawn before — e.g. invest 100,
+  // withdraw 50 in profit, liquidate for 80: really +30 net, not the
+  // -20 a delta-only calculation would show.
+  const beneficiosRetirados = (inv.beneficiosRetirados || []).reduce((sum, b) => sum + Number(b.importe), 0)
+  const totalRecuperado = valorFinal + beneficiosRetirados
+  const ganancia = totalRecuperado - Number(inv.importe)
+  const roiReal = inv.importe ? (ganancia/Number(inv.importe))*100 : 0
+
   // 1) Return full value to account
   cuenta.saldo = (Number(cuenta.saldo)||0) + valorFinal
 
-  // 2) Register the gain/loss of THIS liquidation only. Profits already
-  // withdrawn via "retirar beneficio" were already booked as their own
-  // income entries at the time — they must NEVER be subtracted again
-  // here. valorFinal is what's left in the position right now (e.g. 0
-  // for a burned funded-trading account), not a running total that
-  // needs previously-withdrawn amounts backed out of it.
-  const beneficiosRetirados = (inv.beneficiosRetirados || []).reduce((sum, b) => sum + Number(b.importe), 0)
-  const gananciaFinal = ganancia
-
-  if (gananciaFinal > 0) {
+  // 2) Always book what actually came back as an INCOME — never a
+  // "loss" expense. The original capital already left the account (and
+  // was already recorded then, whether as its own linked expense or
+  // via a plain deduction) at the moment this investment was created —
+  // re-recording a loss as a SEPARATE expense here would make it look
+  // like the money was spent a second time. A liquidation is cash
+  // coming back in, full stop; whether that's more or less than what
+  // went out originally is already fully visible by comparing this
+  // income to the original investment cost, with no extra "loss" line
+  // needed. Nothing is booked for an exact €0 exit — there's no actual
+  // money movement to record (the capital's loss is already implicit
+  // in having spent it up front, with nothing coming back this time).
+  if (valorFinal > 0) {
     S.ingresos.push({
-      id: uid(), concepto: '💰 Ganancia final: ' + inv.nombre,
-      importe: gananciaFinal, categoria: 'Dividendos',
+      id: uid(), concepto: '💰 Liquidación: ' + inv.nombre,
+      importe: valorFinal, categoria: 'Dividendos',
       fecha: todayISO(), cuentaId,
-      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente (no incluido aquí): ${eur(beneficiosRetirados)}` : ''}`
-    })
-  } else if (gananciaFinal < 0) {
-    S.gastos.push({
-      id: uid(), concepto: '📉 Pérdida final: ' + inv.nombre,
-      importe: Math.abs(gananciaFinal), categoria: 'Otro',
-      fecha: todayISO(), cuentaId,
-      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado previamente (no incluido aquí): ${eur(beneficiosRetirados)}` : ''}`
+      notas: `ROI real: ${pct(roiReal)} · Capital: ${eur(Number(inv.importe))}${beneficiosRetirados > 0 ? ` · Ya retirado antes: ${eur(beneficiosRetirados)}` : ''}`
     })
   }
 
@@ -9648,7 +9655,7 @@ window.cambiarTipoRev = function(tipo) {
   window._revTipo = tipo
 }
 
-function abrirRevalorizar(id) {
+function abrirRevalorizar(id, tipo) {
   const inv = S.inversiones.find(x=>x.id===id)
   if (!inv) { toast(t('err_inversion_no_encontrada'),'error'); return }
   if (inv.cerrada) {
@@ -9672,8 +9679,20 @@ function abrirRevalorizar(id) {
   document.getElementById('revBeneficioNotas').value = ''
   poblarCuentaSelect('revBeneficioCuenta', inv.cuentaId || '')
 
-  window._revTipo = 'revalorizacion'
-  cambiarTipoRev('revalorizacion')
+  const tipoInicial = tipo === 'beneficio' ? 'beneficio' : 'revalorizacion'
+  window._revTipo = tipoInicial
+  cambiarTipoRev(tipoInicial)
+  // The internal type-switcher buttons are only meaningful when this
+  // modal could be reached without already knowing which operation was
+  // wanted — now that the investment card itself has two separate
+  // entry-point buttons ("Revalorizar" / "Retirar beneficio"), showing
+  // a second, redundant choice inside would be confusing. Hidden here
+  // rather than removed from the DOM so nothing else that depends on
+  // these elements existing needs to change.
+  const tipoSelector = document.getElementById('revTipoRevalBtn')?.closest('.form-group')
+  if (tipoSelector) tipoSelector.style.display = 'none'
+  const modalTitleEl = document.querySelector('#revalorizarModal .modal-title')
+  if (modalTitleEl) modalTitleEl.textContent = tipoInicial === 'beneficio' ? t('btn_retirar_beneficio','💰 Retirar beneficio') : t('btn_revalorizar','📊 Revalorizar')
 
   document.getElementById('revInvInfo').innerHTML = `
     <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--border)">

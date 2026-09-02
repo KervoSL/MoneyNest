@@ -1,11 +1,11 @@
 {
-  "version": "1.15",
+  "version": "1.16",
   "changelog": {
-    "title": "Novedades de la versión 1.15",
+    "title": "Novedades de la versión 1.16",
     "items": [
-      "Corregido: revalorizar una inversión ya no bloquea poner 0€ (útil para reflejar una cuenta fondeada u otra inversión que se quedó a cero)",
-      "Ya no se crean por defecto las categorías 'Tabaco' ni 'Efectivo' — y si ya las habías borrado, no volverán a aparecer",
-      "El detector de comercios del importador bancario ahora reconoce muchísimos más negocios: telefonía, seguros de salud, gimnasios, viajes, hogar, entretenimiento digital, y muchas más cadenas de restaurantes, ropa y supermercados"
+      "Nuevo: 'Revalorizar' y 'Retirar beneficio' ya son 2 botones separados en la tarjeta de inversión, en vez de tener que elegir dentro de un mismo modal",
+      "Corregido: la ganancia/ROI de una inversión liquidada ahora suma todo el dinero recuperado (lo ya retirado antes + el valor final), no solo el último movimiento",
+      "Corregido: liquidar una inversión ya no crea un gasto adicional cuando hay pérdida — siempre se registra como el ingreso real recibido (o nada si liquidas por 0€), para no contar el dinero perdido dos veces"
     ]
   }
 }
