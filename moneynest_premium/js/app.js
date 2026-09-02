@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.14'
+const VERSION = '1.15'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -4004,7 +4004,7 @@ function defaultState() {
     eventosFinancieros: [],
     categorias: {
       ingreso: ['Salario','Freelance','Alquiler','Dividendos','Venta','Bono','Otro'],
-      gasto: ['Vivienda','Alimentación','Transporte','Salud','Ocio','Ropa','Educación','Suscripciones','Restaurantes','Tecnología','Seguros','Otro','Tabaco','Efectivo'],
+      gasto: ['Vivienda','Alimentación','Transporte','Salud','Ocio','Ropa','Educación','Suscripciones','Restaurantes','Tecnología','Seguros','Otro'],
       inversion: ['Acciones','ETF','Cripto','Inmuebles','Bonos','Fondo indexado','Startups','Otro'],
       deuda: ['Hipoteca','Préstamo personal','Tarjeta crédito','Préstamo coche','Otro'],
       objetivo: ['Emergencia','Viaje','Coche','Casa','Jubilación','Educación','Otro']
@@ -4237,11 +4237,6 @@ function load() {
     for (const k of Object.keys(defCats)) {
       if (!Array.isArray(S.categorias[k])) S.categorias[k] = defCats[k]
     }
-    // Migracion: anadir Tabaco/Efectivo a usuarios existentes que ya
-    // tenian S.categorias.gasto guardado (creado antes de que estas 2
-    // categorias se incluyeran por defecto), sin duplicar si el usuario
-    // ya las tenia por su cuenta.
-    ;['Tabaco','Efectivo'].forEach(c => { if (!S.categorias.gasto.includes(c)) S.categorias.gasto.push(c) })
     // Guard usuario
     if (!S.usuario || typeof S.usuario !== 'object') S.usuario = defaultState().usuario
     S.cuentas = S.cuentas.map(c => ({...c, valorTotal: c.valorTotal !== undefined ? c.valorTotal : c.saldo}))
@@ -9766,8 +9761,14 @@ function confirmarRevalorizacion() {
 
   if (tipo === 'revalorizacion') {
     // Revalorización normal
-    const nuevoValor = parseAmount(document.getElementById('revValor').value)
-    if (!nuevoValor || nuevoValor <= 0) { toast(t('err_valor_salida'),'error'); return }
+    const nuevoValorRaw = document.getElementById('revValor').value
+    const nuevoValor = parseAmount(nuevoValorRaw)
+    // Reject an empty/invalid field, but explicitly ALLOW 0 — a burned
+    // funded-account challenge or a total write-off on a volatile
+    // investment is a legitimate current value, and there was
+    // previously no way to enter it (0 is falsy in JS, so
+    // "!nuevoValor" wrongly rejected it too).
+    if (nuevoValorRaw === '' || nuevoValorRaw === null || isNaN(nuevoValor) || nuevoValor < 0) { toast(t('err_valor_salida'),'error'); return }
 
     const fecha = document.getElementById('revFecha').value || todayISO()
     const notas = document.getElementById('revNotas').value.trim()

@@ -1,10 +1,11 @@
 {
-  "version": "1.14",
+  "version": "1.15",
   "changelog": {
-    "title": "Novedades de la versión 1.14",
+    "title": "Novedades de la versión 1.15",
     "items": [
-      "Nuevo: crear una deuda ahora es un asistente guiado paso a paso, igual que inversiones e ingresos/gastos",
-      "Editar una deuda existente sigue funcionando igual que siempre"
+      "Corregido: revalorizar una inversión ya no bloquea poner 0€ (útil para reflejar una cuenta fondeada u otra inversión que se quedó a cero)",
+      "Ya no se crean por defecto las categorías 'Tabaco' ni 'Efectivo' — y si ya las habías borrado, no volverán a aparecer",
+      "El detector de comercios del importador bancario ahora reconoce muchísimos más negocios: telefonía, seguros de salud, gimnasios, viajes, hogar, entretenimiento digital, y muchas más cadenas de restaurantes, ropa y supermercados"
     ]
   }
 }
