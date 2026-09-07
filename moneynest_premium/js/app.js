@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.17'
+const VERSION = '1.17.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7893,12 +7893,12 @@ function renderFacturacion() {
 
   // ── Badge de estado global (esquina superior derecha) ──
   const statusBadge = isPro
-    ? `<span class="mn-plan-statusbadge" style="color:${pink};border-color:${pink}66;background:${pink}22">● PRO ACTIVO</span>`
+    ? `<span class="mn-plan-statusbadge" style="color:${pink};border-color:${pink}66;background:${pink}22">PRO ACTIVO</span>`
     : isLocal
-    ? `<span class="mn-plan-statusbadge" style="color:var(--accent);border-color:var(--accent)66;background:var(--accent-dim)">● LOCAL ACTIVO</span>`
+    ? `<span class="mn-plan-statusbadge" style="color:var(--accent);border-color:var(--accent)66;background:var(--accent-dim)">LOCAL ACTIVO</span>`
     : isExpired
-    ? `<span class="mn-plan-statusbadge" style="color:var(--red);border-color:var(--red)66;background:var(--red-dim)">● PRUEBA FINALIZADA</span>`
-    : `<span class="mn-plan-statusbadge" style="color:var(--gold);border-color:var(--gold)66;background:var(--gold-dim)">● TRIAL ACTIVO</span>`
+    ? `<span class="mn-plan-statusbadge" style="color:var(--red);border-color:var(--red)66;background:var(--red-dim)">PRUEBA FINALIZADA</span>`
+    : `<span class="mn-plan-statusbadge" style="color:var(--gold);border-color:var(--gold)66;background:var(--gold-dim)">TRIAL ACTIVO</span>`
 
   // ── Banner grande de prueba (solo mientras hay trial activo) ──
   const trialBanner = (isTrial && !isExpired) ? `

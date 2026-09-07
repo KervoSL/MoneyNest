@@ -4010,8 +4010,22 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
    CTA grande — igual estilo en todas las pantallas. */
 .mn-plan-statusbadge {
   font-size: .7rem; font-weight: 800; letter-spacing: .04em;
-  padding: 5px 12px; border-radius: 99px; border: 1px solid;
+  padding: 5px 12px 5px 10px; border-radius: 99px; border: 1px solid;
   white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+/* The leading "●" character in the badge text is replaced visually by
+   this pulsing dot — a subtle animated indicator feels more alive and
+   professional than a static bullet, echoing the kind of live-status
+   indicator used in polished dashboards. */
+.mn-plan-statusbadge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  animation: mn-status-pulse 2s ease-in-out infinite;
+}
+@keyframes mn-status-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: .7; box-shadow: 0 0 0 3px transparent; }
 }
 
 .mn-plan-trialbanner {
@@ -4020,6 +4034,7 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.08));
   border: 1px solid rgba(99,102,241,.25);
+  box-shadow: 0 12px 32px rgba(99,102,241,.14);
 }
 
 .mn-plan-grid {
