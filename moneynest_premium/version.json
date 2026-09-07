@@ -1,11 +1,10 @@
 {
-  "version": "1.16",
+  "version": "1.16.1",
   "changelog": {
-    "title": "Novedades de la versión 1.16",
+    "title": "Novedades de la versión 1.16.1",
     "items": [
-      "Nuevo: 'Revalorizar' y 'Retirar beneficio' ya son 2 botones separados en la tarjeta de inversión, en vez de tener que elegir dentro de un mismo modal",
-      "Corregido: la ganancia/ROI de una inversión liquidada ahora suma todo el dinero recuperado (lo ya retirado antes + el valor final), no solo el último movimiento",
-      "Corregido: liquidar una inversión ya no crea un gasto adicional cuando hay pérdida — siempre se registra como el ingreso real recibido (o nada si liquidas por 0€), para no contar el dinero perdido dos veces"
+      "Corregido un fallo grave: al acabar la prueba gratuita, elegir un plan podía quedarse colgado sin responder si la sesión guardada estaba dañada o caducada",
+      "Cuando ya tenías una cuenta pero la sesión había caducado, ahora se muestra 'Iniciar sesión' en vez de 'Crear cuenta'"
     ]
   }
 }

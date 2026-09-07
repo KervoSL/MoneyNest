@@ -211,8 +211,23 @@ async function _doConfirmPlan(planKey) {
   // this same browser. This never blocks noticeably in practice: by
   // the time someone reaches this button, init() has almost always
   // already resolved.
+  // CONFIRMED EMPIRICALLY: MNSupabaseAuth.ready() can hang forever if
+  // the underlying Supabase SDK tries to silently refresh a
+  // corrupted/expired stored token and that network call never
+  // resolves (e.g. poor connection, or a refresh token that's also
+  // invalid) — with no timeout, this button would then do absolutely
+  // nothing, forever, exactly "se queda pillado y no hace nada". A
+  // hard 4s cap guarantees this always proceeds either way; if it
+  // times out, isLoggedIn() below is treated as unreliable and the
+  // person is safely routed to sign in/register instead of being
+  // stuck.
   if (window.MNSupabaseAuth?.ready) {
-    try { await window.MNSupabaseAuth.ready() } catch (_) { /* handled by the check below */ }
+    try {
+      await Promise.race([
+        window.MNSupabaseAuth.ready(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('auth_ready_timeout')), 4000)),
+      ])
+    } catch (_) { /* handled by the check below either way */ }
   }
 
   // A real purchase requires a real, authenticated identity (Stripe
@@ -222,9 +237,20 @@ async function _doConfirmPlan(planKey) {
   if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
     window._mnPendingCheckoutPlan = planKey;
     closePlanModal();
-    if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal('register');
+    // If this browser already has a (possibly just-expired) session
+    // stored, this person almost certainly already has an account —
+    // showing 'register' here would send them into a signup form with
+    // no way to know it needs to be 'login' instead, likely ending in
+    // a confusing "email already registered" dead end that looks like
+    // the whole purchase flow is stuck.
+    let hadPriorSession = false
+    try { hadPriorSession = window.MNSupabaseAuth.hadStoredSession ? window.MNSupabaseAuth.hadStoredSession() : !!localStorage.getItem('mn_supabase_session') } catch (_) {}
+    const authMode = hadPriorSession ? 'login' : 'register'
+    if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal(authMode);
     if (typeof window.toast === 'function') {
-      window.toast(_aut('plan_necesita_cuenta', 'Crea una cuenta o inicia sesión para continuar con la compra.'), 'info');
+      window.toast(hadPriorSession
+        ? _aut('plan_necesita_login', 'Inicia sesión para continuar con la compra.')
+        : _aut('plan_necesita_cuenta', 'Crea una cuenta o inicia sesión para continuar con la compra.'), 'info');
     }
     return;
   }

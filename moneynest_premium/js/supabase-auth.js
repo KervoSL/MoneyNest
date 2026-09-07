@@ -9,6 +9,18 @@
   const SUPABASE_URL      = 'https://jwddciqqhmfkbqhdrfre.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZGRjaXFxaG1ma2JxaGRyZnJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NjkyMjcsImV4cCI6MjA5NDM0NTIyN30.Gqz39AWpW1BkWXhfhnR_vOUYUy93bgdSNvBfXYQ3VGk';
 
+  // Capture whether a session was already stored BEFORE createClient()
+  // runs below — the SDK can validate and silently clear an
+  // expired/invalid session as part of its own initialization, so
+  // checking this same localStorage key any later could wrongly read
+  // "no prior session" for someone who very much already had an
+  // account, just with a token that happened to expire. Exposed as
+  // hadStoredSession so the "create account" vs "log in" decision
+  // elsewhere in the app stays correct regardless of what the SDK does
+  // to the key afterwards.
+  let _hadStoredSessionAtLoad = false
+  try { _hadStoredSessionAtLoad = !!localStorage.getItem('mn_supabase_session') } catch (_) {}
+
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken:     true,
@@ -56,7 +68,25 @@
     await _handleOAuthCallback();
 
     // Restore existing session (now includes freshly exchanged OAuth session)
-    const { data: { session } } = await sb.auth.getSession();
+    // CONFIRMED EMPIRICALLY: getSession() can hang forever trying to
+    // silently validate/refresh a corrupted or expired stored token if
+    // that network call never resolves — with no timeout, init() (and
+    // therefore ready(), which everything else in the app awaits
+    // before trusting isLoggedIn()) would then never resolve for
+    // anyone in that situation, leaving buttons like the purchase flow
+    // permanently unresponsive. A hard 5s cap guarantees this always
+    // proceeds either way, falling back to "no session" rather than
+    // hanging.
+    let session = null
+    try {
+      const result = await Promise.race([
+        sb.auth.getSession(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('get_session_timeout')), 5000)),
+      ])
+      session = result?.data?.session ?? null
+    } catch (err) {
+      console.warn('[MNSupabaseAuth] getSession() timed out or failed, continuing as logged-out:', err)
+    }
     _session = session;
     if (_session) await _syncProfileToLocal(_session.user);
 
@@ -524,6 +554,7 @@
     // user has been active a while — should await this first, since
     // init() itself is async and getSession() can take a moment.
     ready: () => _initPromise,
+    hadStoredSession: () => _hadStoredSessionAtLoad,
     // Low-level client (for edge cases)
     _sb: sb,
   };
