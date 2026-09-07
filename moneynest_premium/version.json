@@ -1,10 +1,9 @@
 {
-  "version": "1.16.1",
+  "version": "1.17",
   "changelog": {
-    "title": "Novedades de la versión 1.16.1",
+    "title": "Novedades de la versión 1.17",
     "items": [
-      "Corregido un fallo grave: al acabar la prueba gratuita, elegir un plan podía quedarse colgado sin responder si la sesión guardada estaba dañada o caducada",
-      "Cuando ya tenías una cuenta pero la sesión había caducado, ahora se muestra 'Iniciar sesión' en vez de 'Crear cuenta'"
+      "Rediseño visual de Plan y Facturación (parte 1): los botones de comprar plan y la tarjeta de Pro ahora tienen el mismo estilo profesional (gradientes y brillo) que los nuevos asistentes de creación"
     ]
   }
 }

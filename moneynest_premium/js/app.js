@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.16.1'
+const VERSION = '1.17'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7955,12 +7955,12 @@ function renderFacturacion() {
       </ul>
       ${isLocal
         ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
-        : `<button class="btn btn-primary btn-sm" style="width:100%" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}</button>`}
+        : `<button class="mn-plan-btn-local" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}</button>`}
     </div>`
 
   const cardPro = `
     <div class="mn-plan-card mn-plan-card--pro ${isPro ? 'mn-plan-card--current' : ''}">
-      <div class="mn-plan-card__ribbon" style="background:${pink}22;color:${pink}">${isPro ? '✓ '+_aut('cfg_plan_actual_lbl','PLAN ACTUAL') : '⭐ '+_aut('cfg_mas_elegido','MÁS ELEGIDO')}</div>
+      <div class="mn-plan-card__ribbon ${isPro ? '' : 'mn-plan-card__ribbon--pro'}" style="${isPro ? `background:${pink}22;color:${pink}` : ''}">${isPro ? '✓ '+_aut('cfg_plan_actual_lbl','PLAN ACTUAL') : '⭐ '+_aut('cfg_mas_elegido','MÁS ELEGIDO')}</div>
       <div class="mn-plan-card__icon">☁️</div>
       <div class="mn-plan-card__name">${_aut('plan_pro_name','MoneyNest Pro')}</div>
       <div class="mn-plan-card__price" style="color:${pink}">${eur(proPrice)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
@@ -7973,7 +7973,7 @@ function renderFacturacion() {
       </ul>
       ${isPro
         ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
-        : `<button class="btn btn-sm" style="width:100%;background:${pink};color:#fff;border:none" onclick="MNAuthUI._doConfirmPlan('pro')">⚡ ${_aut('cfg_btn_iniciar_prueba_pro','Iniciar 7 días gratis')}</button>`}
+        : `<button class="mn-plan-btn-pro" onclick="MNAuthUI._doConfirmPlan('pro')">⚡ ${_aut('cfg_btn_iniciar_prueba_pro','Iniciar 7 días gratis')}</button>`}
     </div>`
 
   // ── Estado de suscripción real (solo si hay plan de pago activo) ──

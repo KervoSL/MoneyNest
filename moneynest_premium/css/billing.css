@@ -1445,6 +1445,50 @@
   box-shadow: 0 12px 36px rgba(167,139,250,0.12);
 }
 
+/* ── Action buttons — same gradient/glow language as the step-wizard
+   buttons (.mnbi-btn-primary in wizard-shared.css) for visual
+   consistency across the whole app, instead of the plain flat
+   .btn-primary used elsewhere. ── */
+.mn-plan-btn-local {
+  width: 100%; padding: 13px 20px; border-radius: 12px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), #00A882); color: #042b20;
+  font-size: .88rem; font-weight: 800; font-family: inherit;
+  box-shadow: 0 6px 20px rgba(0,212,170,.28);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .15s;
+}
+.mn-plan-btn-local:hover { transform: translateY(-1px); }
+.mn-plan-btn-local:disabled { opacity: .4; cursor: default; transform: none; }
+
+.mn-plan-btn-pro {
+  width: 100%; padding: 13px 20px; border-radius: 12px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #EC4899, #C026D3); color: #fff;
+  font-size: .88rem; font-weight: 800; font-family: inherit;
+  box-shadow: 0 6px 20px rgba(236,72,153,.32);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .15s;
+}
+.mn-plan-btn-pro:hover { transform: translateY(-1px); }
+
+/* ── Pro card: give the "most chosen" card real visual weight instead
+   of just a subtle border tint — a soft gradient border glow, echoing
+   the step-progress gradient bar used in the wizards. ── */
+.mn-plan-card--pro {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card, rgba(17,24,39,0.85)), var(--card, rgba(17,24,39,0.85))) padding-box,
+    linear-gradient(135deg, #EC4899, #6366F1) border-box;
+  box-shadow: 0 16px 40px rgba(236,72,153,.16), 0 4px 16px rgba(0,0,0,.3);
+}
+.mn-plan-card--pro:hover {
+  box-shadow: 0 20px 48px rgba(236,72,153,.24), 0 6px 20px rgba(0,0,0,.35);
+}
+.mn-plan-card__ribbon--pro {
+  background: linear-gradient(135deg, #EC4899, #C026D3) !important;
+  color: #fff !important;
+  font-weight: 800;
+}
+
 .mn-plan-card__glow {
   position: absolute;
   inset: 0;
