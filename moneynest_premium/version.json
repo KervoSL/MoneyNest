@@ -1,9 +1,9 @@
 {
-  "version": "1.18",
+  "version": "1.18.1",
   "changelog": {
-    "title": "Novedades de la versión 1.18",
+    "title": "Novedades de la versión 1.18.1",
     "items": [
-      "Rediseño visual: todos los botones principales de la app (crear, guardar, importar...) y todos los modales clásicos ahora tienen el mismo estilo profesional (gradientes, brillo y sombras más pronunciadas) que los nuevos asistentes de creación"
+      "Rediseño visual: el botón de cerrar (✕) de todos los modales clásicos ahora es minimalista, igual que en los nuevos asistentes de creación"
     ]
   }
 }
