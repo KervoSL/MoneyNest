@@ -1,9 +1,9 @@
 {
-  "version": "1.18.1",
+  "version": "1.18.2",
   "changelog": {
-    "title": "Novedades de la versión 1.18.1",
+    "title": "Novedades de la versión 1.18.2",
     "items": [
-      "Rediseño visual: el botón de cerrar (✕) de todos los modales clásicos ahora es minimalista, igual que en los nuevos asistentes de creación"
+      "Rediseño visual: todos los campos de texto, desplegables y áreas de escritura de la app ahora tienen el mismo tamaño y estilo espacioso que los nuevos asistentes de creación"
     ]
   }
 }

@@ -837,9 +837,9 @@ tbody tr:hover{cursor:default}
 .form-row-3{grid-template-columns:1fr 1fr 1fr}
 label{display:block;font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:5px}
 input,select,textarea{
-  width:100%;padding:9px 12px;
-  background:var(--bg);border:1px solid var(--border2);
-  border-radius:var(--radius-sm);
+  width:100%;padding:11px 14px;
+  background:var(--bg2);border:1.5px solid var(--border2);
+  border-radius:10px;
   color:var(--text);font-size:.88rem;font-family:inherit;
   transition:border-color .15s,box-shadow .15s;
 }
