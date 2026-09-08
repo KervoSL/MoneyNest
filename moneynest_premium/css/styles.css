@@ -813,7 +813,7 @@ tbody tr:hover{cursor:default}
   position:sticky;top:0;background:var(--card);z-index:10;
   border-radius:20px 20px 0 0;
 }
-.modal-title{font-size:1rem;font-weight:700;color:var(--text)}
+.modal-title{font-size:1.15rem;font-weight:800;color:var(--text)}
 .modal-close{
   width:30px;height:30px;border-radius:8px;
   background:none;border:none;color:var(--text3);
@@ -831,7 +831,7 @@ tbody tr:hover{cursor:default}
 }
 
 /* ─── FORMS ──────────────────────────────────────────────────── */
-.form-group{margin-bottom:14px}
+.form-group{margin-bottom:18px}
 .form-row{display:grid;gap:12px;margin-bottom:14px}
 .form-row-2{grid-template-columns:1fr 1fr}
 .form-row-3{grid-template-columns:1fr 1fr 1fr}

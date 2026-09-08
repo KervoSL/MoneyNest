@@ -1,9 +1,9 @@
 {
-  "version": "1.18.3",
+  "version": "1.19",
   "changelog": {
-    "title": "Novedades de la versión 1.18.3",
+    "title": "Novedades de la versión 1.19",
     "items": [
-      "Corregido: en móvil, el nuevo tamaño de los campos de formulario no se estaba aplicando — una regla más específica para pantallas pequeñas se había quedado con el tamaño antiguo. Ahora ya se ve igual en móvil que en el resto de la app"
+      "Rediseño visual: el título de todos los modales clásicos ahora es grande y audaz (como en los asistentes), y los campos tienen más espacio entre sí para que respiren mejor"
     ]
   }
 }
