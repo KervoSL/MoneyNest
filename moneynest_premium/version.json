@@ -1,9 +1,9 @@
 {
-  "version": "1.17.1",
+  "version": "1.18",
   "changelog": {
-    "title": "Novedades de la versión 1.17.1",
+    "title": "Novedades de la versión 1.18",
     "items": [
-      "Rediseño visual de Plan y Facturación (parte 2): el badge de estado del plan ahora tiene un punto animado, y el banner de la prueba gratuita se ve más pulido"
+      "Rediseño visual: todos los botones principales de la app (crear, guardar, importar...) y todos los modales clásicos ahora tienen el mismo estilo profesional (gradientes, brillo y sombras más pronunciadas) que los nuevos asistentes de creación"
     ]
   }
 }
