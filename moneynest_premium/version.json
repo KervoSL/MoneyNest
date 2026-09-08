@@ -1,9 +1,9 @@
 {
-  "version": "1.18.2",
+  "version": "1.18.3",
   "changelog": {
-    "title": "Novedades de la versión 1.18.2",
+    "title": "Novedades de la versión 1.18.3",
     "items": [
-      "Rediseño visual: todos los campos de texto, desplegables y áreas de escritura de la app ahora tienen el mismo tamaño y estilo espacioso que los nuevos asistentes de creación"
+      "Corregido: en móvil, el nuevo tamaño de los campos de formulario no se estaba aplicando — una regla más específica para pantallas pequeñas se había quedado con el tamaño antiguo. Ahora ya se ve igual en móvil que en el resto de la app"
     ]
   }
 }
