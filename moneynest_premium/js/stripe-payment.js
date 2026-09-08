@@ -676,6 +676,18 @@ window.MNPayment = (() => {
       if (promoCode) _showPromoResult(true, null, data.pricing);
 
     } catch (err) {
+      // A real, specific rejection from the backend (you already have
+      // an active/trialing subscription for this plan) — showing this
+      // clearly instead of a generic 'something went wrong' saves
+      // confusion, and retrying via the checkout-redirect fallback
+      // below would just fail with the exact same reason again, so
+      // skip straight to a clear message instead of a useless retry.
+      if (err instanceof Error && err.message === 'already_subscribed') {
+        console.warn('[MNPayment] Rejected: already has an active subscription for this plan.');
+        _showError(_spt('payment_already_subscribed', 'Ya tienes este plan activo. Revisa "Gestionar suscripción" en Plan y Facturación.'));
+        _setLoading(false);
+        return;
+      }
       // Fallback: if the embedded payment-intent endpoint is unavailable,
       // try the redirect-based Stripe Checkout flow instead.
       console.warn('[MNPayment] Embedded payment failed, trying checkout redirect fallback:', err);

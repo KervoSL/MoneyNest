@@ -1,9 +1,10 @@
 {
-  "version": "1.19",
+  "version": "1.19.1",
   "changelog": {
-    "title": "Novedades de la versión 1.19",
+    "title": "Novedades de la versión 1.19.1",
     "items": [
-      "Rediseño visual: el título de todos los modales clásicos ahora es grande y audaz (como en los asistentes), y los campos tienen más espacio entre sí para que respiren mejor"
+      "Corregido: el modal de pago de Pro mostraba un precio incorrecto (6,99€ en vez de 14,99€) en el título",
+      "Corregido: si intentas comprar un plan que ya tienes activo, ahora se muestra un mensaje claro en vez de un error genérico"
     ]
   }
 }

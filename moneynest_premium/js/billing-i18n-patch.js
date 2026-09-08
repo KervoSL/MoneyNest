@@ -240,8 +240,6 @@
       payment_success_pro_sub:        '7 días de prueba gratuita iniciados. Disfruta de MoneyNest Pro.',
       payment_error_generic:          'Error al procesar el pago. Inténtalo de nuevo.',
       payment_error_init:             'No se pudo iniciar el pago. Inténtalo de nuevo.',
-      payment_local_plan_title:       'Activar Local — 6,99€',
-      payment_pro_plan_title:         'Activar Pro — 6,99€ primer año',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -442,8 +440,6 @@
       payment_success_pro_sub:        '7-day free trial started. Enjoy MoneyNest Pro.',
       payment_error_generic:          'Error processing payment. Please try again.',
       payment_error_init:             'Could not start payment. Please try again.',
-      payment_local_plan_title:       'Activate Local — €6.99',
-      payment_pro_plan_title:         'Activate Pro — €10 first year',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -639,7 +635,6 @@
       payment_success_pro_title: 'Pro activé !', payment_success_pro_sub: 'Essai de 7 jours démarré. Profitez de MoneyNest Pro.',
       payment_error_generic: 'Erreur lors du paiement. Veuillez réessayer.',
       payment_error_init: 'Impossible de démarrer le paiement. Veuillez réessayer.',
-      payment_local_plan_title: 'Activer Local — 5 €', payment_pro_plan_title: 'Activer Pro — 10 € première année',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -835,7 +830,6 @@
       payment_success_pro_title: 'Pro aktiviert!', payment_success_pro_sub: '7-Tage-Testphase gestartet. Genießen Sie MoneyNest Pro.',
       payment_error_generic: 'Fehler bei der Zahlung. Bitte versuchen Sie es erneut.',
       payment_error_init: 'Zahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
-      payment_local_plan_title: 'Lokal aktivieren — 5 €', payment_pro_plan_title: 'Pro aktivieren — 10 € erstes Jahr',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -1031,7 +1025,6 @@
       payment_success_pro_title: 'Pro attivato!', payment_success_pro_sub: 'Prova di 7 giorni avviata. Goditi MoneyNest Pro.',
       payment_error_generic: 'Errore durante il pagamento. Riprova.',
       payment_error_init: 'Impossibile avviare il pagamento. Riprova.',
-      payment_local_plan_title: 'Attiva Locale — 5 €', payment_pro_plan_title: 'Attiva Pro — 10 € primo anno',
     },
 
     // ────────────────────────────────────────────────────────────
@@ -1227,7 +1220,6 @@
       payment_success_pro_title: 'Pro ativado!', payment_success_pro_sub: 'Teste de 7 dias iniciado. Desfruta do MoneyNest Pro.',
       payment_error_generic: 'Erro ao processar pagamento. Tenta novamente.',
       payment_error_init: 'Não foi possível iniciar o pagamento. Tenta novamente.',
-      payment_local_plan_title: 'Ativar Local — 5 €', payment_pro_plan_title: 'Ativar Pro — 10 € primeiro ano',
     },
 
     // Catalán eliminado — se mantienen 6 idiomas: es, en, fr, de, it, pt
@@ -1398,7 +1390,6 @@
       payment_success_pro_title: 'Pro activat!', payment_success_pro_sub: 'Prova de 7 dies iniciada. Gaudeix de MoneyNest Pro.',
       payment_error_generic: 'Error en processar el pagament. Torna-ho a intentar.',
       payment_error_init: 'No s\'ha pogut iniciar el pagament. Torna-ho a intentar.',
-      payment_local_plan_title: 'Activar Local — 5 €', payment_pro_plan_title: 'Activar Pro — 10 € primer any',
     },
   };
 
