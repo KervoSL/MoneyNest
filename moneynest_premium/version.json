@@ -1,9 +1,9 @@
 {
-  "version": "1.19.2",
+  "version": "1.20",
   "changelog": {
-    "title": "Novedades de la versión 1.19.2",
+    "title": "Novedades de la versión 1.20",
     "items": [
-      "Corregido: 'Gestionar suscripción' podía quedarse parado sin hacer nada si la sesión aún no había terminado de cargar, o si la conexión con el servidor tardaba demasiado"
+      "Nuevo: ya puedes crear presupuestos para tus categorías de inversión (por ejemplo, 'no invertir más de 500€ al mes en Acciones'). Solo cuenta el dinero metido en inversiones nuevas — los retiros o liquidaciones no restan del límite"
     ]
   }
 }

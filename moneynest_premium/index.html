@@ -742,6 +742,13 @@
     </div>
     <div class="modal-body">
       <div class="form-group">
+        <label data-i18n="modal_pres_ambito_lbl">¿Presupuesto de qué?</label>
+        <select id="presAmbito" onchange="window._onPresAmbitoChange()">
+          <option value="gasto" data-i18n="modal_pres_ambito_gasto">💸 Gastos</option>
+          <option value="inversion" data-i18n="modal_pres_ambito_inversion">📈 Inversiones</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label data-i18n="modal_pres_cat_lbl">Categoría</label>
         <select id="presCat" onchange="checkCustomCat('presCat','presCatCustom')">
           <option value="__custom__">+ Categoría personalizada</option>
@@ -758,6 +765,11 @@
           <option value="quarterly">📆 Trimestral</option>
           <option value="annual">🗓️ Anual</option>
         </select>
+      </div>
+      <div class="form-group" id="presAmbitoNota" style="display:none">
+        <div style="font-size:.78rem;color:var(--text2);background:var(--bg2);border-radius:8px;padding:10px 12px">
+          <span data-i18n="modal_pres_ambito_nota">Solo cuenta el dinero que metas en inversiones nuevas de esta categoría cada mes. Los retiros o liquidaciones no restan del límite.</span>
+        </div>
       </div>
       <div class="form-group">
         <label id="presLimiteLabel">Límite mensual (€) *</label>

@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.19.2'
+const VERSION = '1.20'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -4566,9 +4566,18 @@ function updateBadges() {
   // Also sync bottom nav alert badge (budget overruns + expired debts)
   const m = currentMonth()
   const catMap = gastosMesByCat(m)
-  const presAlerts = Object.keys(S.presupuestos).filter(c=>{
-    const gast = Number(catMap[c])||0
-    const lim  = Number(S.presupuestos[c])||0
+  const invMapAlert = {}
+  ;(S.inversiones||[]).forEach(inv => {
+    if (inv.fecha && inv.fecha.slice(0,7) === m && inv.categoria) {
+      invMapAlert[inv.categoria] = (invMapAlert[inv.categoria]||0) + (Number(inv.importe)||0)
+    }
+  })
+  const presAlerts = Object.keys(S.presupuestosV2 || {}).filter(c=>{
+    const esInversion = c.startsWith('inv::')
+    const nombreReal = esInversion ? c.slice(5) : c
+    const { limite } = S.presupuestosV2[c] || {}
+    const gast = esInversion ? (Number(invMapAlert[nombreReal])||0) : (Number(catMap[nombreReal])||0)
+    const lim  = Number(limite)||0
     return lim > 0 && gast >= lim
   }).length
   const totalAlerts = vencidas + presAlerts
@@ -5023,19 +5032,28 @@ function renderSubscriptionDetector() {
 }
 
 function renderPresupuestosResumen() {
-  const cats = Object.keys(S.presupuestos)
+  const cats = Object.keys(S.presupuestosV2 || {})
   if (!cats.length) return ''
   const m = currentMonth()
   const catMap = gastosMesByCat(m)
+  const invMap = {}
+  ;(S.inversiones||[]).forEach(inv => {
+    if (inv.fecha && inv.fecha.slice(0,7) === m && inv.categoria) {
+      invMap[inv.categoria] = (invMap[inv.categoria]||0) + (Number(inv.importe)||0)
+    }
+  })
   const items = cats.map(cat=>{
-    const limite = Number(S.presupuestos[cat])||0
-    const gastado = Number(catMap[cat])||0
-    const pctVal = limite ? clamp((gastado/limite)*100,0,100) : 0
+    const esInversion = cat.startsWith('inv::')
+    const nombreReal = esInversion ? cat.slice(5) : cat
+    const { limite } = S.presupuestosV2[cat] || { limite: S.presupuestos[cat] }
+    const limiteN = Number(limite)||0
+    const gastado = esInversion ? (Number(invMap[nombreReal])||0) : (Number(catMap[nombreReal])||0)
+    const pctVal = limiteN ? clamp((gastado/limiteN)*100,0,100) : 0
     const cls = pctVal>=100?'progress-danger':pctVal>=80?'progress-warn':'progress-ok'
     return `<div style="margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px">
-        <span style="color:var(--text);font-weight:600"><span style="font-size:.85rem;margin-right:4px">${catEmoji(cat)}</span>${cat}</span>
-        <span style="color:var(--text2)">${eur(gastado)} / ${eur(limite)}</span>
+        <span style="color:var(--text);font-weight:600"><span style="font-size:.85rem;margin-right:4px">${catEmoji(nombreReal)}</span>${nombreReal}</span>
+        <span style="color:var(--text2)">${eur(gastado)} / ${eur(limiteN)}</span>
       </div>
       <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${pctVal}%"></div></div>
     </div>`
@@ -6665,16 +6683,45 @@ function renderPresupuestos() {
     if (g.fecha >= quarterStart && g.fecha <= m+'-31') { catMapQ[g.categoria] = (catMapQ[g.categoria]||0) + (Number(g.importe)||0) }
   })
 
+  // Investment budgets only count fresh capital put into NEW
+  // investments created in the period — withdrawals/liquidations never
+  // subtract from the limit, confirmed with the user. Deliberately
+  // mirrors the exact same per-period aggregation shape as the expense
+  // maps above so the rendering loop below can treat both uniformly.
+  const invMap = {}
+  const invMapYear = {}
+  const invMapQ = {}
+  ;(S.inversiones||[]).forEach(inv => {
+    if (!inv.fecha || !inv.categoria) return
+    const importe = Number(inv.importe) || 0
+    if (inv.fecha.slice(0,7) === m) { invMap[inv.categoria] = (invMap[inv.categoria]||0) + importe }
+    if (inv.fecha.startsWith(yr)) { invMapYear[inv.categoria] = (invMapYear[inv.categoria]||0) + importe }
+    if (inv.fecha >= quarterStart && inv.fecha <= m+'-31') { invMapQ[inv.categoria] = (invMapQ[inv.categoria]||0) + importe }
+  })
+
   const cats = Object.keys(S.presupuestosV2)
+  // Resolves how much has gone against a given budget key for its own
+  // period type, transparently picking the expense or investment map
+  // depending on whether the key carries the 'inv::' prefix.
+  const _gastadoParaClave = (cat, tipo) => {
+    const esInversion = cat.startsWith('inv::')
+    const nombreReal = esInversion ? cat.slice(5) : cat
+    if (esInversion) {
+      return tipo==='annual' ? (invMapYear[nombreReal]||0) : tipo==='quarterly' ? (invMapQ[nombreReal]||0) : (invMap[nombreReal]||0)
+    }
+    return tipo==='annual' ? (catMapYear[nombreReal]||0) : tipo==='quarterly' ? (catMapQ[nombreReal]||0) : (catMap[nombreReal]||0)
+  }
   const totalLimiteM = cats.reduce((a,c) => {
     const { limite, tipo } = S.presupuestosV2[c] || { limite: 0, tipo: 'monthly' }
     return a + (tipo==='annual' ? (Number(limite)||0)/12 : tipo==='quarterly' ? (Number(limite)||0)/3 : (Number(limite)||0))
   }, 0)
-  const totalGastadoM = cats.reduce((a,c)=>a+(Number(catMap[c])||0),0)
+  const totalGastadoM = cats.reduce((a,c)=>{
+    const { tipo } = S.presupuestosV2[c] || { tipo: 'monthly' }
+    return a + _gastadoParaClave(c, tipo)
+  },0)
   const enRojo = cats.filter(c => {
     const { limite, tipo } = S.presupuestosV2[c] || { limite: S.presupuestos[c], tipo: 'monthly' }
-    const spent = tipo==='annual' ? (catMapYear[c]||0) : tipo==='quarterly' ? (catMapQ[c]||0) : (catMap[c]||0)
-    return spent >= (Number(limite)||0)
+    return _gastadoParaClave(c, tipo) >= (Number(limite)||0)
   }).length
 
   const tipoLabel = { monthly: window._currentLang==='en'?'Monthly':'Mensual', quarterly: window._currentLang==='en'?'Quarterly':'Trimestral', annual: window._currentLang==='en'?'Annual':'Anual' }
@@ -6682,8 +6729,10 @@ function renderPresupuestos() {
 
   const items = cats.map(cat => {
     const { limite, tipo } = S.presupuestosV2[cat] || { limite: S.presupuestos[cat], tipo: 'monthly' }
+    const esInversion = cat.startsWith('inv::')
+    const nombreReal = esInversion ? cat.slice(5) : cat
     const limiteN = Number(limite)||0
-    const gastado = tipo==='annual' ? (catMapYear[cat]||0) : tipo==='quarterly' ? (catMapQ[cat]||0) : (catMap[cat]||0)
+    const gastado = _gastadoParaClave(cat, tipo)
     const pctVal = limiteN ? clamp((gastado/limiteN)*100,0,120) : 0
     const cls = pctVal>=100?'progress-danger':pctVal>=80?'progress-warn':'progress-ok'
     const badge = pctVal>=100
@@ -6694,8 +6743,8 @@ function renderPresupuestos() {
     <div class="budget-item">
       <div class="budget-header">
         <div class="budget-cat">
-          <span style="font-size:1rem">${catEmoji(cat)}</span> ${cat} ${badge}
-          <span style="font-size:.68rem;color:var(--text2);margin-left:6px">${tipoIcon[tipo]||''} ${tipoLabel[tipo]||tipo}</span>
+          <span style="font-size:1rem">${catEmoji(nombreReal)}</span> ${nombreReal} ${badge}
+          <span style="font-size:.68rem;color:var(--text2);margin-left:6px">${tipoIcon[tipo]||''} ${tipoLabel[tipo]||tipo}${esInversion ? ' · 📈 '+(window._currentLang==='en'?'Investing':'Inversión') : ''}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="budget-nums">${eur(gastado)} / <strong>${eur(limiteN)}</strong></div>
@@ -6756,15 +6805,24 @@ function renderPresupuestos() {
 function exportarPresupuestos() {
   const m = currentMonth()
   const catMap = gastosMesByCat(m)
+  const invMap = {}
+  ;(S.inversiones||[]).forEach(inv => {
+    if (inv.fecha && inv.fecha.slice(0,7) === m && inv.categoria) {
+      invMap[inv.categoria] = (invMap[inv.categoria]||0) + (Number(inv.importe)||0)
+    }
+  })
   try {
     const wb = XLSX.utils.book_new()
     const headers = ['Categoría','Límite (€)','Gastado (€)','Disponible (€)','% Usado','Estado']
-    const rows = Object.keys(S.presupuestos).map(cat => {
-      const limite = Number(S.presupuestos[cat])||0
-      const gastado = Number(catMap[cat])||0
-      const pctVal = limite ? Math.round(gastado/limite*100) : 0
+    const rows = Object.keys(S.presupuestosV2 || {}).map(cat => {
+      const esInversion = cat.startsWith('inv::')
+      const nombreReal = esInversion ? cat.slice(5) : cat
+      const { limite } = S.presupuestosV2[cat] || { limite: S.presupuestos[cat] }
+      const limiteN = Number(limite)||0
+      const gastado = esInversion ? (Number(invMap[nombreReal])||0) : (Number(catMap[nombreReal])||0)
+      const pctVal = limiteN ? Math.round(gastado/limiteN*100) : 0
       const estado = pctVal>=100?'Superado':pctVal>=80?'En alerta':'OK'
-      return [cat, limite, gastado, Math.max(0,limite-gastado), pctVal+'%', estado]
+      return [nombreReal + (esInversion ? ' (Inversión)' : ''), limiteN, gastado, Math.max(0,limiteN-gastado), pctVal+'%', estado]
     })
     const ws = XLSX.utils.aoa_to_sheet([headers,...rows])
     ws['!cols'] = headers.map(h=>({wch:Math.max(h.length,14)}))
@@ -8693,13 +8751,22 @@ function generarInsights() {
   }
 
   // ── CASE F: Budget overrun (only if budgets exist) ──────────────
-  if (Object.keys(S.presupuestos).length > 0 && gas > 0) {
+  if (Object.keys(S.presupuestosV2 || {}).length > 0) {
     const catMap = gastosMesByCat(m)
-    const overrun = Object.keys(S.presupuestos).filter(c => {
-      const spent = Number(catMap[c]) || 0
-      const limit = Number(S.presupuestos[c]) || 0
-      return limit > 0 && spent > limit
+    const invMapOverrun = {}
+    ;(S.inversiones||[]).forEach(inv => {
+      if (inv.fecha && inv.fecha.slice(0,7) === m && inv.categoria) {
+        invMapOverrun[inv.categoria] = (invMapOverrun[inv.categoria]||0) + (Number(inv.importe)||0)
+      }
     })
+    const overrun = Object.keys(S.presupuestosV2 || {}).filter(c => {
+      const esInversion = c.startsWith('inv::')
+      const nombreReal = esInversion ? c.slice(5) : c
+      const { limite } = S.presupuestosV2[c] || {}
+      const spent = esInversion ? (Number(invMapOverrun[nombreReal])||0) : (Number(catMap[nombreReal])||0)
+      const limit = Number(limite) || 0
+      return limit > 0 && spent > limit
+    }).map(c => c.startsWith('inv::') ? c.slice(5) : c)
     if (overrun.length) {
       insights.push({
         icon: '🚫',
@@ -8756,7 +8823,8 @@ function confirmar(msg, onOk, opts={}) {
 // (inversion, deuda, objetivo: listas de categorias completamente
 // distintas) sigue con el campo de texto simple ya existente.
 function _catSelectTipo(selectId) {
-  if (selectId === 'gastoCat' || selectId === 'presCat') return 'gasto'
+  if (selectId === 'gastoCat') return 'gasto'
+  if (selectId === 'presCat') return document.getElementById('presAmbito')?.value === 'inversion' ? 'inversion' : 'gasto'
   if (selectId === 'ingresoCat') return 'ingreso'
   return null
 }
@@ -10267,8 +10335,16 @@ function resetPresForm() {
   document.getElementById('presLimite').value = ''
   const tipoEl = document.getElementById('presTipo')
   if (tipoEl) tipoEl.value = 'monthly'
+  const ambitoEl = document.getElementById('presAmbito')
+  if (ambitoEl) ambitoEl.value = 'gasto'
   window._updatePresLabel()
-  poblarSelect('presCat','gasto')
+  window._onPresAmbitoChange()
+}
+window._onPresAmbitoChange = function() {
+  const ambito = document.getElementById('presAmbito')?.value || 'gasto'
+  poblarSelect('presCat', ambito === 'inversion' ? 'inversion' : 'gasto')
+  const nota = document.getElementById('presAmbitoNota')
+  if (nota) nota.style.display = ambito === 'inversion' ? 'block' : 'none'
 }
 window._updatePresLabel = function() {
   const tipoEl = document.getElementById('presTipo')
@@ -10280,20 +10356,31 @@ window._updatePresLabel = function() {
 function guardarPresupuesto() {
   if (!_formGuard.lock('presupuestoModal')) return
   const _unlock = () => _formGuard.unlock('presupuestoModal')
-  const cat = getOrCreateCat('presCat','presCatCustomInput','gasto')
-  if (!cat) { toast(t('err_selecciona_cat'),'error'); _unlock(); return }
+  const ambito = document.getElementById('presAmbito')?.value === 'inversion' ? 'inversion' : 'gasto'
+  const catNombre = getOrCreateCat('presCat','presCatCustomInput', ambito === 'inversion' ? 'inversion' : 'gasto')
+  if (!catNombre) { toast(t('err_selecciona_cat'),'error'); _unlock(); return }
+  // Investment budgets are stored under a prefixed key so they can
+  // never collide with an expense category that happens to share the
+  // same name (e.g. both having an "Otro" category) — expense budget
+  // keys are left completely untouched in their original bare-name
+  // format for full backward compatibility with budgets already saved.
+  const cat = ambito === 'inversion' ? ('inv::' + catNombre) : catNombre
   const limite = parseAmount(document.getElementById('presLimite').value)
   if (!limite || limite <= 0) { toast(t('err_limite_valido'),'error'); _unlock(); return }
   const tipo = (document.getElementById('presTipo')?.value) || 'monthly'
   // Store as object with type info; keep backward compat (plain number = monthly)
   if (!S.presupuestosV2) S.presupuestosV2 = {}
-  S.presupuestosV2[cat] = { limite, tipo }
+  S.presupuestosV2[cat] = { limite, tipo, ambito }
   // Also update legacy S.presupuestos with monthly-equivalent for charts
-  S.presupuestos[cat] = tipo === 'annual' ? limite/12 : tipo === 'quarterly' ? limite/3 : limite
+  // (investment budgets are skipped here — the legacy map is expense-only)
+  if (ambito !== 'inversion') {
+    S.presupuestos[cat] = tipo === 'annual' ? limite/12 : tipo === 'quarterly' ? limite/3 : limite
+  }
   save(); if (window.MNGamification) MNGamification.checkAchievement('presupuesto_added'); closeModal('presupuestoModal'); _unlock(); render(); toast(t('toast_presupuesto_guardado'))
 }
 function borrarPresupuesto(cat) {
-  confirmar(t('confirm_eliminar_presupuesto') + ' "' + cat + '"?', ()=>{
+  confirmar(t('confirm_eliminar_presupuesto') + ' "' + cat.replace('inv::','') + '"?', ()=>{
+    delete S.presupuestosV2[cat]
     delete S.presupuestos[cat]
     save(); render(); toast(t('toast_presupuesto_eliminado'))
   }, {titulo:t('confirm_eliminar_presupuesto_titulo'),icono:'🗑️'})
@@ -10467,7 +10554,11 @@ function _categoryUsageCount(key, cat) {
     return enGastos + enPresupuesto
   }
   if (key === 'ingreso')   return (S.ingresos||[]).filter(i => i.categoria === cat).length
-  if (key === 'inversion') return (S.inversiones||[]).filter(i => i.categoria === cat).length
+  if (key === 'inversion') {
+    const enInversiones = (S.inversiones||[]).filter(i => i.categoria === cat).length
+    const enPresupuestoInv = (S.presupuestosV2 && S.presupuestosV2['inv::'+cat] !== undefined) ? 1 : 0
+    return enInversiones + enPresupuestoInv
+  }
   if (key === 'deuda')     return (S.deudas||[]).filter(d => d.categoria === cat).length
   if (key === 'objetivo')  return (S.objetivos||[]).filter(o => o.categoria === cat).length
   return 0
@@ -10637,6 +10728,10 @@ function _confirmCreateCategory() {
       if (key === 'gasto') {
         if (S.presupuestos && S.presupuestos[oldName] !== undefined) { S.presupuestos[nombre] = S.presupuestos[oldName]; delete S.presupuestos[oldName] }
         if (S.presupuestosV2 && S.presupuestosV2[oldName] !== undefined) { S.presupuestosV2[nombre] = S.presupuestosV2[oldName]; delete S.presupuestosV2[oldName] }
+      }
+      if (key === 'inversion') {
+        const oldKey = 'inv::' + oldName, newKey = 'inv::' + nombre
+        if (S.presupuestosV2 && S.presupuestosV2[oldKey] !== undefined) { S.presupuestosV2[newKey] = S.presupuestosV2[oldKey]; delete S.presupuestosV2[oldKey] }
       }
       if (S.catColors && S.catColors[oldName] !== undefined) { S.catColors[nombre] = S.catColors[oldName]; delete S.catColors[oldName] }
       S.categoriaEmojis = S.categoriaEmojis || {}
