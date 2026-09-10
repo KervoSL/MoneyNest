@@ -1,10 +1,9 @@
 {
-  "version": "1.19.1",
+  "version": "1.19.2",
   "changelog": {
-    "title": "Novedades de la versión 1.19.1",
+    "title": "Novedades de la versión 1.19.2",
     "items": [
-      "Corregido: el modal de pago de Pro mostraba un precio incorrecto (6,99€ en vez de 14,99€) en el título",
-      "Corregido: si intentas comprar un plan que ya tienes activo, ahora se muestra un mensaje claro en vez de un error genérico"
+      "Corregido: 'Gestionar suscripción' podía quedarse parado sin hacer nada si la sesión aún no había terminado de cargar, o si la conexión con el servidor tardaba demasiado"
     ]
   }
 }

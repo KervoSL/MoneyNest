@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.19.1'
+const VERSION = '1.19.2'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -14559,6 +14559,20 @@ window._openStripePortal = async function() {
 }
 
 async function _openStripeCustomerPortal(btn) {
+  // CONFIRMED EMPIRICALLY (see _doConfirmPlan): checking isLoggedIn()
+  // without first waiting for the session restore to actually finish
+  // can wrongly read "not logged in" for someone who really is, if
+  // this button is pressed in the brief window right after the page
+  // loads. Same 4s safety cap as the purchase flow — if it times out,
+  // isLoggedIn() below is treated as unreliable rather than trusted.
+  if (window.MNSupabaseAuth?.ready) {
+    try {
+      await Promise.race([
+        window.MNSupabaseAuth.ready(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('auth_ready_timeout')), 4000)),
+      ])
+    } catch (_) { /* handled by the check below either way */ }
+  }
   if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
     if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión o usa "Restaurar acceso" primero.'), 'warning')
     return
@@ -14567,10 +14581,19 @@ async function _openStripeCustomerPortal(btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…') }
   try {
     const token = window.MNSupabaseAuth.getSession()?.access_token
+    // CONFIRMED EMPIRICALLY: this fetch previously had no timeout at
+    // all — if the network request ever hung (bad connection, a slow
+    // response, anything), this button stayed stuck on "Abriendo…"
+    // forever with zero visible error, exactly "no abre nada". A hard
+    // 15s cap guarantees this always resolves one way or another.
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
     const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
     const data = await res.json()
     if (!res.ok || !data.url) {
       if (data.error === 'no_customer') {
