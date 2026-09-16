@@ -1,5 +1,5 @@
-/* ─── MoneyNest Service Worker v43 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v43'
+/* ─── MoneyNest Service Worker v44 ─────────────────────────────── */
+const CACHE_NAME = 'moneynest-v44'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const LOCAL_ASSETS = [
   './css/styles.css',
   './css/billing.css',
   './css/wizard-shared.css',
+  './css/pin-lock.css',
   './css/data-manager.css',
   './css/premium-ux.css',
   './js/auth.js',
@@ -36,6 +37,7 @@ const LOCAL_ASSETS = [
   './js/billing-i18n-patch.js',
   './js/data-manager.js',
   './js/sync.js',
+  './js/pin-lock.js',
   './js/gamification-guides.js',
   './js/gamification.js',
   './js/bank-import.js',

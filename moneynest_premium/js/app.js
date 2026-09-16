@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.20'
+const VERSION = '1.21'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -7757,6 +7757,24 @@ function renderCategorias() {
   `
 }
 
+function _onPinToggle(checkbox) {
+  if (checkbox.checked) {
+    // Revert the checkbox visually until setup actually succeeds —
+    // startSetup's callback re-renders the whole card correctly once
+    // a PIN is really saved, so there's no need to trust the checked
+    // state in the meantime.
+    checkbox.checked = false
+    window.MNPinLock.startSetup((success) => { if (success) render() })
+  } else {
+    checkbox.checked = true // revert until confirmed
+    confirmar(
+      t('cfg_pin_desactivar_confirm','¿Desactivar el bloqueo por PIN?'),
+      () => { window.MNPinLock.disable(); render() },
+      { titulo: t('cfg_pin_desactivar_titulo','Desactivar PIN'), icono: '🔓' }
+    )
+  }
+}
+
 function renderConfiguracion() {
   const isDark = S.theme !== 'light'
 
@@ -7867,6 +7885,44 @@ function renderConfiguracion() {
           </div>
         </div>
         ${window.MNInstall ? window.MNInstall.renderInstallCard() : ''}
+      </div>
+
+      <!-- Bloqueo con PIN -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🔒 ${t('cfg_pin_titulo','Bloqueo con PIN')}</div>
+            <div class="card-subtitle">${t('cfg_pin_sub','Pide un PIN cada vez que abras la app')}</div>
+          </div>
+        </div>
+        ${(() => {
+          const eligible = window.MNPinLock && window.MNPinLock.hasEligiblePlan()
+          if (!eligible) {
+            return `<div style="font-size:.82rem;color:var(--text2);line-height:1.6">
+              ${t('cfg_pin_bloqueado','Disponible con el plan Local o Pro.')}
+              <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%" onclick="goTo('facturacion')">${t('cfg_pin_ver_planes','Ver planes')}</button>
+            </div>`
+          }
+          const enabled = window.MNPinLock.isEnabled()
+          const timing = window.MNPinLock.getTiming()
+          return `
+            <div class="form-check" style="margin-bottom:${enabled?'14px':'0'}">
+              <input type="checkbox" id="pinToggle" ${enabled?'checked':''} onchange="_onPinToggle(this)">
+              <label for="pinToggle">${t('cfg_pin_activar','Activar bloqueo por PIN')}</label>
+            </div>
+            ${enabled ? `
+              <div class="form-group" style="margin-bottom:10px">
+                <label>${t('cfg_pin_cuando','Bloquear')}</label>
+                <select id="pinTimingSelect" onchange="MNPinLock.setTiming(this.value)">
+                  <option value="immediate" ${timing==='immediate'?'selected':''}>${t('cfg_pin_inmediato','Inmediatamente')}</option>
+                  <option value="1min" ${timing==='1min'?'selected':''}>${t('cfg_pin_1min','Tras 1 minuto en segundo plano')}</option>
+                  <option value="5min" ${timing==='5min'?'selected':''}>${t('cfg_pin_5min','Tras 5 minutos en segundo plano')}</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNPinLock.startSetup(()=>render())">${t('cfg_pin_cambiar','Cambiar PIN')}</button>
+            ` : ''}
+          `
+        })()}
       </div>
 
       <!-- Notificaciones -->
@@ -17269,6 +17325,7 @@ function init() {
   updateStreak()
   if (window.MNRecurring) try { MNRecurring.processDueRecurrings() } catch {}
   render()                    // ← app renders first (visible behind overlay)
+  if (window.MNPinLock) try { MNPinLock.checkOnLoad() } catch {}
   _updateSidebarLang()
   translateDOM()              // PASO 3: traduce modales estáticos index.html
   _autoResetFlagsIfEmpty()

@@ -1,0 +1,159 @@
+/**
+ * MoneyNest — css/pin-lock.css
+ * Estilos del overlay de bloqueo por PIN. Cargado siempre como CSS
+ * estático (no inyectado dinámicamente) porque este overlay debe
+ * poder mostrarse en el instante más temprano posible del arranque
+ * de la app, antes de que cualquier otro módulo tenga oportunidad de
+ * inyectar sus propios estilos.
+ */
+
+#mnPinLockOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg, #0A0E17);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mnpin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.mnpin-icon { font-size: 2.2rem; margin-bottom: 4px; }
+
+.mnpin-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text, #fff);
+  margin-bottom: 4px;
+}
+
+.mnpin-sub {
+  font-size: .82rem;
+  color: var(--text2, #94A3B8);
+  margin-bottom: 12px;
+}
+
+.mnpin-dots {
+  display: flex;
+  gap: 16px;
+  margin: 18px 0 10px;
+}
+
+.mnpin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2, #2A3346);
+  background: transparent;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+
+.mnpin-dot.filled {
+  background: var(--accent, #00D4AA);
+  border-color: var(--accent, #00D4AA);
+  transform: scale(1.1);
+}
+
+.mnpin-error {
+  font-size: .8rem;
+  color: var(--red, #EF4444);
+  font-weight: 600;
+  margin-bottom: 6px;
+  min-height: 18px;
+}
+
+.mnpin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.mnpin-key {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--border2, #2A3346);
+  background: var(--bg2, #0F1420);
+  color: var(--text, #fff);
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .1s, transform .1s;
+}
+.mnpin-key:active { background: var(--border, #1A2030); transform: scale(.94); }
+.mnpin-key--empty { visibility: hidden; pointer-events: none; }
+.mnpin-key--del { font-size: 1.1rem; border: none; background: none; }
+.mnpin-key--del:active { background: var(--bg2, #0F1420); }
+
+.mnpin-forgot {
+  margin-top: 22px;
+  background: none;
+  border: none;
+  color: var(--text3, #64748B);
+  font-size: .78rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px;
+  font-family: inherit;
+}
+
+.mnpin-password-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg2, #0F1420);
+  border: 1.5px solid var(--border2, #2A3346);
+  border-radius: 10px;
+  color: var(--text, #fff);
+  font-size: .88rem;
+  font-family: inherit;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.mnpin-password-input:focus { outline: none; border-color: var(--accent, #00D4AA); }
+
+.mnpin-confirm-btn {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent, #00D4AA), #00A882);
+  color: #042b20;
+  font-size: .88rem;
+  font-weight: 800;
+  font-family: inherit;
+  box-shadow: 0 6px 20px rgba(0,212,170,.28);
+  margin-top: 4px;
+}
+.mnpin-confirm-btn:disabled { opacity: .5; }
+
+@keyframes mnpin-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+.mnpin-shake { animation: mnpin-shake .4s; }
+
+/* ── Setup flow (creating/changing a PIN) shares the same visual
+   language, rendered inside the classic modal system instead of the
+   full-screen lock overlay, since it's a deliberate settings action,
+   not an app-open gate. ── */
+.mnpin-setup-dots { display: flex; gap: 14px; justify-content: center; margin: 16px 0; }

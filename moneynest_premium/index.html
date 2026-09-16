@@ -53,6 +53,7 @@
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/billing.css">
 <link rel="stylesheet" href="css/wizard-shared.css">
+<link rel="stylesheet" href="css/pin-lock.css">
 <link rel="stylesheet" href="css/data-manager.css">
 <link rel="stylesheet" href="css/premium-ux.css">
 </head>
@@ -429,6 +430,16 @@
 </div>
 
 <!-- REVALORIZAR MODAL -->
+<div class="modal-overlay" id="pinSetupModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">🔒 <span id="pinSetupTitle">Configurar PIN</span></div>
+      <button class="modal-close" onclick="MNPinLock._cancelSetup()">✕</button>
+    </div>
+    <div class="modal-body" id="pinSetupBody" style="padding-bottom:24px"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="revalorizarModal">
   <div class="modal">
     <div class="modal-header">
@@ -1406,6 +1417,7 @@
 <script src="js/billing-i18n-patch.js"></script>
 <script src="js/data-manager.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/pin-lock.js"></script>
 <script src="js/gamification-guides.js"></script>
 <script src="js/gamification.js"></script>
 <script src="js/bank-import.js"></script>

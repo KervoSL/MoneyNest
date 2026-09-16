@@ -266,6 +266,24 @@
     return data;
   }
 
+  // ── Re-authentication check (no session side-effects) ──────────
+  // Used to confirm "this is really you" for sensitive local actions
+  // (e.g. disabling the PIN lock) without any of signIn()'s extra
+  // behavior (rate limiting keyed by attempts, claiming a new device
+  // session, etc.) — the person is already logged in, this only
+  // re-checks their password is correct. Deliberately swallows every
+  // error into a plain false/true so callers never need to parse
+  // Supabase-specific error shapes for a simple yes/no check.
+  async function verifyPassword(email, password) {
+    if (!email || !password) return false;
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      return !error;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ── Single-session watchdog ──────────────────────────────────
   // Polls every 90s; signs out if server session_id differs from local
   // — but ONLY enforces this for the Local plan (single device by
@@ -536,6 +554,7 @@
     // Password
     resetPassword,
     updatePassword,
+    verifyPassword,
     // Profile
     getProfile,
     updateProfile,
