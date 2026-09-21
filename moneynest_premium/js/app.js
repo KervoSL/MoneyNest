@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.21'
+const VERSION = '1.21.1'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -15179,15 +15179,14 @@ function checkOnboarding() {
     return
   }
 
-  // First time ever opening the app with no account and no demo yet:
-  // jump straight into the demo experience — no choice screen (it
-  // looked bad and added friction). The subtle banner during the demo
-  // still offers "crear cuenta" at any time.
-  if (!localStorage.getItem(PRE_OB_CHOICE_MADE_FLAG)) {
-    localStorage.setItem(PRE_OB_CHOICE_MADE_FLAG, 'true')
-    _startPreOnboardingDemo()
-    return
-  }
+  // NOTE: automatically loading the pre-onboarding demo here for a
+  // brand-new user was removed — it silently pre-loaded 200+ example
+  // movements before the person had done anything, which immediately
+  // tripped the 100-movement trial limit and showed "trial ya
+  // completado" on a first-ever visit. PRE_OB_CHOICE_MADE_FLAG is
+  // still set below so this check only ever runs once per browser,
+  // same as before.
+  localStorage.setItem(PRE_OB_CHOICE_MADE_FLAG, 'true')
 
   obStep = 1
   obData = { nombre:'', email:'', password:'', mode:'personal', lang: _currentLang || 'es', theme: S?.theme || 'dark', startTutorial:false, loadDemo:false }

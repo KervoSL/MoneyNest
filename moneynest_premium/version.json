@@ -1,9 +1,9 @@
 {
-  "version": "1.21",
+  "version": "1.21.1",
   "changelog": {
-    "title": "Novedades de la versión 1.21",
+    "title": "Novedades de la versión 1.21.1",
     "items": [
-      "Nuevo: bloqueo con PIN para abrir la app (disponible con el plan Local o Pro). Configúralo en Ajustes → Bloqueo con PIN"
+      "Corregido un fallo grave: quien abría la app por primera vez veía que la prueba gratuita ya estaba agotada, sin haber hecho nada. Ahora empieza correctamente desde cero"
     ]
   }
 }
