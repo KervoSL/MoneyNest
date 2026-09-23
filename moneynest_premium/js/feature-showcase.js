@@ -139,34 +139,37 @@
     switch(type) {
       case 'networth':
         return `
-          <div class="visual-card">
-            <div class="visual-header">
-              <div class="visual-label">Patrimonio neto</div>
-              <div class="visual-amount">45.280 €</div>
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
             </div>
-            <div class="visual-chart">
-              <div class="visual-bar visual-bar-green" style="width: 70%">
-                <span>Activos</span>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="text-align:center;padding:8px 0;">
+                <div style="font-size:.65rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Patrimonio neto</div>
+                <div style="font-size:1.8rem;font-weight:800;color:#00D4AA;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em;">45.280 €</div>
               </div>
-              <div class="visual-bar visual-bar-red" style="width: 30%">
-                <span>Deudas</span>
+              <div class="ob-kpi-row">
+                <div class="ob-kpi-mini">
+                  <div class="ob-kpi-lbl">🏦 Cuentas</div>
+                  <div class="ob-kpi-val green">12.500 €</div>
+                </div>
+                <div class="ob-kpi-mini">
+                  <div class="ob-kpi-lbl">📈 Inversiones</div>
+                  <div class="ob-kpi-val blue">28.300 €</div>
+                </div>
               </div>
-            </div>
-            <div class="visual-items">
-              <div class="visual-item">
-                <span class="visual-item-icon">🏦</span>
-                <span class="visual-item-label">Cuentas</span>
-                <span class="visual-item-value">12.500 €</span>
-              </div>
-              <div class="visual-item">
-                <span class="visual-item-icon">📈</span>
-                <span class="visual-item-label">Inversiones</span>
-                <span class="visual-item-value">28.300 €</span>
-              </div>
-              <div class="visual-item">
-                <span class="visual-item-icon">🏠</span>
-                <span class="visual-item-label">Activos</span>
-                <span class="visual-item-value">15.000 €</span>
+              <div class="ob-kpi-row">
+                <div class="ob-kpi-mini">
+                  <div class="ob-kpi-lbl">🏠 Activos</div>
+                  <div class="ob-kpi-val green">15.000 €</div>
+                </div>
+                <div class="ob-kpi-mini">
+                  <div class="ob-kpi-lbl">💳 Deudas</div>
+                  <div class="ob-kpi-val red">-10.520 €</div>
+                </div>
               </div>
             </div>
           </div>
@@ -174,63 +177,85 @@
 
       case 'importer':
         return `
-          <div class="visual-card">
-            <div class="visual-upload">
-              <div class="visual-upload-icon">📄</div>
-              <div class="visual-upload-label">movimientos_banco.csv</div>
-              <div class="visual-upload-progress">
-                <div class="visual-upload-bar" style="width: 75%"></div>
-              </div>
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
             </div>
-            <div class="visual-transactions">
-              <div class="visual-transaction">
-                <span class="visual-tx-icon">🍔</span>
-                <span class="visual-tx-desc">McDonald's Barcelona</span>
-                <span class="visual-tx-amount">-12,50 €</span>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:10px;">
+              <div style="text-align:center;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                <div style="font-size:1.4rem;margin-bottom:4px;">📄</div>
+                <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.7);">movimientos_banco.csv</div>
+                <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:8px;overflow:hidden;">
+                  <div style="height:100%;width:75%;background:#00D4AA;border-radius:2px;"></div>
+                </div>
               </div>
-              <div class="visual-transaction">
-                <span class="visual-tx-icon">⛽</span>
-                <span class="visual-tx-desc">Repsol Gasolina</span>
-                <span class="visual-tx-amount">-45,00 €</span>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:1rem;">🍔</span>
+                    <span style="font-size:.7rem;color:rgba(255,255,255,0.7);">McDonald's</span>
+                  </div>
+                  <span style="font-size:.75rem;font-weight:700;color:#F43F5E;">-12,50 €</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:1rem;">⛽</span>
+                    <span style="font-size:.7rem;color:rgba(255,255,255,0.7);">Repsol</span>
+                  </div>
+                  <span style="font-size:.75rem;font-weight:700;color:#F43F5E;">-45,00 €</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:1rem;">💰</span>
+                    <span style="font-size:.7rem;color:rgba(255,255,255,0.7);">Nómina</span>
+                  </div>
+                  <span style="font-size:.75rem;font-weight:700;color:#00D4AA;">+2.100 €</span>
+                </div>
               </div>
-              <div class="visual-transaction">
-                <span class="visual-tx-icon">💰</span>
-                <span class="visual-tx-desc">Nómina enero</span>
-                <span class="visual-tx-amount">+2.100,00 €</span>
-              </div>
+              <div style="text-align:center;padding:6px 10px;background:rgba(0,212,170,0.08);color:#00D4AA;border-radius:8px;font-size:.65rem;font-weight:700;">✓ 127 movimientos importados</div>
             </div>
-            <div class="visual-badge">✓ 127 movimientos importados</div>
           </div>
         `;
 
       case 'investments':
         return `
-          <div class="visual-card">
-            <div class="visual-portfolio">
-              <div class="visual-portfolio-header">
-                <div class="visual-portfolio-label">Portfolio total</div>
-                <div class="visual-portfolio-value">28.300 €</div>
-                <div class="visual-portfolio-gain">+2.847 € (+11,2%)</div>
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
+            </div>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="text-align:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:.65rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Portfolio total</div>
+                <div style="font-size:1.6rem;font-weight:800;color:rgba(255,255,255,0.95);font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em;margin-bottom:4px;">28.300 €</div>
+                <div style="font-size:.75rem;font-weight:700;color:#00D4AA;">+2.847 € (+11,2%)</div>
               </div>
-              <div class="visual-investment">
-                <div class="visual-inv-icon">📊</div>
-                <div class="visual-inv-details">
-                  <div class="visual-inv-name">Vanguard S&P 500</div>
-                  <div class="visual-inv-subtitle">15.000 € • +8,5%</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;">
+                  <div style="font-size:1.3rem;">📊</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:2px;">Vanguard S&P 500</div>
+                    <div style="font-size:.65rem;color:rgba(255,255,255,0.5);">15.000 € • <span style="color:#00D4AA;">+8,5%</span></div>
+                  </div>
                 </div>
-              </div>
-              <div class="visual-investment">
-                <div class="visual-inv-icon">₿</div>
-                <div class="visual-inv-details">
-                  <div class="visual-inv-name">Bitcoin</div>
-                  <div class="visual-inv-subtitle">8.500 € • +24,1%</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;">
+                  <div style="font-size:1.3rem;">₿</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:2px;">Bitcoin</div>
+                    <div style="font-size:.65rem;color:rgba(255,255,255,0.5);">8.500 € • <span style="color:#00D4AA;">+24,1%</span></div>
+                  </div>
                 </div>
-              </div>
-              <div class="visual-investment">
-                <div class="visual-inv-icon">🏢</div>
-                <div class="visual-inv-details">
-                  <div class="visual-inv-name">Apple Inc.</div>
-                  <div class="visual-inv-subtitle">4.800 € • +6,3%</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;">
+                  <div style="font-size:1.3rem;">🏢</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:2px;">Apple Inc.</div>
+                    <div style="font-size:.65rem;color:rgba(255,255,255,0.5);">4.800 € • <span style="color:#00D4AA;">+6,3%</span></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -239,37 +264,45 @@
 
       case 'goals':
         return `
-          <div class="visual-card">
-            <div class="visual-goal">
-              <div class="visual-goal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="visual-goal-icon">✈️</div>
-                <div class="visual-goal-name">Viaje a Japón</div>
-              </div>
-              <div class="visual-goal-progress">
-                <div class="visual-goal-amount">
-                  <span>2.400 €</span>
-                  <span class="visual-goal-total">de 3.500 €</span>
-                </div>
-                <div class="visual-goal-bar">
-                  <div class="visual-goal-fill" style="width: 68%"></div>
-                </div>
-                <div class="visual-goal-status">68% completado • Faltan 4 meses</div>
-              </div>
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
             </div>
-            <div class="visual-goal">
-              <div class="visual-goal-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="visual-goal-icon">💻</div>
-                <div class="visual-goal-name">MacBook Pro</div>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:14px;display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:1.4rem;">✈️</div>
+                  <div style="font-size:.85rem;font-weight:800;color:white;">Viaje a Japón</div>
+                </div>
+                <div style="padding:12px;background:rgba(255,255,255,0.03);">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <span style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9);">2.400 €</span>
+                    <span style="font-size:.7rem;color:rgba(255,255,255,0.5);">de 3.500 €</span>
+                  </div>
+                  <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+                    <div style="height:100%;width:68%;background:#667eea;border-radius:3px;"></div>
+                  </div>
+                  <div style="font-size:.65rem;color:rgba(255,255,255,0.5);">68% • Faltan 4 meses</div>
+                </div>
               </div>
-              <div class="visual-goal-progress">
-                <div class="visual-goal-amount">
-                  <span>1.200 €</span>
-                  <span class="visual-goal-total">de 2.500 €</span>
+              <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+                <div style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);padding:14px;display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:1.4rem;">💻</div>
+                  <div style="font-size:.85rem;font-weight:800;color:white;">MacBook Pro</div>
                 </div>
-                <div class="visual-goal-bar">
-                  <div class="visual-goal-fill" style="width: 48%"></div>
+                <div style="padding:12px;background:rgba(255,255,255,0.03);">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <span style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9);">1.200 €</span>
+                    <span style="font-size:.7rem;color:rgba(255,255,255,0.5);">de 2.500 €</span>
+                  </div>
+                  <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+                    <div style="height:100%;width:48%;background:#f093fb;border-radius:3px;"></div>
+                  </div>
+                  <div style="font-size:.65rem;color:rgba(255,255,255,0.5);">48% • Faltan 6 meses</div>
                 </div>
-                <div class="visual-goal-status">48% completado • Faltan 6 meses</div>
               </div>
             </div>
           </div>
@@ -277,36 +310,44 @@
 
       case 'cta':
         return `
-          <div class="visual-card visual-cta">
-            <div class="visual-cta-features">
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">100 movimientos gratis</div>
-              </div>
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">Sin tarjeta de crédito</div>
-              </div>
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">Datos 100% privados</div>
-              </div>
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">Funciona offline</div>
-              </div>
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">Sync en la nube opcional</div>
-              </div>
-              <div class="visual-cta-feature">
-                <div class="visual-cta-icon">✓</div>
-                <div class="visual-cta-text">Diseño premium</div>
-              </div>
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
             </div>
-            <div class="visual-cta-badge">
-              <div class="visual-cta-badge-icon">🎉</div>
-              <div class="visual-cta-badge-text">Empieza gratis en menos de 2 minutos</div>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">100 gratis</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">Sin tarjeta</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">Privado</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">Offline</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">Cloud sync</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.15);border-radius:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#00D4AA;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;">✓</div>
+                  <div style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,0.8);">Premium</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.2);border-radius:12px;margin-top:4px;">
+                <div style="font-size:1.4rem;">🎉</div>
+                <div style="font-size:.75rem;font-weight:700;color:#00D4AA;">Empieza en menos de 2 minutos</div>
+              </div>
             </div>
           </div>
         `;
