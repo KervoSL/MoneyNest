@@ -15171,6 +15171,17 @@ function checkOnboarding() {
     return
   }
 
+  // FEATURE SHOWCASE: Show visual presentation before onboarding
+  // If user hasn't seen the showcase yet, show it first (it will call checkOnboarding() when done)
+  if (typeof hasSeenShowcase === 'function' && !hasSeenShowcase()) {
+    if (typeof showFeatureShowcase === 'function') {
+      const showcaseShown = showFeatureShowcase();
+      if (showcaseShown) {
+        return; // Showcase is now showing, it will call checkOnboarding() when complete
+      }
+    }
+  }
+
   // If a pre-onboarding demo is already running, never re-show the
   // choice screen nor restart onboarding — just keep the demo going
   // (its own timer/banner logic handles the rest).
