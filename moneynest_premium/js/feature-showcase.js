@@ -116,8 +116,8 @@
           `).join('')}
         </div>
 
-        <!-- Skip button (top right) -->
-        <button class="showcase-skip" onclick="showcaseComplete()">
+        <!-- Skip button (top right) - only visible from slide 2 onwards -->
+        <button class="showcase-skip" id="showcaseSkipBtn" onclick="showcaseComplete()">
           Saltar
         </button>
 
@@ -221,6 +221,12 @@
       screen.classList.toggle('prev', isPrev);
       screen.classList.toggle('next', isNext);
     });
+
+    // Show/hide skip button (only visible from slide 2 onwards)
+    const skipBtn = document.getElementById('showcaseSkipBtn');
+    if (skipBtn) {
+      skipBtn.style.display = currentSlide === 0 ? 'none' : 'block';
+    }
   }
 
   // Render visual mockups
