@@ -276,67 +276,76 @@
               </button>
             </div>
 
-            <!-- Dashboard simulado (como si ya estuvieras en la app) -->
-            <div class="welcome-dashboard-preview">
-              <!-- Header del dashboard -->
-              <div class="wdp-header">
-                <div class="wdp-header-title">Dashboard</div>
-                <div class="wdp-header-date">September 2026</div>
+            <!-- Dashboard simulado - EXACTO como el real de MoneyNest -->
+            <div class="welcome-dashboard-mockup">
+              <!-- Sidebar falso -->
+              <div class="wdm-sidebar">
+                <div class="wdm-logo">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="width:28px;height:28px">
+                    <rect width="48" height="48" fill="none"/>
+                    <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+                    <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                    <polyline points="10,28 18,20 26,23 38,12" stroke="#00D4AA" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="33,11 38,12 37,17" stroke="#00D4AA" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>MoneyNest</span>
+                </div>
+                <div class="wdm-nav-item wdm-nav-active">Dashboard</div>
+                <div class="wdm-nav-item">Ingresos</div>
+                <div class="wdm-nav-item">Gastos</div>
+                <div class="wdm-nav-item">Inversiones</div>
               </div>
 
-              <!-- KPIs principales -->
-              <div class="wdp-kpis">
-                <div class="wdp-kpi wdp-kpi-balance">
-                  <div class="wdp-kpi-label">Monthly Balance</div>
-                  <div class="wdp-kpi-value">+1,058 €</div>
-                  <div class="wdp-kpi-change">↑ 12.4% vs last month</div>
+              <!-- Contenido principal -->
+              <div class="wdm-main">
+                <!-- Topbar -->
+                <div class="wdm-topbar">
+                  <div class="wdm-topbar-title">Dashboard</div>
+                  <div class="wdm-topbar-balance">Disponible <span>0,00 €</span></div>
                 </div>
-                <div class="wdp-kpi">
-                  <div class="wdp-kpi-label">Income</div>
-                  <div class="wdp-kpi-value wdp-kpi-income">+3,245 €</div>
-                </div>
-                <div class="wdp-kpi">
-                  <div class="wdp-kpi-label">Expenses</div>
-                  <div class="wdp-kpi-value wdp-kpi-expense">-2,187 €</div>
-                </div>
-              </div>
 
-              <!-- Mini gráfico -->
-              <div class="wdp-chart">
-                <div class="wdp-chart-bar" style="height:35%"></div>
-                <div class="wdp-chart-bar" style="height:60%"></div>
-                <div class="wdp-chart-bar" style="height:45%"></div>
-                <div class="wdp-chart-bar wdp-chart-bar-active" style="height:80%"></div>
-                <div class="wdp-chart-bar" style="height:55%"></div>
-                <div class="wdp-chart-bar" style="height:70%"></div>
-              </div>
+                <!-- Saludo -->
+                <div class="wdm-greeting">
+                  <div class="wdm-greeting-text">Hola <span>Joan</span></div>
+                  <div class="wdm-greeting-date">Sep 2026 · Resumen financiero</div>
+                </div>
 
-              <!-- Movimientos recientes -->
-              <div class="wdp-transactions">
-                <div class="wdp-section-title">Recent Transactions</div>
-                <div class="wdp-tx">
-                  <div class="wdp-tx-icon wdp-tx-icon-income">💼</div>
-                  <div class="wdp-tx-info">
-                    <div class="wdp-tx-name">Salary</div>
-                    <div class="wdp-tx-date">Sep 1</div>
+                <!-- Patrimonio Neto -->
+                <div class="wdm-networth">
+                  <div class="wdm-networth-label">PATRIMONIO NETO</div>
+                  <div class="wdm-networth-value">0,00 €</div>
+                  <div class="wdm-networth-breakdown">
+                    <div class="wdm-nw-item">
+                      <span class="wdm-nw-icon">💰</span>
+                      <span class="wdm-nw-label">Liquidez</span>
+                      <span class="wdm-nw-value">0,00 €</span>
+                    </div>
+                    <div class="wdm-nw-item">
+                      <span class="wdm-nw-icon">📈</span>
+                      <span class="wdm-nw-label">Invertido</span>
+                      <span class="wdm-nw-value">0,00 €</span>
+                    </div>
+                    <div class="wdm-nw-item">
+                      <span class="wdm-nw-icon">🏠</span>
+                      <span class="wdm-nw-label">Activos</span>
+                      <span class="wdm-nw-value">0,00 €</span>
+                    </div>
+                    <div class="wdm-nw-item">
+                      <span class="wdm-nw-icon">💳</span>
+                      <span class="wdm-nw-label">Deudas</span>
+                      <span class="wdm-nw-value wdm-nw-positive">Sin deudas ✓</span>
+                    </div>
                   </div>
-                  <div class="wdp-tx-amt wdp-tx-amt-positive">+3,200 €</div>
                 </div>
-                <div class="wdp-tx">
-                  <div class="wdp-tx-icon wdp-tx-icon-expense">🛒</div>
-                  <div class="wdp-tx-info">
-                    <div class="wdp-tx-name">Groceries</div>
-                    <div class="wdp-tx-date">Sep 15</div>
+
+                <!-- Cuentas -->
+                <div class="wdm-accounts">
+                  <div class="wdm-section-label">CUENTAS</div>
+                  <div class="wdm-account-item">
+                    <span class="wdm-account-dot"></span>
+                    <span class="wdm-account-name">Efectivo</span>
+                    <span class="wdm-account-value">0,00 €</span>
                   </div>
-                  <div class="wdp-tx-amt wdp-tx-amt-negative">-85.40 €</div>
-                </div>
-                <div class="wdp-tx">
-                  <div class="wdp-tx-icon wdp-tx-icon-expense">☕</div>
-                  <div class="wdp-tx-info">
-                    <div class="wdp-tx-name">Starbucks</div>
-                    <div class="wdp-tx-date">Sep 20</div>
-                  </div>
-                  <div class="wdp-tx-amt wdp-tx-amt-negative">-4.50 €</div>
                 </div>
               </div>
             </div>

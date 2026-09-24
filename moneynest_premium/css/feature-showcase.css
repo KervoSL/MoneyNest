@@ -734,227 +734,237 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 
 /* ──────────────────────────────────────────────────────────────
-   DASHBOARD PREVIEW (simulación de estar en la app)
+   DASHBOARD MOCKUP (simulación EXACTA del dashboard real)
    ────────────────────────────────────────────────────────────── */
-.welcome-dashboard-preview {
+.welcome-dashboard-mockup {
   width: 100%;
-  max-width: 100%;
-  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  background: #0C1119;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: clamp(24px, 4vw, 40px);
-  backdrop-filter: blur(30px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
-  position: relative;
-  z-index: 2;
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+  min-height: 500px;
 }
 
-/* Header del dashboard */
-.wdp-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: clamp(20px, 3vh, 28px);
-  padding-bottom: clamp(16px, 2.5vh, 20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.wdp-header-title {
-  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.95);
-  letter-spacing: -0.02em;
-}
-
-.wdp-header-date {
-  font-size: clamp(0.75rem, 1.6vw, 0.85rem);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* KPIs principales */
-.wdp-kpis {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: clamp(12px, 2vw, 20px);
-  margin-bottom: clamp(20px, 3vh, 28px);
-}
-
-.wdp-kpi {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: clamp(14px, 2.5vw, 20px) clamp(16px, 2.8vw, 22px);
-  transition: all 0.3s ease;
-}
-
-.wdp-kpi:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 212, 170, 0.15);
-  transform: translateY(-2px);
-}
-
-.wdp-kpi-balance {
-  background: linear-gradient(135deg, rgba(0,212,170,0.08) 0%, rgba(0,212,170,0.03) 100%);
-  border-color: rgba(0,212,170,0.15);
-}
-
-.wdp-kpi-label {
-  font-size: clamp(0.68rem, 1.4vw, 0.75rem);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 8px;
-}
-
-.wdp-kpi-value {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 900;
-  color: #00D4AA;
-  letter-spacing: -0.03em;
-  margin-bottom: 4px;
-}
-
-.wdp-kpi-income {
-  color: #10B981;
-}
-
-.wdp-kpi-expense {
-  color: #F43F5E;
-}
-
-.wdp-kpi-change {
-  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-  font-weight: 600;
-  color: #10B981;
-}
-
-/* Mini gráfico */
-.wdp-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(6px, 1.2vw, 10px);
-  height: clamp(60px, 10vh, 80px);
-  padding: clamp(12px, 2vh, 16px);
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  margin-bottom: clamp(20px, 3vh, 28px);
-}
-
-.wdp-chart-bar {
-  flex: 1;
-  background: rgba(0, 212, 170, 0.35);
-  border-radius: 4px 4px 0 0;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.wdp-chart-bar:hover {
-  background: rgba(0, 212, 170, 0.5);
-}
-
-.wdp-chart-bar-active {
-  background: rgba(0, 212, 170, 0.6);
-  box-shadow: 0 0 16px rgba(0, 212, 170, 0.4);
-}
-
-/* Movimientos recientes */
-.wdp-transactions {
+/* ──────────────────────────────────────────────────────────────
+   SIDEBAR FALSO
+   ────────────────────────────────────────────────────────────── */
+.wdm-sidebar {
+  width: 220px;
+  background: #0A0E17;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.8vh, 14px);
-}
-
-.wdp-section-title {
-  font-size: clamp(0.8rem, 1.7vw, 0.9rem);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 4px;
-}
-
-.wdp-tx {
-  display: flex;
-  align-items: center;
-  gap: clamp(10px, 2vw, 14px);
-  padding: clamp(10px, 2vh, 14px) clamp(12px, 2.2vw, 16px);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  transition: all 0.25s ease;
-}
-
-.wdp-tx:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  transform: translateX(4px);
-}
-
-.wdp-tx-icon {
-  width: clamp(36px, 6vw, 44px);
-  height: clamp(36px, 6vw, 44px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 11px;
-  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.wdp-tx-icon-income {
-  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
-  border: 1px solid rgba(16,185,129,0.2);
+.wdm-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
 }
 
-.wdp-tx-icon-expense {
-  background: linear-gradient(135deg, rgba(244,63,94,0.15), rgba(244,63,94,0.05));
-  border: 1px solid rgba(244,63,94,0.2);
+.wdm-logo span {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: -0.01em;
 }
 
-.wdp-tx-info {
+.wdm-nav-item {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.wdm-nav-active {
+  background: rgba(0, 212, 170, 0.1);
+  color: #00D4AA;
+  font-weight: 600;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CONTENIDO PRINCIPAL
+   ────────────────────────────────────────────────────────────── */
+.wdm-main {
   flex: 1;
+  background: #0C1119;
+  padding: 24px 32px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 0;
+  gap: 24px;
 }
 
-.wdp-tx-name {
-  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Topbar */
+.wdm-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.wdp-tx-date {
-  font-size: clamp(0.7rem, 1.5vw, 0.78rem);
-  font-weight: 500;
+.wdm-topbar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.wdm-topbar-balance {
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
-.wdp-tx-amt {
+.wdm-topbar-balance span {
+  color: #00D4AA;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+/* Saludo */
+.wdm-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wdm-greeting-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wdm-greeting-text span {
+  color: #00D4AA;
+}
+
+.wdm-greeting-date {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Patrimonio Neto */
+.wdm-networth {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.wdm-networth-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 12px;
+}
+
+.wdm-networth-value {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: clamp(0.9rem, 1.9vw, 1.05rem);
-  font-weight: 800;
-  white-space: nowrap;
-  font-feature-settings: 'tnum';
-  letter-spacing: -0.02em;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #00D4AA;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
 }
 
-.wdp-tx-amt-positive {
+.wdm-networth-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.wdm-nw-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.wdm-nw-icon {
+  font-size: 1.4rem;
+}
+
+.wdm-nw-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.wdm-nw-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.wdm-nw-positive {
   color: #10B981;
+  font-size: 0.75rem;
 }
 
-.wdp-tx-amt-negative {
-  color: #F43F5E;
+/* Cuentas */
+.wdm-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wdm-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.wdm-account-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.wdm-account-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #F59E0B;
+  flex-shrink: 0;
+}
+
+.wdm-account-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.wdm-account-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1169,17 +1179,31 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     padding: clamp(28px, 4.5vh, 48px) clamp(28px, 4.5vw, 56px);
   }
 
-  .welcome-dashboard-preview {
-    padding: clamp(20px, 3.5vw, 32px);
+  .welcome-dashboard-mockup {
+    flex-direction: column;
+    min-height: 450px;
   }
 
-  .wdp-kpis {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .wdm-sidebar {
+    width: 100%;
+    flex-direction: row;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-x: auto;
   }
 
-  .wdp-chart {
-    height: 60px;
+  .wdm-logo {
+    margin-bottom: 0;
+    margin-right: 20px;
+  }
+
+  .wdm-main {
+    padding: 20px 24px;
+  }
+
+  .wdm-networth-breakdown {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .cta-features {
@@ -1233,32 +1257,43 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     max-width: 100%;
   }
 
-  .welcome-dashboard-preview {
-    padding: clamp(18px, 3vw, 28px);
-    border-radius: 18px;
+  .welcome-dashboard-mockup {
+    border-radius: 16px;
+    min-height: 400px;
   }
 
-  .wdp-kpis {
+  .wdm-sidebar {
+    padding: 12px;
+  }
+
+  .wdm-nav-item {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  .wdm-main {
+    padding: 16px 20px;
+    gap: 20px;
+  }
+
+  .wdm-greeting-text {
+    font-size: 1.5rem;
+  }
+
+  .wdm-networth-value {
+    font-size: 2rem;
+  }
+
+  .wdm-networth-breakdown {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
-  .wdp-kpi-value {
-    font-size: clamp(1.3rem, 4vw, 1.6rem);
-  }
-
-  .wdp-chart {
-    height: 50px;
-    gap: 4px;
-  }
-
-  .wdp-tx {
-    padding: 10px 12px;
-  }
-
-  .wdp-tx-icon {
-    width: 34px;
-    height: 34px;
-    font-size: 1rem;
+  .wdm-nw-item {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 12px 14px;
   }
 
   .cta-features {
@@ -1315,16 +1350,24 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     max-width: 100%;
   }
 
-  .welcome-dashboard-preview {
-    padding: 16px;
+  .welcome-dashboard-mockup {
+    border-radius: 14px;
   }
 
-  .wdp-kpi {
-    padding: 12px 14px;
+  .wdm-sidebar {
+    gap: 2px;
   }
 
-  .wdp-chart {
-    height: 45px;
+  .wdm-main {
+    padding: 14px 16px;
+  }
+
+  .wdm-greeting-text {
+    font-size: 1.3rem;
+  }
+
+  .wdm-networth {
+    padding: 18px;
   }
 }
 
