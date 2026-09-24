@@ -1,3 +1,27 @@
+/* === Z-INDEX MAP ===
+   40        .fab
+   50        .topbar sub-elements
+   100       .sidebar (desktop)
+   200       .bottom-nav, .modal-overlay (base)
+   215       .sidebar-overlay
+   220       .sidebar (mobile, fixed)
+   390-400   #demoFab, #demoPanelModal, .quick-add-modal
+   500       dropdowns
+   600       context menus
+   900       export modals
+   8500-8800 mini-intro, coach marks
+   9000-9200 story modals
+   9400-9500 confirm/install prompts
+   9700      .mn-modal-inline-top
+   9900      auth modal
+   9990      #tutorialOverlay
+   9998      .showcase-overlay
+   9999      .tut-tooltip, .tut-highlight
+   10000     billing modals
+   99999     PIN lock
+   100000    #planModalOverlay
+======================== */
+
 /* ─── RESET & BASE ────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;scroll-behavior:smooth;font-size-adjust:none;}
@@ -503,6 +527,10 @@ tbody tr:hover{cursor:default}
   th,td{padding:6px 8px;font-size:.75rem}
   .td-actions{flex-direction:column;gap:4px}
 }
+@media(max-width:480px){
+  table{min-width:0;width:100%}
+  th,td{white-space:normal;word-break:break-word}
+}
 
 /* ─── BUTTONS ────────────────────────────────────────────────── */
 .btn{
@@ -535,7 +563,7 @@ tbody tr:hover{cursor:default}
 
 /* FAB */
 .fab{
-  position:fixed;bottom:28px;right:28px;
+  position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0px));right:28px;
   width:52px;height:52px;border-radius:16px;
   background:var(--accent);color:#000;
   font-size:1.4rem;display:flex;align-items:center;justify-content:center;
@@ -664,7 +692,7 @@ tbody tr:hover{cursor:default}
 .quick-add-sheet{
   background:var(--card);
   border-radius:20px 20px 0 0;
-  padding:20px 20px 32px;
+  padding:20px 20px calc(32px + env(safe-area-inset-bottom,0px));
   width:100%;max-width:500px;
   animation:slideUp .25s ease;
   border:1px solid var(--border2);
@@ -1093,7 +1121,7 @@ textarea{resize:vertical;min-height:70px}
 /* ─── OVERLAY SIDEBAR MOBILE ─────────────────────────────────── */
 .sidebar-overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.6);z-index:210;
+  background:rgba(0,0,0,0.6);z-index:215;
   -webkit-tap-highlight-color:transparent;
   backdrop-filter:blur(2px);
   -webkit-backdrop-filter:blur(2px);
@@ -1248,7 +1276,7 @@ textarea{resize:vertical;min-height:70px}
   .hamburger{min-width:44px;min-height:44px;padding:12px}
   /* Modales full-screen en móvil */
   .modal{padding:0;border-radius:0;max-width:100%;height:100vh;height:100dvh}
-  .modal-content{border-radius:0;max-height:100%;overflow-y:auto}
+  .modal-content{border-radius:0;max-height:100%;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0px)}
   .modal-footer{flex-wrap:wrap;gap:8px}
   .modal-footer .btn{flex:1;min-width:120px}
   /* Cards con más padding */
@@ -2451,7 +2479,7 @@ ize:.92rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3}
 @keyframes demoFabIn{from{opacity:0;transform:scale(.7) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 #demoFab{
-  position:fixed;bottom:88px;right:18px;z-index:390;
+  position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));right:18px;z-index:390;
   display:flex;align-items:center;gap:8px;
   background:linear-gradient(135deg,#f59e0b,#d97706);
   color:#fff;border-radius:99px;
@@ -2475,7 +2503,7 @@ ize:.92rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3}
 
 /* Real mode FAB (not demo) */
 #demoFabReal{
-  position:fixed;bottom:88px;right:18px;z-index:390;
+  position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));right:18px;z-index:390;
   display:flex;align-items:center;gap:8px;
   background:var(--card);border:1px solid var(--border2);color:var(--text2);
   border-radius:99px;padding:7px 13px 7px 9px;
