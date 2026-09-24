@@ -121,7 +121,7 @@
           Saltar
         </button>
 
-        <!-- Left panel: branding -->
+        <!-- Left panel: STATIC branding (never changes) -->
         <div class="showcase-split-left">
           <div class="showcase-left-content">
             <!-- Logo -->
@@ -141,10 +141,16 @@
               <div class="showcase-brand-name">MoneyNest</div>
             </div>
 
-            <!-- Current slide info (changes with active slide) -->
-            <div class="showcase-left-info">
-              <div class="showcase-left-icon"></div>
-              <h3 class="showcase-left-title"></h3>
+            <!-- Static tagline (never changes) -->
+            <h1 class="showcase-left-tagline">
+              Tu dinero,<br><span>bajo control.</span>
+            </h1>
+
+            <!-- Static bullet points (never change) -->
+            <div class="showcase-left-bullets">
+              <div class="showcase-left-bullet">Finanzas personales inteligentes</div>
+              <div class="showcase-left-bullet">Ingresos, gastos, inversiones y patrimonio</div>
+              <div class="showcase-left-bullet">Privado, seguro y sin conexión obligatoria</div>
             </div>
           </div>
         </div>
@@ -154,28 +160,34 @@
           ${slides.map((slide, index) => `
             <div class="showcase-screen" data-screen="${index}">
               <div class="showcase-screen-content">
-                <!-- Zone 1: Headline (top) -->
-                <div class="showcase-content-top">
-                  <h1 class="showcase-title">${slide.title}</h1>
-                  <h2 class="showcase-subtitle">${slide.subtitle}</h2>
+                <!-- Step indicator -->
+                <div class="showcase-step-pill">
+                  <div class="showcase-step-pill-dot"></div>
+                  PASO ${index + 1} DE ${slides.length}
                 </div>
 
-                <!-- Zone 2: Mockup (middle, shrinks to fit) -->
+                <!-- Headline -->
+                <h1 class="showcase-headline">${slide.title}</h1>
+                <p class="showcase-lead">${slide.subtitle}</p>
+
+                <!-- Visual mockup -->
                 <div class="showcase-visual">
                   ${renderVisual(slide.visual)}
                 </div>
 
-                <!-- Zone 3: Description + Navigation (bottom) -->
-                <div class="showcase-content-bottom">
-                  <p class="showcase-description">${slide.description}</p>
-                  <div class="showcase-nav">
+                <!-- Description -->
+                <p class="showcase-lead" style="margin-bottom: 28px; max-width: 100%;">${slide.description}</p>
+
+                <!-- Navigation -->
+                <div class="showcase-nav">
+                  <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
+                    ${index === slides.length - 1 ? 'Comenzar 🚀' : 'Siguiente →'}
+                  </button>
+                  ${index > 0 ? `
                     <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
                       ← Anterior
                     </button>
-                    <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
-                      Siguiente →
-                    </button>
-                  </div>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -192,12 +204,6 @@
     const overlay = document.getElementById('showcaseOverlay');
     if (!overlay) return;
 
-    // Update progress dots
-    overlay.querySelectorAll('.showcase-dot').forEach((dot, i) => {
-      dot.classList.toggle('active', i === currentSlide);
-      dot.classList.toggle('completed', i < currentSlide);
-    });
-
     // Update screens visibility
     overlay.querySelectorAll('.showcase-screen').forEach((screen, i) => {
       const isActive = i === currentSlide;
@@ -207,30 +213,6 @@
       screen.classList.toggle('active', isActive);
       screen.classList.toggle('prev', isPrev);
       screen.classList.toggle('next', isNext);
-    });
-
-    // Update left panel info
-    const leftIcon = overlay.querySelector('.showcase-left-icon');
-    const leftTitle = overlay.querySelector('.showcase-left-title');
-    if (leftIcon && leftTitle) {
-      leftIcon.textContent = slides[currentSlide].icon;
-      leftTitle.textContent = slides[currentSlide].subtitle;
-    }
-
-    // Update navigation buttons in all screens
-    overlay.querySelectorAll('.showcase-screen').forEach((screen, i) => {
-      const backBtn = screen.querySelector('.showcase-btn-back');
-      const nextBtn = screen.querySelector('.showcase-btn-primary');
-
-      if (backBtn) {
-        backBtn.style.visibility = currentSlide > 0 ? 'visible' : 'hidden';
-      }
-
-      if (nextBtn) {
-        const isLastSlide = currentSlide === slides.length - 1;
-        nextBtn.textContent = isLastSlide ? 'Comenzar 🚀' : 'Siguiente →';
-        nextBtn.onclick = isLastSlide ? showcaseComplete : showcaseNext;
-      }
     });
   }
 
@@ -585,11 +567,13 @@
 
   // Navigation - CSS only, no DOM rebuild
   window.showcaseNext = function() {
-    if (currentSlide < slides.length - 1) {
+    const isLastSlide = currentSlide === slides.length - 1;
+
+    if (isLastSlide) {
+      showcaseComplete();
+    } else {
       currentSlide++;
       updateActiveSlide();
-    } else {
-      showcaseComplete();
     }
   };
 
