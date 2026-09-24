@@ -127,15 +127,18 @@
             <!-- Logo -->
             <div class="showcase-brand">
               <div class="showcase-brand-icon">
-                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                   <defs>
-                    <linearGradient id="showcaseLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="mnShowcaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#00D4AA"/>
                       <stop offset="100%" stop-color="#00A882"/>
                     </linearGradient>
                   </defs>
-                  <polyline points="10,24 16,16 22,20 30,10" stroke="url(#showcaseLogoGrad)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="25,9 30,10 29,15" stroke="url(#showcaseLogoGrad)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect width="512" height="512" fill="#0A0E17" rx="96"/>
+                  <path d="M96 344 Q256 416 416 344" stroke="rgba(255,255,255,0.8)" stroke-width="34" fill="none" stroke-linecap="round"/>
+                  <path d="M130 300 Q256 356 382 300" stroke="rgba(255,255,255,0.5)" stroke-width="22" fill="none" stroke-linecap="round"/>
+                  <polyline points="115,300 195,207 275,253 393,115" stroke="url(#mnShowcaseGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="333,103 393,115 380,172" stroke="url(#mnShowcaseGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
               <div class="showcase-brand-name">MoneyNest</div>
