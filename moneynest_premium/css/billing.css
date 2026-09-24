@@ -2091,6 +2091,11 @@
   letter-spacing: -.025em; padding-right: 40px;
 }
 .mnpo-right-sub { font-size: .7rem; color: #374151; font-weight: 500; margin-top: -12px; }
+.mnpo-wallet-wrap { margin-bottom: 16px; }
+.mnpo-wallet-divider { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.mnpo-wallet-line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+.mnpo-wallet-or { font-size: .72rem; color: rgba(255,255,255,0.4); white-space: nowrap; }
+
 .mnpo-stripe-wrap { flex: 1; }
 #mnPoElement { min-height: 200px; }
 

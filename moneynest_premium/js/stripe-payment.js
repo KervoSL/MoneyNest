@@ -60,6 +60,15 @@ window.MNPayment = (() => {
               </div>
             </div>
 
+            <div class="mnpo-wallet-wrap" id="mnPoWalletWrap" style="display:none">
+              <div id="mnPoPaymentRequestBtn"></div>
+              <div class="mnpo-wallet-divider">
+                <span class="mnpo-wallet-line"></span>
+                <span class="mnpo-wallet-or">${_spt('payment_or_card','o pagar con tarjeta')}</span>
+                <span class="mnpo-wallet-line"></span>
+              </div>
+            </div>
+
             <div class="mnpo-stripe-wrap">
               <div id="mnPoElement"></div>
             </div>
@@ -643,8 +652,11 @@ window.MNPayment = (() => {
       // codigo promocional), lo desmontamos antes de montar el nuevo.
       if (_elements) {
         try { _elements.getElement('payment')?.unmount(); } catch (_) { /* ignore */ }
+        try { _elements.getElement('paymentRequestButton')?.unmount(); } catch (_) { /* ignore */ }
         _elements = null;
         document.getElementById('mnPoElement').innerHTML = '';
+        const walletWrap = document.getElementById('mnPoWalletWrap');
+        if (walletWrap) { walletWrap.style.display = 'none'; document.getElementById('mnPoPaymentRequestBtn').innerHTML = ''; }
       }
 
       _elements = stripe.elements({
@@ -654,6 +666,44 @@ window.MNPayment = (() => {
 
       const paymentElement = _elements.create('payment');
       paymentElement.mount('#mnPoElement');
+
+      // ── Apple Pay / Google Pay via Payment Request Button ──
+      try {
+        const amountCents = data.pricing?.finalAmount
+          || (priceId === MNStripeConfig.prices.local ? 699 : 1499);
+        const paymentRequest = stripe.paymentRequest({
+          country: 'ES',
+          currency: 'eur',
+          total: { label: 'MoneyNest', amount: amountCents },
+          requestPayerEmail: true,
+        });
+        const canPay = await paymentRequest.canMakePayment();
+        if (canPay) {
+          const walletWrap = document.getElementById('mnPoWalletWrap');
+          if (walletWrap) walletWrap.style.display = '';
+          const prBtn = _elements.create('paymentRequestButton', {
+            paymentRequest,
+            style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '48px' } },
+          });
+          prBtn.mount('#mnPoPaymentRequestBtn');
+          paymentRequest.on('paymentmethod', async (ev) => {
+            const { error: confirmError } = await stripe.confirmCardPayment(
+              data.clientSecret,
+              { payment_method: ev.paymentMethod.id },
+              { handleActions: false }
+            );
+            if (confirmError) {
+              ev.complete('fail');
+              _showError(confirmError.message || _spt('payment_error_generic', 'Error al procesar el pago.'));
+            } else {
+              ev.complete('success');
+              _onPaymentSuccess(_activePriceId, _activeEmail);
+            }
+          });
+        }
+      } catch (walletErr) {
+        console.warn('[MNPayment] Wallet button unavailable:', walletErr);
+      }
 
       // Safety timeout: if the embedded Stripe iframe never fires
       // 'ready' (blocked by an ad/privacy blocker or browser extension,
