@@ -135,7 +135,7 @@
       if (error || !row) return null;
 
       // Only return cloud data if it's newer than what's stored locally
-      const localStr = localStorage.getItem('mn_data');
+      const localStr = localStorage.getItem('mn7_data');
       if (!localStr) return row.data;
 
       const localObj = JSON.parse(localStr);
@@ -170,7 +170,7 @@
     setInterval(async () => {
       const session = await _getSession();
       if (!session) return;
-      const raw = localStorage.getItem('mn_data');
+      const raw = localStorage.getItem('mn7_data');
       if (!raw) return;
       try {
         const data = JSON.parse(raw);
@@ -201,7 +201,28 @@
 
   // ─── Listeners ───────────────────────────────────────────────────
   window.addEventListener('online',  () => processPendingQueue());
-  window.addEventListener('mn:data:saved', e => { if (e.detail) triggerSync(e.detail); });
+  document.addEventListener('mn:saved', () => {
+    try {
+      const raw = localStorage.getItem('mn7_data');
+      if (raw) triggerSync(JSON.parse(raw));
+    } catch(e) {}
+  });
+
+  // ─── Post-login cloud download ───────────────────────────────────
+  if (window.MNSupabaseAuth) {
+    MNSupabaseAuth.onAuthChange(async (event, session) => {
+      if (event !== 'SIGNED_IN' || !session) return;
+      try {
+        const cloudData = await fetchFromCloud();
+        if (cloudData) {
+          localStorage.setItem('mn7_data', JSON.stringify(cloudData));
+          window.location.reload();
+        }
+      } catch(e) {
+        console.warn('[MNSync] post-login download failed:', e);
+      }
+    });
+  }
 
   // ─── Public API ──────────────────────────────────────────────────
   window.MNSync = { triggerSync, fetchFromCloud, processPendingQueue, autoBackup, syncToCloud };
