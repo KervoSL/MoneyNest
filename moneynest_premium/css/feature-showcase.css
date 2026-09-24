@@ -250,12 +250,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   padding: clamp(16px, 2vh, 24px) 0;
 }
 
-/* Welcome screen content: different structure */
+/* Welcome screen content: full bleed for floating cards */
 .welcome-screen .showcase-screen-content {
-  max-width: 1100px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 2vh, 24px);
+  gap: 0;
   align-items: center;
   padding: clamp(24px, 3vh, 40px) 0;
 }
@@ -499,17 +499,18 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    Minimalista, elegante, mucho espacio negativo
 */
 
-/* Container principal - diseño "ya estás en la app" */
+/* Container principal - hero centrado con cards flotantes */
 .welcome-premium {
   width: 100%;
-  max-width: min(1400px, 92vw);
-  display: grid;
-  grid-template-columns: 480px 1fr;
-  gap: clamp(48px, 6vw, 80px);
-  align-items: start;
-  padding: clamp(48px, 7vh, 80px) clamp(48px, 6vw, 90px) clamp(56px, 8vh, 100px);
+  max-width: 100%;
   position: relative;
   z-index: 1;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(40px, 6vh, 80px) clamp(24px, 4vw, 60px);
+  overflow: hidden;
 }
 
 /* Gradientes animados más presentes */
@@ -556,20 +557,24 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   COLUMNA IZQUIERDA (Logo + Dashboard)
+   CENTRO (Hero)
    ────────────────────────────────────────────────────────────── */
-.welcome-left {
+.welcome-center {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: clamp(20px, 3vh, 28px);
-  animation: welcomeFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  animation: welcomeFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
 }
 
 .welcome-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: clamp(28px, 4vh, 48px);
 }
 
 .welcome-brand-icon {
@@ -607,31 +612,18 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   COLUMNA DERECHA (Textos + CTA)
-   ────────────────────────────────────────────────────────────── */
-.welcome-right {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  justify-content: center;
-  align-items: flex-start;
-  animation: welcomeFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
-  padding: 60px 64px;
-}
-
-/* ──────────────────────────────────────────────────────────────
-   HEADLINE (potente, mucho espacio alrededor)
+   HEADLINE
    ────────────────────────────────────────────────────────────── */
 .welcome-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: clamp(28px, 4vw, 52px);
-  font-weight: 700;
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1.15;
+  line-height: 1.1;
   color: #FFFFFF;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
   text-shadow: 0 4px 35px rgba(0, 0, 0, 0.35);
-  text-align: left;
+  text-align: center;
 }
 
 .welcome-headline span {
@@ -656,10 +648,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   font-size: clamp(14px, 1.8vw, 20px);
   font-weight: 400;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.6);
-  max-width: 480px;
-  margin: 0 0 40px;
-  text-align: left;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 520px;
+  margin: 0 0 36px;
+  text-align: center;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -719,6 +711,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   color: rgba(255, 255, 255, 0.5);
   text-decoration: none;
   transition: color 0.2s ease;
+  margin-top: 16px;
 }
 
 .welcome-login-link span {
@@ -737,245 +730,210 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 
 /* ──────────────────────────────────────────────────────────────
-   DASHBOARD MOCKUP (simulación EXACTA del dashboard real)
+   FLOATING GLASSMORPHIC CARDS
    ────────────────────────────────────────────────────────────── */
-.welcome-dashboard-mockup {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.wc-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
-  animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
-  height: fit-content;
-  max-height: 480px;
+  padding: 18px 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  pointer-events: none;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
-/* ──────────────────────────────────────────────────────────────
-   SIDEBAR FALSO
-   ────────────────────────────────────────────────────────────── */
-.wdm-sidebar {
-  width: 130px;
-  background: #0A0E17;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 16px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.wdm-logo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  margin-bottom: 12px;
-}
-
-.wdm-logo span {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.95);
-  letter-spacing: -0.01em;
-}
-
-.wdm-logo svg {
-  width: 20px;
-  height: 20px;
-}
-
-.wdm-nav-item {
-  padding: 6px 8px;
+.wc-card-label {
   font-size: 0.72rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  border-radius: 6px;
-  cursor: default;
-  transition: all 0.2s;
-}
-
-.wdm-nav-active {
-  background: rgba(0, 212, 170, 0.1);
-  color: #00D4AA;
-  font-weight: 600;
-}
-
-/* ──────────────────────────────────────────────────────────────
-   CONTENIDO PRINCIPAL
-   ────────────────────────────────────────────────────────────── */
-.wdm-main {
-  flex: 1;
-  background: #0C1119;
-  padding: 16px 18px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* Topbar */
-.wdm-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.wdm-topbar-title {
-  font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.wdm-topbar-balance {
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.wdm-topbar-balance span {
-  color: #00D4AA;
-  font-weight: 700;
-  margin-left: 4px;
-}
-
-/* Saludo */
-.wdm-greeting {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.wdm-greeting-text {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.wdm-greeting-text span {
-  color: #00D4AA;
-}
-
-.wdm-greeting-date {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* Patrimonio Neto */
-.wdm-networth {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.wdm-networth-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
   margin-bottom: 6px;
 }
 
-.wdm-networth-value {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.5rem;
+.wc-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.wc-card-value {
+  font-size: 1.35rem;
   font-weight: 900;
-  color: #00D4AA;
+  color: #FFFFFF;
   letter-spacing: -0.03em;
-  margin-bottom: 10px;
 }
 
-.wdm-networth-breakdown {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.wdm-nw-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  text-align: center;
-}
-
-.wdm-nw-icon {
-  font-size: 1rem;
-}
-
-.wdm-nw-label {
-  font-size: 0.62rem;
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 600;
-}
-
-.wdm-nw-value {
-  font-size: 0.72rem;
+.wc-badge-green {
+  font-size: 0.68rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #00D4AA;
 }
 
-.wdm-nw-positive {
-  color: #10B981;
-  font-size: 0.65rem;
-}
-
-/* Cuentas */
-.wdm-accounts {
+/* Tabs */
+.wc-tabs {
   display: flex;
-  flex-direction: column;
   gap: 6px;
+  margin-top: 4px;
 }
 
-.wdm-section-label {
+.wc-tabs span {
   font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 2px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 3px 8px;
+  border-radius: 10px;
 }
 
-.wdm-account-item {
+.wc-tab-active {
+  background: #3B82F6;
+  color: #FFFFFF !important;
+}
+
+/* ── Card positions (desktop) ── */
+.wc-patrimonio {
+  width: clamp(230px, 20vw, 300px);
+  top: 8%;
+  left: 3%;
+  animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s backwards;
+}
+
+.wc-cuentas {
+  width: clamp(220px, 19vw, 280px);
+  bottom: 10%;
+  left: 2%;
+  animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
+}
+
+.wc-gastos {
+  width: clamp(260px, 22vw, 320px);
+  top: 5%;
+  right: 2%;
+  animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}
+
+.wc-inversiones {
+  width: clamp(190px, 16vw, 240px);
+  top: 52%;
+  right: 4%;
+  animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s backwards;
+}
+
+.wc-objetivos {
+  width: clamp(190px, 16vw, 230px);
+  bottom: 6%;
+  right: 3%;
+  animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s backwards;
+}
+
+@keyframes wcFloat {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Cuentas card items ── */
+.wc-account {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
 }
 
-.wdm-account-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #F59E0B;
+.wc-account:last-child { border-bottom: none; }
+
+.wc-acc-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
   flex-shrink: 0;
 }
 
-.wdm-account-name {
+.wc-acc-name {
   flex: 1;
-  font-size: 0.7rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
 }
 
-.wdm-account-value {
-  font-size: 0.74rem;
+.wc-acc-val {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.wc-neg { color: #F87171; }
+
+/* ── Gastos donut card ── */
+.wc-gastos-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.wc-donut {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #3B82F6 0% 32%,
+    #60A5FA 32% 50%,
+    #818CF8 50% 62%,
+    #A78BFA 62% 73%,
+    #475569 73% 100%
+  );
+  flex-shrink: 0;
+  -webkit-mask: radial-gradient(circle, transparent 52%, black 53%);
+  mask: radial-gradient(circle, transparent 52%, black 53%);
+}
+
+.wc-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wc-legend div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wc-lpct {
+  margin-left: auto;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Objetivos progress ── */
+.wc-progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.wc-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00D4AA, #3B82F6);
+  border-radius: 4px;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1185,49 +1143,13 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     max-width: clamp(300px, 72vw, 480px);
   }
 
-  /* Welcome adjustments */
+  /* Welcome adjustments — hide floating cards on tablet */
+  .wc-card {
+    display: none;
+  }
+
   .welcome-premium {
-    grid-template-columns: 1fr;
-    gap: clamp(32px, 5vh, 48px);
     padding: 32px 24px;
-  }
-
-  .welcome-left {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .welcome-right {
-    width: 100%;
-    padding: 0;
-  }
-
-  .welcome-dashboard-mockup {
-    max-width: 100%;
-    flex-direction: column;
-  }
-
-  .wdm-sidebar {
-    width: 100%;
-    flex-direction: row;
-    padding: 14px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    overflow-x: auto;
-  }
-
-  .wdm-logo {
-    margin-bottom: 0;
-    margin-right: 16px;
-  }
-
-  .wdm-main {
-    padding: 18px 20px;
-    gap: 16px;
-  }
-
-  .wdm-networth-breakdown {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .cta-features {
@@ -1277,22 +1199,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   /* Welcome mobile */
   .welcome-premium {
-    padding: 32px 24px;
-    max-width: 100%;
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-
-  .welcome-left {
-    width: 100%;
-  }
-
-  .welcome-right {
-    width: 100%;
+    padding: 32px 20px;
   }
 
   .welcome-headline {
-    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
   }
 
   .welcome-subheadline {
@@ -1301,45 +1212,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   .welcome-cta {
     width: 100%;
-  }
-
-  .welcome-dashboard-mockup {
-    border-radius: 16px;
-    max-width: 100%;
-  }
-
-  .wdm-sidebar {
-    padding: 12px;
-  }
-
-  .wdm-nav-item {
-    font-size: 0.75rem;
-    padding: 7px 9px;
-    white-space: nowrap;
-  }
-
-  .wdm-main {
-    padding: 14px 16px;
-    gap: 14px;
-  }
-
-  .wdm-greeting-text {
-    font-size: 1.3rem;
-  }
-
-  .wdm-networth-value {
-    font-size: 1.6rem;
-  }
-
-  .wdm-networth-breakdown {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .wdm-nw-item {
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 10px 12px;
   }
 
   .cta-features {
@@ -1381,47 +1253,20 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   }
 
   .welcome-premium {
-    padding: 24px 20px;
+    padding: 24px 16px;
   }
 
   .welcome-headline {
-    font-size: clamp(1.8rem, 6.5vw, 2.2rem);
+    font-size: clamp(1.6rem, 6.5vw, 2.2rem);
   }
 
   .welcome-subheadline {
-    font-size: clamp(0.9rem, 2.4vw, 1.08rem);
+    font-size: clamp(0.82rem, 2.4vw, 1rem);
   }
 
   .welcome-cta {
     max-width: 100%;
     width: 100%;
-  }
-
-  .welcome-dashboard-mockup {
-    border-radius: 14px;
-    max-width: 100%;
-  }
-
-  .wdm-sidebar {
-    gap: 2px;
-    padding: 10px;
-  }
-
-  .wdm-main {
-    padding: 12px 14px;
-    gap: 12px;
-  }
-
-  .wdm-greeting-text {
-    font-size: 1.2rem;
-  }
-
-  .wdm-networth {
-    padding: 14px;
-  }
-
-  .wdm-networth-value {
-    font-size: 1.4rem;
   }
 }
 
@@ -1436,12 +1281,13 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   .welcome-feature,
   .cta-feature,
   .ob-visual-preview,
+  .welcome-center,
   .welcome-brand,
   .welcome-headline,
   .welcome-subheadline,
   .welcome-cta,
   .welcome-login,
-  .welcome-product-peek,
+  .wc-card,
   .peek-card {
     animation: none !important;
     transition-duration: 0.01ms !important;

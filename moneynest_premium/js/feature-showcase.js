@@ -235,9 +235,83 @@
       case 'welcome':
         return `
           <div class="welcome-premium">
-            <!-- Columna IZQUIERDA: Logo + Dashboard -->
-            <div class="welcome-left">
-              <!-- Logo arriba -->
+            <!-- Floating card: Patrimonio neto (top-left) -->
+            <div class="wc-card wc-patrimonio">
+              <div class="wc-card-label">Patrimonio neto</div>
+              <div class="wc-card-row">
+                <span class="wc-card-value">42,847 €</span>
+                <span class="wc-badge-green">↑ +12.4%</span>
+              </div>
+              <svg viewBox="0 0 200 55" fill="none" style="width:100%;height:auto;margin:8px 0 4px">
+                <defs>
+                  <linearGradient id="wcAG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#00D4AA" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#00D4AA" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,42 C25,38 45,30 75,22 C105,14 135,18 165,10 L200,6 L200,55 L0,55Z" fill="url(#wcAG)"/>
+                <path d="M0,42 C25,38 45,30 75,22 C105,14 135,18 165,10 L200,6" stroke="#00D4AA" stroke-width="2" fill="none"/>
+              </svg>
+              <div class="wc-tabs">
+                <span>1M</span><span class="wc-tab-active">3M</span><span>6M</span><span>1A</span><span>TODO</span>
+              </div>
+            </div>
+
+            <!-- Floating card: Cuentas (bottom-left) -->
+            <div class="wc-card wc-cuentas">
+              <div class="wc-card-label">Cuentas</div>
+              <div class="wc-account"><span class="wc-acc-icon" style="background:#6366F1">🏦</span><span class="wc-acc-name">Cuenta corriente</span><span class="wc-acc-val">2,450 €</span></div>
+              <div class="wc-account"><span class="wc-acc-icon" style="background:#F472B6">💰</span><span class="wc-acc-name">Ahorros</span><span class="wc-acc-val">8,200 €</span></div>
+              <div class="wc-account"><span class="wc-acc-icon" style="background:#00D4AA">📈</span><span class="wc-acc-name">Inversión</span><span class="wc-acc-val">12,600 €</span></div>
+              <div class="wc-account"><span class="wc-acc-icon" style="background:#3B82F6">💳</span><span class="wc-acc-name">Tarjeta</span><span class="wc-acc-val wc-neg">-1,230 €</span></div>
+            </div>
+
+            <!-- Floating card: Gastos donut (top-right) -->
+            <div class="wc-card wc-gastos">
+              <div class="wc-card-label" style="display:flex;align-items:center;gap:6px">
+                <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="#00D4AA" stroke-width="2" stroke-dasharray="12 26"/></svg>
+                Gastos
+              </div>
+              <div class="wc-gastos-body">
+                <div class="wc-donut"></div>
+                <div class="wc-legend">
+                  <div><span class="wc-dot" style="background:#3B82F6"></span>Vivienda<span class="wc-lpct">32%</span></div>
+                  <div><span class="wc-dot" style="background:#60A5FA"></span>Alimentación<span class="wc-lpct">18%</span></div>
+                  <div><span class="wc-dot" style="background:#818CF8"></span>Transporte<span class="wc-lpct">12%</span></div>
+                  <div><span class="wc-dot" style="background:#A78BFA"></span>Ocio<span class="wc-lpct">11%</span></div>
+                  <div><span class="wc-dot" style="background:#475569"></span>Otros<span class="wc-lpct">27%</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating card: Inversiones (mid-right) -->
+            <div class="wc-card wc-inversiones">
+              <div class="wc-card-label" style="display:flex;align-items:center;gap:6px">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polyline points="1,11 5,7 8,9 13,3" stroke="#00D4AA" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Inversiones
+              </div>
+              <div class="wc-card-row">
+                <span class="wc-card-value">15,230 €</span>
+                <span class="wc-badge-green">↑ +8.2%</span>
+              </div>
+              <svg viewBox="0 0 140 35" fill="none" style="width:100%;height:auto;margin-top:6px">
+                <polyline points="0,30 20,26 40,24 60,18 80,20 100,12 120,9 140,5" stroke="#00D4AA" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <!-- Floating card: Objetivos (bottom-right) -->
+            <div class="wc-card wc-objetivos">
+              <div class="wc-card-label" style="display:flex;align-items:center;gap:6px">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="3" width="12" height="8" rx="2" fill="none" stroke="#00D4AA" stroke-width="1.5"/><line x1="4" y1="6" x2="10" y2="6" stroke="#00D4AA" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Objetivos
+              </div>
+              <div style="font-size:.78rem;color:rgba(255,255,255,.7);margin-top:4px">Viaje a Japón</div>
+              <div class="wc-progress"><div class="wc-progress-bar" style="width:68%"></div></div>
+              <div style="font-size:.7rem;color:rgba(255,255,255,.5);text-align:right">68%</div>
+            </div>
+
+            <!-- Center hero content -->
+            <div class="welcome-center">
               <div class="welcome-brand">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
                   <defs>
@@ -255,110 +329,22 @@
                 <span class="welcome-brand-text">MoneyNest</span>
               </div>
 
-              <!-- Dashboard mockup debajo -->
-              <div class="welcome-dashboard-mockup">
-              <!-- Sidebar falso -->
-              <div class="wdm-sidebar">
-                <div class="wdm-logo">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="width:28px;height:28px">
-                    <rect width="48" height="48" fill="none"/>
-                    <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-                    <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-                    <polyline points="10,28 18,20 26,23 38,12" stroke="#00D4AA" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="33,11 38,12 37,17" stroke="#00D4AA" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <span>MoneyNest</span>
-                </div>
-                <div class="wdm-nav-item wdm-nav-active">Dashboard</div>
-                <div class="wdm-nav-item">Ingresos</div>
-                <div class="wdm-nav-item">Gastos</div>
-                <div class="wdm-nav-item">Inversiones</div>
-              </div>
-
-              <!-- Contenido principal -->
-              <div class="wdm-main">
-                <!-- Topbar -->
-                <div class="wdm-topbar">
-                  <div class="wdm-topbar-title">Dashboard</div>
-                  <div class="wdm-topbar-balance">Disponible <span>2,450 €</span></div>
-                </div>
-
-                <!-- Saludo -->
-                <div class="wdm-greeting">
-                  <div class="wdm-greeting-text">Hola <span>Joan</span></div>
-                  <div class="wdm-greeting-date">Sep 2026 · Resumen financiero</div>
-                </div>
-
-                <!-- Patrimonio Neto -->
-                <div class="wdm-networth">
-                  <div class="wdm-networth-label">PATRIMONIO NETO</div>
-                  <div class="wdm-networth-value">42,847 €</div>
-                  <div class="wdm-networth-breakdown">
-                    <div class="wdm-nw-item">
-                      <span class="wdm-nw-icon">💰</span>
-                      <span class="wdm-nw-label">Liquidez</span>
-                      <span class="wdm-nw-value">10,650 €</span>
-                    </div>
-                    <div class="wdm-nw-item">
-                      <span class="wdm-nw-icon">📈</span>
-                      <span class="wdm-nw-label">Invertido</span>
-                      <span class="wdm-nw-value">32,197 €</span>
-                    </div>
-                    <div class="wdm-nw-item">
-                      <span class="wdm-nw-icon">🏠</span>
-                      <span class="wdm-nw-label">Activos</span>
-                      <span class="wdm-nw-value">18,000 €</span>
-                    </div>
-                    <div class="wdm-nw-item">
-                      <span class="wdm-nw-icon">💳</span>
-                      <span class="wdm-nw-label">Deudas</span>
-                      <span class="wdm-nw-value wdm-nw-positive">Sin deudas ✓</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Cuentas -->
-                <div class="wdm-accounts">
-                  <div class="wdm-section-label">CUENTAS</div>
-                  <div class="wdm-account-item">
-                    <span class="wdm-account-dot"></span>
-                    <span class="wdm-account-name">Cuenta corriente</span>
-                    <span class="wdm-account-value">2,450 €</span>
-                  </div>
-                  <div class="wdm-account-item">
-                    <span class="wdm-account-dot" style="background:#6366F1"></span>
-                    <span class="wdm-account-name">Ahorros</span>
-                    <span class="wdm-account-value">8,200 €</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </div>
-            <!-- FIN columna izquierda -->
-
-            <!-- Columna DERECHA: Textos + CTA -->
-            <div class="welcome-right">
-              <!-- Headline -->
               <h1 class="welcome-headline">
                 Tu dinero,<br>bajo <span>control</span>.
               </h1>
 
-              <!-- Subheadline -->
               <p class="welcome-subheadline">
-                Ingresos, gastos, inversiones y patrimonio en un solo lugar.
+                Ingresos, gastos, inversiones y patrimonio<br>en un solo lugar.
               </p>
 
-              <!-- CTA Primary -->
               <button class="welcome-cta" onclick="showcaseNext()">
                 Comenzar gratis →
               </button>
 
-              <!-- Login link -->
               <a href="#" class="welcome-login-link" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
                 ¿Ya tienes cuenta? <span>Inicia sesión</span>
               </a>
             </div>
-            <!-- FIN columna derecha -->
           </div>
         `;
 
