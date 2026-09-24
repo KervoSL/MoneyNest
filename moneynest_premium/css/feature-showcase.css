@@ -499,13 +499,13 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    Minimalista, elegante, mucho espacio negativo
 */
 
-/* Container principal - responsive grid con margen inferior correcto */
+/* Container principal - diseño "ya estás en la app" */
 .welcome-premium {
   width: 100%;
   max-width: min(1100px, 88vw);
   display: grid;
-  grid-template-rows: auto auto auto auto auto minmax(auto, 1fr);
-  gap: clamp(24px, 3.5vh, 40px);
+  grid-template-rows: auto auto auto auto auto 1fr;
+  gap: clamp(28px, 4vh, 40px);
   align-items: center;
   justify-items: center;
   text-align: center;
@@ -750,142 +750,193 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   PRODUCT PEEK (composición parcial del producto)
+   DASHBOARD PREVIEW (simulación de estar en la app)
    ────────────────────────────────────────────────────────────── */
-.welcome-product-peek {
+.welcome-dashboard-preview {
   width: 100%;
-  max-width: min(1000px, 92vw);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-  gap: clamp(16px, 2.8vw, 28px);
-  opacity: 0.92;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: clamp(24px, 4vw, 40px);
+  backdrop-filter: blur(30px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards;
-  grid-row: 6;
-  align-self: start;
   position: relative;
   z-index: 2;
-}
-
-.peek-card {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 20px;
-  padding: clamp(22px, 3.8vw, 36px) clamp(20px, 3.3vw, 30px);
-  backdrop-filter: blur(28px);
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow: 0 5px 24px rgba(0, 0, 0, 0.18);
-  position: relative;
   overflow: hidden;
+  grid-row: 6;
+  align-self: start;
+  justify-self: stretch;
 }
 
-.peek-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+/* Header del dashboard */
+.wdp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: clamp(20px, 3vh, 28px);
+  padding-bottom: clamp(16px, 2.5vh, 20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.peek-card:hover {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(0, 212, 170, 0.18);
-  transform: translateY(-5px);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+.wdp-header-title {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: -0.02em;
 }
 
-.peek-card-label {
-  font-size: 0.72rem;
-  font-weight: 700;
+.wdp-header-date {
+  font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* KPIs principales */
+.wdp-kpis {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: clamp(12px, 2vw, 20px);
+  margin-bottom: clamp(20px, 3vh, 28px);
+}
+
+.wdp-kpi {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: clamp(14px, 2.5vw, 20px) clamp(16px, 2.8vw, 22px);
+  transition: all 0.3s ease;
+}
+
+.wdp-kpi:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(0, 212, 170, 0.15);
+  transform: translateY(-2px);
+}
+
+.wdp-kpi-balance {
+  background: linear-gradient(135deg, rgba(0,212,170,0.08) 0%, rgba(0,212,170,0.03) 100%);
+  border-color: rgba(0,212,170,0.15);
+}
+
+.wdp-kpi-label {
+  font-size: clamp(0.68rem, 1.4vw, 0.75rem);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 11px;
-}
-
-/* Net worth card (grande, 2 columnas) */
-.peek-networth {
-  grid-column: 1 / -1;
-  text-align: center;
-}
-
-.peek-card-value {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 2.4rem;
-  font-weight: 900;
-  letter-spacing: -0.035em;
-  color: #00D4AA;
   margin-bottom: 8px;
 }
 
-.peek-card-delta {
-  font-size: 0.9rem;
+.wdp-kpi-value {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 900;
+  color: #00D4AA;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.wdp-kpi-income {
+  color: #10B981;
+}
+
+.wdp-kpi-expense {
+  color: #F43F5E;
+}
+
+.wdp-kpi-change {
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   font-weight: 600;
   color: #10B981;
 }
 
-/* Accounts card */
-.peek-accounts {
+/* Mini gráfico */
+.wdp-chart {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(6px, 1.2vw, 10px);
+  height: clamp(60px, 10vh, 80px);
+  padding: clamp(12px, 2vh, 16px);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  margin-bottom: clamp(20px, 3vh, 28px);
 }
 
-.peek-account-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.peek-account-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.peek-account-row span:nth-child(2) {
+.wdp-chart-bar {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: rgba(0, 212, 170, 0.35);
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
-.peek-account-amt {
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  font-feature-settings: 'tnum';
+.wdp-chart-bar:hover {
+  background: rgba(0, 212, 170, 0.5);
 }
 
-/* Transactions card */
-.peek-transactions {
+.wdp-chart-bar-active {
+  background: rgba(0, 212, 170, 0.6);
+  box-shadow: 0 0 16px rgba(0, 212, 170, 0.4);
+}
+
+/* Movimientos recientes */
+.wdp-transactions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: clamp(10px, 1.8vh, 14px);
 }
 
-.peek-tx-row {
+.wdp-section-title {
+  font-size: clamp(0.8rem, 1.7vw, 0.9rem);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+}
+
+.wdp-tx {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: clamp(10px, 2vw, 14px);
+  padding: clamp(10px, 2vh, 14px) clamp(12px, 2.2vw, 16px);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  transition: all 0.25s ease;
 }
 
-.peek-tx-icon {
-  width: 30px;
-  height: 30px;
+.wdp-tx:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.wdp-tx-icon {
+  width: clamp(36px, 6vw, 44px);
+  height: clamp(36px, 6vw, 44px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.055);
-  border-radius: 9px;
-  font-size: 0.95rem;
+  border-radius: 11px;
+  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
   flex-shrink: 0;
 }
 
-.peek-tx-info {
+.wdp-tx-icon-income {
+  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
+  border: 1px solid rgba(16,185,129,0.2);
+}
+
+.wdp-tx-icon-expense {
+  background: linear-gradient(135deg, rgba(244,63,94,0.15), rgba(244,63,94,0.05));
+  border: 1px solid rgba(244,63,94,0.2);
+}
+
+.wdp-tx-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -893,8 +944,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   min-width: 0;
 }
 
-.peek-tx-name {
-  font-size: 0.85rem;
+.wdp-tx-name {
+  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
   overflow: hidden;
@@ -902,21 +953,27 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   white-space: nowrap;
 }
 
-.peek-tx-date {
-  font-size: 0.73rem;
-  color: rgba(255, 255, 255, 0.45);
+.wdp-tx-date {
+  font-size: clamp(0.7rem, 1.5vw, 0.78rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.peek-tx-amt {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #F43F5E;
+.wdp-tx-amt {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(0.9rem, 1.9vw, 1.05rem);
+  font-weight: 800;
   white-space: nowrap;
   font-feature-settings: 'tnum';
+  letter-spacing: -0.02em;
 }
 
-.peek-tx-positive {
+.wdp-tx-amt-positive {
   color: #10B981;
+}
+
+.wdp-tx-amt-negative {
+  color: #F43F5E;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1129,20 +1186,19 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   /* Welcome adjustments */
   .welcome-premium {
     padding: clamp(28px, 4.5vh, 48px) clamp(28px, 4.5vw, 56px);
-    grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
   }
 
-  .welcome-product-peek {
+  .welcome-dashboard-preview {
+    padding: clamp(20px, 3.5vw, 32px);
+  }
+
+  .wdp-kpis {
     grid-template-columns: 1fr;
-    max-width: min(540px, 92vw);
+    gap: 10px;
   }
 
-  .peek-networth {
-    grid-column: 1;
-  }
-
-  .peek-card {
-    padding: clamp(18px, 2.8vw, 26px) clamp(16px, 2.3vw, 24px);
+  .wdp-chart {
+    height: 60px;
   }
 
   .cta-features {
@@ -1196,39 +1252,32 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     max-width: 100%;
   }
 
-  .welcome-product-peek {
+  .welcome-dashboard-preview {
+    padding: clamp(18px, 3vw, 28px);
+    border-radius: 18px;
+  }
+
+  .wdp-kpis {
     grid-template-columns: 1fr;
-    gap: clamp(12px, 1.8vw, 20px);
   }
 
-  .peek-card {
-    padding: clamp(16px, 2.3vw, 22px) clamp(14px, 2vw, 20px);
+  .wdp-kpi-value {
+    font-size: clamp(1.3rem, 4vw, 1.6rem);
   }
 
-  .peek-card-value {
-    font-size: clamp(1.9rem, 4.5vw, 2.2rem);
+  .wdp-chart {
+    height: 50px;
+    gap: 4px;
   }
 
-  .peek-card-label {
-    font-size: clamp(0.68rem, 1.3vw, 0.78rem);
+  .wdp-tx {
+    padding: 10px 12px;
   }
 
-  .peek-tx-icon {
-    width: 26px;
-    height: 26px;
-    font-size: 0.85rem;
-  }
-
-  .peek-tx-name {
-    font-size: 0.8rem;
-  }
-
-  .peek-tx-amt {
-    font-size: 0.8rem;
-  }
-
-  .peek-account-row {
-    font-size: 0.8rem;
+  .wdp-tx-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
   }
 
   .cta-features {
@@ -1285,12 +1334,16 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     max-width: 100%;
   }
 
-  .welcome-product-peek {
-    gap: 12px;
+  .welcome-dashboard-preview {
+    padding: 16px;
   }
 
-  .peek-card {
-    padding: 16px 14px;
+  .wdp-kpi {
+    padding: 12px 14px;
+  }
+
+  .wdp-chart {
+    height: 45px;
   }
 }
 

@@ -273,48 +273,67 @@
               Already have an account? <span>Log in</span>
             </a>
 
-            <!-- Visual del producto (composición parcial) -->
-            <div class="welcome-product-peek">
-              <!-- Net worth card -->
-              <div class="peek-card peek-networth">
-                <div class="peek-card-label">Net Worth</div>
-                <div class="peek-card-value">42,847 €</div>
-                <div class="peek-card-delta">+12.4%</div>
+            <!-- Dashboard simulado (como si ya estuvieras en la app) -->
+            <div class="welcome-dashboard-preview">
+              <!-- Header del dashboard -->
+              <div class="wdp-header">
+                <div class="wdp-header-title">Dashboard</div>
+                <div class="wdp-header-date">September 2026</div>
               </div>
 
-              <!-- Accounts mini -->
-              <div class="peek-card peek-accounts">
-                <div class="peek-card-label">Accounts</div>
-                <div class="peek-account-row">
-                  <div class="peek-account-dot" style="background:#00D4AA"></div>
-                  <span>Main account</span>
-                  <span class="peek-account-amt">2,450 €</span>
+              <!-- KPIs principales -->
+              <div class="wdp-kpis">
+                <div class="wdp-kpi wdp-kpi-balance">
+                  <div class="wdp-kpi-label">Monthly Balance</div>
+                  <div class="wdp-kpi-value">+1,058 €</div>
+                  <div class="wdp-kpi-change">↑ 12.4% vs last month</div>
                 </div>
-                <div class="peek-account-row">
-                  <div class="peek-account-dot" style="background:#6366F1"></div>
-                  <span>Savings</span>
-                  <span class="peek-account-amt">8,200 €</span>
+                <div class="wdp-kpi">
+                  <div class="wdp-kpi-label">Income</div>
+                  <div class="wdp-kpi-value wdp-kpi-income">+3,245 €</div>
+                </div>
+                <div class="wdp-kpi">
+                  <div class="wdp-kpi-label">Expenses</div>
+                  <div class="wdp-kpi-value wdp-kpi-expense">-2,187 €</div>
                 </div>
               </div>
 
-              <!-- Transactions preview -->
-              <div class="peek-card peek-transactions">
-                <div class="peek-card-label">Recent</div>
-                <div class="peek-tx-row">
-                  <div class="peek-tx-icon">🛒</div>
-                  <div class="peek-tx-info">
-                    <div class="peek-tx-name">Groceries</div>
-                    <div class="peek-tx-date">Today</div>
+              <!-- Mini gráfico -->
+              <div class="wdp-chart">
+                <div class="wdp-chart-bar" style="height:35%"></div>
+                <div class="wdp-chart-bar" style="height:60%"></div>
+                <div class="wdp-chart-bar" style="height:45%"></div>
+                <div class="wdp-chart-bar wdp-chart-bar-active" style="height:80%"></div>
+                <div class="wdp-chart-bar" style="height:55%"></div>
+                <div class="wdp-chart-bar" style="height:70%"></div>
+              </div>
+
+              <!-- Movimientos recientes -->
+              <div class="wdp-transactions">
+                <div class="wdp-section-title">Recent Transactions</div>
+                <div class="wdp-tx">
+                  <div class="wdp-tx-icon wdp-tx-icon-income">💼</div>
+                  <div class="wdp-tx-info">
+                    <div class="wdp-tx-name">Salary</div>
+                    <div class="wdp-tx-date">Sep 1</div>
                   </div>
-                  <div class="peek-tx-amt">-52.30 €</div>
+                  <div class="wdp-tx-amt wdp-tx-amt-positive">+3,200 €</div>
                 </div>
-                <div class="peek-tx-row">
-                  <div class="peek-tx-icon">💼</div>
-                  <div class="peek-tx-info">
-                    <div class="peek-tx-name">Salary</div>
-                    <div class="peek-tx-date">Jan 1</div>
+                <div class="wdp-tx">
+                  <div class="wdp-tx-icon wdp-tx-icon-expense">🛒</div>
+                  <div class="wdp-tx-info">
+                    <div class="wdp-tx-name">Groceries</div>
+                    <div class="wdp-tx-date">Sep 15</div>
                   </div>
-                  <div class="peek-tx-amt peek-tx-positive">+3,200 €</div>
+                  <div class="wdp-tx-amt wdp-tx-amt-negative">-85.40 €</div>
+                </div>
+                <div class="wdp-tx">
+                  <div class="wdp-tx-icon wdp-tx-icon-expense">☕</div>
+                  <div class="wdp-tx-info">
+                    <div class="wdp-tx-name">Starbucks</div>
+                    <div class="wdp-tx-date">Sep 20</div>
+                  </div>
+                  <div class="wdp-tx-amt wdp-tx-amt-negative">-4.50 €</div>
                 </div>
               </div>
             </div>
