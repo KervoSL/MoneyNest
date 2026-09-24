@@ -485,22 +485,28 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 /* Container principal */
 .welcome-premium {
   width: 100%;
-  max-width: 580px;
+  max-width: 1100px; /* Más ancho para mejor distribución */
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 0 32px;
+  padding: 0 48px;
   position: relative;
   z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  justify-content: center;
 }
 
-/* Subtle background gradient (NO exagerado) */
+/* Gradientes sutiles estilo MoneyNest */
 .welcome-screen::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 900px 600px at 50% 30%, rgba(0,212,170,0.04) 0%, transparent 70%);
+  background:
+    radial-gradient(ellipse 1000px 700px at 50% 30%, rgba(0,212,170,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 800px 600px at 20% 60%, rgba(99,102,241,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 800px 600px at 80% 50%, rgba(139,92,246,0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -512,7 +518,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 80px;
+  margin-bottom: clamp(40px, 6vh, 70px); /* Responsive vertical spacing */
   animation: welcomeFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
 }
 
@@ -540,7 +546,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   letter-spacing: -0.04em;
   line-height: 1.05;
   color: #FFFFFF;
-  margin: 0 0 28px 0;
+  margin: 0 0 clamp(20px, 3vh, 28px) 0; /* Responsive */
   animation: welcomeFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
 }
 
@@ -552,8 +558,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   font-weight: 500;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.5);
-  max-width: 480px;
-  margin: 0 0 48px 0;
+  max-width: 560px; /* Más ancho */
+  margin: 0 0 clamp(32px, 5vh, 48px) 0; /* Responsive */
   animation: welcomeFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
 }
 
@@ -622,12 +628,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    ────────────────────────────────────────────────────────────── */
 .welcome-product-peek {
   width: 100%;
-  max-width: 520px;
+  max-width: 850px; /* Mucho más ancho */
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 12px;
-  margin-top: 80px;
+  gap: 16px; /* Más espacio entre cards */
+  margin-top: clamp(48px, 7vh, 80px); /* Responsive */
   opacity: 0.85;
   animation: welcomePeekIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards;
 }
@@ -635,8 +641,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .peek-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 18px 16px;
+  border-radius: 16px;
+  padding: 24px 20px; /* Más padding para cards más grandes */
   backdrop-filter: blur(20px);
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -961,25 +967,17 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   /* Welcome premium responsive */
   .welcome-premium {
-    padding: 0 24px;
-  }
-
-  .welcome-brand {
-    margin-bottom: 60px;
-  }
-
-  .welcome-headline {
-    font-size: clamp(2rem, 7vw, 2.8rem);
-    margin-bottom: 20px;
-  }
-
-  .welcome-subheadline {
-    font-size: 0.95rem;
-    margin-bottom: 36px;
+    padding: 0 32px;
+    max-width: 720px; /* Menos ancho en tablet */
   }
 
   .welcome-product-peek {
-    margin-top: 60px;
+    max-width: 100%; /* Full width en tablet */
+    gap: 14px;
+  }
+
+  .peek-card {
+    padding: 20px 16px;
   }
 }
 
@@ -1031,11 +1029,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   /* Welcome premium small mobile */
   .welcome-premium {
-    padding: 0 20px;
-  }
-
-  .welcome-brand {
-    margin-bottom: 48px;
+    padding: 0 24px;
+    max-width: 100%;
   }
 
   .welcome-brand-icon {
@@ -1045,16 +1040,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   .welcome-brand-text {
     font-size: 1.1rem;
-  }
-
-  .welcome-headline {
-    font-size: clamp(1.8rem, 8vw, 2.4rem);
-    margin-bottom: 18px;
-  }
-
-  .welcome-subheadline {
-    font-size: 0.9rem;
-    margin-bottom: 32px;
   }
 
   .welcome-cta {
@@ -1069,12 +1054,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   }
 
   .welcome-product-peek {
-    margin-top: 48px;
-    gap: 10px;
+    gap: 12px;
   }
 
   .peek-card {
-    padding: 16px 14px;
+    padding: 18px 14px;
   }
 
   .peek-card-value {
