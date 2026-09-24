@@ -154,27 +154,32 @@
           ${slides.map((slide, index) => `
             <div class="showcase-screen" data-screen="${index}">
               <div class="showcase-screen-content">
+                <!-- Zone 1: Headline (top) -->
+                <div class="showcase-content-top">
+                  <h1 class="showcase-title">${slide.title}</h1>
+                  <h2 class="showcase-subtitle">${slide.subtitle}</h2>
+                </div>
+
+                <!-- Zone 2: Mockup (middle, shrinks to fit) -->
                 <div class="showcase-visual">
                   ${renderVisual(slide.visual)}
                 </div>
-                <div class="showcase-content">
-                  <h1 class="showcase-title">${slide.title}</h1>
-                  <h2 class="showcase-subtitle">${slide.subtitle}</h2>
+
+                <!-- Zone 3: Description + Navigation (bottom) -->
+                <div class="showcase-content-bottom">
                   <p class="showcase-description">${slide.description}</p>
+                  <div class="showcase-nav">
+                    <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
+                      ← Anterior
+                    </button>
+                    <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
+                      Siguiente →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           `).join('')}
-
-          <!-- Navigation (bottom) -->
-          <div class="showcase-nav">
-            <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
-              ← Anterior
-            </button>
-            <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
-              Siguiente →
-            </button>
-          </div>
         </div>
       </div>
     `;
@@ -212,19 +217,21 @@
       leftTitle.textContent = slides[currentSlide].subtitle;
     }
 
-    // Update navigation buttons
-    const backBtn = overlay.querySelector('.showcase-btn-back');
-    const nextBtn = overlay.querySelector('.showcase-btn-primary');
+    // Update navigation buttons in all screens
+    overlay.querySelectorAll('.showcase-screen').forEach((screen, i) => {
+      const backBtn = screen.querySelector('.showcase-btn-back');
+      const nextBtn = screen.querySelector('.showcase-btn-primary');
 
-    if (backBtn) {
-      backBtn.style.visibility = currentSlide > 0 ? 'visible' : 'hidden';
-    }
+      if (backBtn) {
+        backBtn.style.visibility = currentSlide > 0 ? 'visible' : 'hidden';
+      }
 
-    if (nextBtn) {
-      const isLastSlide = currentSlide === slides.length - 1;
-      nextBtn.textContent = isLastSlide ? 'Comenzar 🚀' : 'Siguiente →';
-      nextBtn.onclick = isLastSlide ? showcaseComplete : showcaseNext;
-    }
+      if (nextBtn) {
+        const isLastSlide = currentSlide === slides.length - 1;
+        nextBtn.textContent = isLastSlide ? 'Comenzar 🚀' : 'Siguiente →';
+        nextBtn.onclick = isLastSlide ? showcaseComplete : showcaseNext;
+      }
+    });
   }
 
   // Render visual mockups
