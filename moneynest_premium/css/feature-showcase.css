@@ -35,7 +35,7 @@
 }
 
 /* ──────────────────────────────────────────────────────────────
-   LEFT PANEL (STATIC - never changes)
+   LEFT PANEL (STATIC - hidden on welcome screen)
    ────────────────────────────────────────────────────────────── */
 .showcase-split-left {
   width: 42%;
@@ -49,6 +49,14 @@
   justify-content: center;
   padding: 60px 40px;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Hide left panel when welcome screen is active */
+body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-20px);
 }
 
 /* Gradient mesh background */
@@ -175,12 +183,12 @@
    ────────────────────────────────────────────────────────────── */
 .showcase-screen {
   position: absolute;
-  inset: 0; /* ← Llenar right panel */
+  inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 40px 40px; /* Padding reducido */
+  padding: 28px 40px; /* Padding mínimo */
   overflow: hidden;
 
   /* Hidden by default */
@@ -192,6 +200,18 @@
               transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
   transform: translateX(30px);
+}
+
+/* Welcome screen: hide left panel, use full width */
+.showcase-screen.welcome-screen {
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 3;
+}
+
+.welcome-screen ~ * {
+  /* Asegurar que left panel esté visible para otras screens */
 }
 
 /* Active screen (visible) */
@@ -219,7 +239,13 @@
   max-width: 480px;
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Gap pequeño */
+  gap: 10px; /* Gap mínimo */
+}
+
+/* Welcome screen content: centrado fullscreen */
+.welcome-screen .showcase-screen-content {
+  max-width: 700px;
+  gap: 20px;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -262,12 +288,12 @@
    ────────────────────────────────────────────────────────────── */
 .showcase-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: 1.5rem; /* Más pequeño */
+  font-size: 1.3rem; /* Más pequeño */
   font-weight: 800;
   color: white;
   letter-spacing: -0.05em;
   line-height: 1.1;
-  margin-bottom: 6px; /* Menos margen */
+  margin: 0; /* Sin margen */
 }
 
 .showcase-headline span {
@@ -302,13 +328,13 @@
 /* Mockup window styling */
 .ob-visual-preview {
   width: 100%;
-  max-width: 420px; /* ← Limitar ancho para que quepa */
+  max-width: 340px; /* Mucho más pequeño */
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  margin-bottom: 0;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  margin: 0;
   transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -319,30 +345,39 @@
 
 .ob-preview-header {
   background: rgba(255, 255, 255, 0.04);
-  padding: 8px 12px; /* Más pequeño */
+  padding: 6px 10px; /* Más pequeño */
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ob-preview-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px; /* Más pequeño */
+  height: 6px;
   border-radius: 50%;
 }
 
 .ob-preview-title-bar {
   flex: 1;
-  height: 6px;
+  height: 5px; /* Más pequeño */
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  margin: 0 8px;
+  border-radius: 2px;
+  margin: 0 6px;
 }
 
 .ob-preview-body {
-  padding: 10px; /* Más pequeño */
-  font-size: 0.9rem; /* Reducir texto interno */
+  padding: 8px; /* Más pequeño */
+  font-size: 0.75rem; /* Mucho más pequeño */
+}
+
+/* Reducir tamaños internos de mockups */
+.ob-preview-body > div {
+  font-size: 0.75rem;
+}
+
+.ob-preview-body [style*="font-size"] {
+  font-size: 0.7rem !important;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -351,15 +386,16 @@
 .showcase-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Menos gap */
+  gap: 6px; /* Mínimo gap */
   width: 100%;
+  margin-top: 4px;
 }
 
 .showcase-btn {
   width: 100%;
-  padding: 12px 18px; /* Más pequeño */
-  border-radius: 12px;
-  font-size: 0.9rem; /* Más pequeño */
+  padding: 10px 16px; /* Más pequeño */
+  border-radius: 10px;
+  font-size: 0.85rem; /* Más pequeño */
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -436,61 +472,137 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   WELCOME SCREEN (Slide 1) - HERO PREMIUM DESIGN
+   WELCOME SCREEN (Slide 1) - EPIC FULLSCREEN HERO
    ════════════════════════════════════════════════════════════════ */
 .showcase-welcome {
   width: 100%;
-  max-width: 480px;
+  max-width: 650px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 32px;
   text-align: center;
+  position: relative;
+}
+
+/* Animated background gradients */
+.welcome-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 30% 40%, rgba(0,212,170,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 800px at 70% 60%, rgba(99,102,241,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 500px at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%);
+  animation: welcomeBackgroundShift 15s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes welcomeBackgroundShift {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(2deg);
+  }
 }
 
 /* Hero title */
 .welcome-hero-title {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: 2rem;
+  font-size: 2.4rem;
   font-weight: 900;
   color: white;
-  letter-spacing: -0.05em;
-  line-height: 1.15;
-  margin-bottom: 8px;
+  letter-spacing: -0.06em;
+  line-height: 1.1;
+  margin: 0;
+  text-shadow: 0 0 40px rgba(0, 212, 170, 0.3);
+  animation: welcomeTitleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes welcomeTitleIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .welcome-hero-title span {
   color: #00D4AA;
+  text-shadow: 0 0 50px rgba(0, 212, 170, 0.6);
 }
 
 .welcome-hero-subtitle {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.5;
-  margin-bottom: 12px;
+  margin: 0;
+  animation: welcomeTitleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
+  position: relative;
+  z-index: 1;
 }
 
-/* Logo grande centro */
+/* Logo grande centro con animaciones épicas */
 .welcome-logo-large {
-  width: 120px;
-  height: 120px;
-  margin: 12px 0;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 24px;
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 212, 170, 0.4), 0 8px 32px rgba(0, 0, 0, 0.6);
-  animation: welcomeLogoGlow 3s ease-in-out infinite;
+  box-shadow:
+    0 0 60px rgba(0, 212, 170, 0.5),
+    0 12px 40px rgba(0, 0, 0, 0.7);
+  animation:
+    welcomeLogoFloat 4s ease-in-out infinite,
+    welcomeLogoGlow 3s ease-in-out infinite,
+    welcomeLogoIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes welcomeLogoFloat {
+  0%, 100% {
+    transform: translateY(0) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotateY(5deg);
+  }
 }
 
 @keyframes welcomeLogoGlow {
   0%, 100% {
-    box-shadow: 0 0 40px rgba(0, 212, 170, 0.4), 0 8px 32px rgba(0, 0, 0, 0.6);
+    box-shadow:
+      0 0 60px rgba(0, 212, 170, 0.5),
+      0 12px 40px rgba(0, 0, 0, 0.7);
   }
   50% {
-    box-shadow: 0 0 60px rgba(0, 212, 170, 0.6), 0 12px 48px rgba(0, 0, 0, 0.7);
+    box-shadow:
+      0 0 100px rgba(0, 212, 170, 0.8),
+      0 20px 60px rgba(0, 0, 0, 0.9);
+  }
+}
+
+@keyframes welcomeLogoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotateY(-20deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
   }
 }
 
@@ -504,55 +616,89 @@
 .welcome-features-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
+  max-width: 460px;
   text-align: left;
+  animation: welcomeTitleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-feature-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.4;
+  animation: welcomeFeatureIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.welcome-feature-item:nth-child(1) { animation-delay: 0.4s; }
+.welcome-feature-item:nth-child(2) { animation-delay: 0.5s; }
+.welcome-feature-item:nth-child(3) { animation-delay: 0.6s; }
+.welcome-feature-item:nth-child(4) { animation-delay: 0.7s; }
+
+@keyframes welcomeFeatureIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .welcome-feature-item::before {
   content: '✓';
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 212, 170, 0.15);
   color: #00D4AA;
   border-radius: 50%;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
 }
 
-/* Botón grande */
+/* Botón épico */
 .welcome-cta-button {
   width: 100%;
-  padding: 16px 24px;
-  border-radius: 14px;
+  max-width: 320px;
+  padding: 18px 28px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
   color: white;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  margin-top: 8px;
+  box-shadow:
+    0 0 40px rgba(0, 212, 170, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: welcomeTitleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.8s backwards;
+  position: relative;
+  z-index: 1;
+  letter-spacing: -0.01em;
 }
 
 .welcome-cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 212, 170, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 0 60px rgba(0, 212, 170, 0.6),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.welcome-cta-button:active {
+  transform: translateY(-1px) scale(1);
 }
 
 /* ════════════════════════════════════════════════════════════════

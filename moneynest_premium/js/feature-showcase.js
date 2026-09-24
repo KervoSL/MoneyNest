@@ -161,37 +161,41 @@
         <!-- Right panel: screens container -->
         <div class="showcase-split-right">
           ${slides.map((slide, index) => `
-            <div class="showcase-screen" data-screen="${index}">
+            <div class="showcase-screen ${index === 0 ? 'welcome-screen' : ''}" data-screen="${index}">
               <div class="showcase-screen-content">
-                <!-- Step indicator -->
-                <div class="showcase-step-pill">
-                  <div class="showcase-step-pill-dot"></div>
-                  PASO ${index + 1} DE ${slides.length}
-                </div>
+                ${index === 0 ? '' : `
+                  <!-- Step indicator -->
+                  <div class="showcase-step-pill">
+                    <div class="showcase-step-pill-dot"></div>
+                    PASO ${index + 1} DE ${slides.length}
+                  </div>
 
-                <!-- Headline -->
-                <h1 class="showcase-headline">${slide.title}</h1>
-                <p class="showcase-lead">${slide.subtitle}</p>
+                  <!-- Headline -->
+                  <h1 class="showcase-headline">${slide.title}</h1>
 
-                <!-- Visual mockup -->
-                <div class="showcase-visual">
-                  ${renderVisual(slide.visual)}
-                </div>
+                  <!-- Visual mockup -->
+                  <div class="showcase-visual">
+                    ${renderVisual(slide.visual)}
+                  </div>
 
-                <!-- Description -->
-                <p class="showcase-lead" style="margin-bottom: 28px; max-width: 100%;">${slide.description}</p>
-
-                <!-- Navigation -->
-                <div class="showcase-nav">
-                  <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
-                    ${index === slides.length - 1 ? 'Comenzar 🚀' : 'Siguiente →'}
-                  </button>
-                  ${index > 0 ? `
-                    <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
-                      ← Anterior
+                  <!-- Navigation -->
+                  <div class="showcase-nav">
+                    <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
+                      ${index === slides.length - 1 ? 'Comenzar 🚀' : 'Siguiente →'}
                     </button>
-                  ` : ''}
-                </div>
+                    ${index > 0 ? `
+                      <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
+                        ← Anterior
+                      </button>
+                    ` : ''}
+                  </div>
+                `}
+                ${index === 0 ? `
+                  <!-- Welcome screen content -->
+                  <div class="showcase-visual">
+                    ${renderVisual(slide.visual)}
+                  </div>
+                ` : ''}
               </div>
             </div>
           `).join('')}
