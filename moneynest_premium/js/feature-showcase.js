@@ -228,46 +228,90 @@
     switch(type) {
       case 'welcome':
         return `
-          <div class="showcase-welcome">
-            <!-- Hero title -->
-            <div>
-              <h1 class="welcome-hero-title">
-                Tus finanzas personales,<br><span>reinventadas</span>
-              </h1>
-              <p class="welcome-hero-subtitle">
-                Todo lo que necesitas en una sola app
-              </p>
-            </div>
-
-            <!-- Logo grande centro -->
-            <div class="welcome-logo-large">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+          <div class="welcome-premium">
+            <!-- Branding -->
+            <div class="welcome-brand">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
                 <defs>
-                  <linearGradient id="welcomeHeroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#00D4AA"/>
                     <stop offset="100%" stop-color="#00A882"/>
                   </linearGradient>
                 </defs>
-                <rect width="512" height="512" fill="#0A0E17" rx="96"/>
-                <path d="M96 344 Q256 416 416 344" stroke="rgba(255,255,255,0.8)" stroke-width="34" fill="none" stroke-linecap="round"/>
-                <path d="M130 300 Q256 356 382 300" stroke="rgba(255,255,255,0.5)" stroke-width="22" fill="none" stroke-linecap="round"/>
-                <polyline points="115,300 195,207 275,253 393,115" stroke="url(#welcomeHeroGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="333,103 393,115 380,172" stroke="url(#welcomeHeroGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect width="48" height="48" fill="none"/>
+                <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+                <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                <polyline points="10,28 18,20 26,23 38,12" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="33,11 38,12 37,17" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
+              <span class="welcome-brand-text">MoneyNest</span>
             </div>
 
-            <!-- Lista de características -->
-            <div class="welcome-features-list">
-              <div class="welcome-feature-item">Controla ingresos, gastos e inversiones</div>
-              <div class="welcome-feature-item">Patrimonio neto actualizado en tiempo real</div>
-              <div class="welcome-feature-item">Objetivos de ahorro con seguimiento visual</div>
-              <div class="welcome-feature-item">Privado, seguro y funciona offline</div>
-            </div>
+            <!-- Headline -->
+            <h1 class="welcome-headline">
+              Your money,<br>finally clear.
+            </h1>
 
-            <!-- Botón grande -->
-            <button class="welcome-cta-button" onclick="showcaseNext()">
-              Comenzar →
+            <!-- Subheadline -->
+            <p class="welcome-subheadline">
+              Track everything that matters to your financial life — in one simple place.
+            </p>
+
+            <!-- CTA Primary -->
+            <button class="welcome-cta" onclick="showcaseNext()">
+              Get started
             </button>
+
+            <!-- Login link (discreto) -->
+            <a href="#" class="welcome-login" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
+              Already have an account? <span>Log in</span>
+            </a>
+
+            <!-- Visual del producto (composición parcial) -->
+            <div class="welcome-product-peek">
+              <!-- Net worth card -->
+              <div class="peek-card peek-networth">
+                <div class="peek-card-label">Net Worth</div>
+                <div class="peek-card-value">42,847 €</div>
+                <div class="peek-card-delta">+12.4%</div>
+              </div>
+
+              <!-- Accounts mini -->
+              <div class="peek-card peek-accounts">
+                <div class="peek-card-label">Accounts</div>
+                <div class="peek-account-row">
+                  <div class="peek-account-dot" style="background:#00D4AA"></div>
+                  <span>Main account</span>
+                  <span class="peek-account-amt">2,450 €</span>
+                </div>
+                <div class="peek-account-row">
+                  <div class="peek-account-dot" style="background:#6366F1"></div>
+                  <span>Savings</span>
+                  <span class="peek-account-amt">8,200 €</span>
+                </div>
+              </div>
+
+              <!-- Transactions preview -->
+              <div class="peek-card peek-transactions">
+                <div class="peek-card-label">Recent</div>
+                <div class="peek-tx-row">
+                  <div class="peek-tx-icon">🛒</div>
+                  <div class="peek-tx-info">
+                    <div class="peek-tx-name">Groceries</div>
+                    <div class="peek-tx-date">Today</div>
+                  </div>
+                  <div class="peek-tx-amt">-52.30 €</div>
+                </div>
+                <div class="peek-tx-row">
+                  <div class="peek-tx-icon">💼</div>
+                  <div class="peek-tx-info">
+                    <div class="peek-tx-name">Salary</div>
+                    <div class="peek-tx-date">Jan 1</div>
+                  </div>
+                  <div class="peek-tx-amt peek-tx-positive">+3,200 €</div>
+                </div>
+              </div>
+            </div>
           </div>
         `;
 
