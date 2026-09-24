@@ -27,6 +27,7 @@
    ────────────────────────────────────────────────────────────── */
 .showcase-split {
   display: flex;
+  flex-direction: row; /* ← KEY: lado a lado */
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -163,13 +164,9 @@
    RIGHT PANEL (screens container)
    ────────────────────────────────────────────────────────────── */
 .showcase-split-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 60px 60px 60px 120px; /* Más padding-left para empujar contenido a derecha */
-  max-width: 640px;
-  overflow: hidden; /* Sin scroll */
+  flex: 1; /* ← Toma espacio restante */
+  position: relative; /* ← KEY para absolute screens */
+  overflow: hidden;
   background: #0A0F1E;
 }
 
@@ -178,12 +175,13 @@
    ────────────────────────────────────────────────────────────── */
 .showcase-screen {
   position: absolute;
-  inset: 0;
+  inset: 0; /* ← Llenar right panel */
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Centrar verticalmente */
-  padding: 60px 60px 60px 120px; /* Más padding-left */
-  overflow: hidden; /* Sin scroll */
+  justify-content: center;
+  align-items: center;
+  padding: 40px 40px; /* Padding reducido */
+  overflow: hidden;
 
   /* Hidden by default */
   opacity: 0;
@@ -218,10 +216,10 @@
 
 .showcase-screen-content {
   width: 100%;
-  max-width: 460px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Reducir gap para que quepa sin scroll */
+  gap: 16px; /* Gap pequeño */
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -231,12 +229,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.68rem;
+  font-size: 0.65rem; /* Más pequeño */
   font-weight: 700;
   color: #00D4AA;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 12px; /* Menos margen */
+  margin-bottom: 8px; /* Menos margen */
 }
 
 .showcase-step-pill-dot {
@@ -263,12 +261,12 @@
    ────────────────────────────────────────────────────────────── */
 .showcase-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: 1.65rem; /* Más pequeño para que quepa */
+  font-size: 1.5rem; /* Más pequeño */
   font-weight: 800;
   color: white;
   letter-spacing: -0.05em;
-  line-height: 1.15;
-  margin-bottom: 8px; /* Menos margen */
+  line-height: 1.1;
+  margin-bottom: 6px; /* Menos margen */
 }
 
 .showcase-headline span {
@@ -276,10 +274,10 @@
 }
 
 .showcase-lead {
-  font-size: 0.85rem; /* Más pequeño */
+  font-size: 0.8rem; /* Más pequeño */
   color: rgba(255, 255, 255, 0.5);
-  line-height: 1.5; /* Menos espaciado */
-  margin-bottom: 16px; /* Menos margen */
+  line-height: 1.4;
+  margin-bottom: 12px; /* Menos margen */
   font-weight: 400;
   max-width: 100%;
 }
@@ -292,7 +290,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px; /* Menos margen */
+  margin-bottom: 12px; /* Menos margen */
 }
 
 .showcase-visual > * {
@@ -319,7 +317,7 @@
 
 .ob-preview-header {
   background: rgba(255, 255, 255, 0.04);
-  padding: 10px 14px;
+  padding: 8px 12px; /* Más pequeño */
   display: flex;
   align-items: center;
   gap: 6px;
@@ -341,7 +339,7 @@
 }
 
 .ob-preview-body {
-  padding: 14px;
+  padding: 12px; /* Más pequeño */
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -350,15 +348,15 @@
 .showcase-nav {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px; /* Menos gap */
   width: 100%;
 }
 
 .showcase-btn {
   width: 100%;
-  padding: 14px 20px; /* Más pequeño */
-  border-radius: 14px;
-  font-size: 0.95rem; /* Más pequeño */
+  padding: 12px 18px; /* Más pequeño */
+  border-radius: 12px;
+  font-size: 0.9rem; /* Más pequeño */
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -443,20 +441,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 20px 0;
+  gap: 16px; /* Menos gap */
+  padding: 0;
 }
 
 .welcome-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px; /* Menos gap */
 }
 
 .welcome-logo svg {
-  width: 80px;
-  height: 80px;
+  width: 60px; /* Más pequeño */
+  height: 60px;
 }
 
 .welcome-features {
@@ -471,11 +469,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 16px 12px;
+  gap: 4px; /* Menos gap */
+  padding: 12px 10px; /* Más pequeño */
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -487,12 +485,12 @@
 }
 
 .welcome-feature-icon {
-  font-size: 2rem;
+  font-size: 1.6rem; /* Más pequeño */
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
 .welcome-feature-text {
-  font-size: 0.85rem;
+  font-size: 0.75rem; /* Más pequeño */
   font-weight: 700;
   color: white;
   text-align: center;
