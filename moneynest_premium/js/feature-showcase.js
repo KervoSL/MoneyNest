@@ -225,39 +225,45 @@
       case 'welcome':
         return `
           <div class="showcase-welcome">
-            <div class="welcome-hero">
-              <div class="welcome-logo">
-                <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" style="width:80px;height:80px;">
-                  <defs>
-                    <linearGradient id="welcomeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00D4AA"/>
-                      <stop offset="100%" stop-color="#00A882"/>
-                    </linearGradient>
-                  </defs>
-                  <circle cx="30" cy="30" r="28" fill="rgba(0,212,170,0.1)" stroke="url(#welcomeGrad)" stroke-width="3"/>
-                  <polyline points="18,30 25,22 32,26 42,14" stroke="url(#welcomeGrad)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="37,13 42,14 41,19" stroke="url(#welcomeGrad)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="welcome-features">
-                <div class="welcome-feature">
-                  <div class="welcome-feature-icon">🏦</div>
-                  <div class="welcome-feature-text">Cuentas</div>
-                </div>
-                <div class="welcome-feature">
-                  <div class="welcome-feature-icon">💸</div>
-                  <div class="welcome-feature-text">Movimientos</div>
-                </div>
-                <div class="welcome-feature">
-                  <div class="welcome-feature-icon">📈</div>
-                  <div class="welcome-feature-text">Inversiones</div>
-                </div>
-                <div class="welcome-feature">
-                  <div class="welcome-feature-icon">🎯</div>
-                  <div class="welcome-feature-text">Objetivos</div>
-                </div>
-              </div>
+            <!-- Hero title -->
+            <div>
+              <h1 class="welcome-hero-title">
+                Tus finanzas personales,<br><span>reinventadas</span>
+              </h1>
+              <p class="welcome-hero-subtitle">
+                Todo lo que necesitas en una sola app
+              </p>
             </div>
+
+            <!-- Logo grande centro -->
+            <div class="welcome-logo-large">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <defs>
+                  <linearGradient id="welcomeHeroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00D4AA"/>
+                    <stop offset="100%" stop-color="#00A882"/>
+                  </linearGradient>
+                </defs>
+                <rect width="512" height="512" fill="#0A0E17" rx="96"/>
+                <path d="M96 344 Q256 416 416 344" stroke="rgba(255,255,255,0.8)" stroke-width="34" fill="none" stroke-linecap="round"/>
+                <path d="M130 300 Q256 356 382 300" stroke="rgba(255,255,255,0.5)" stroke-width="22" fill="none" stroke-linecap="round"/>
+                <polyline points="115,300 195,207 275,253 393,115" stroke="url(#welcomeHeroGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="333,103 393,115 380,172" stroke="url(#welcomeHeroGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <!-- Lista de características -->
+            <div class="welcome-features-list">
+              <div class="welcome-feature-item">Controla ingresos, gastos e inversiones</div>
+              <div class="welcome-feature-item">Patrimonio neto actualizado en tiempo real</div>
+              <div class="welcome-feature-item">Objetivos de ahorro con seguimiento visual</div>
+              <div class="welcome-feature-item">Privado, seguro y funciona offline</div>
+            </div>
+
+            <!-- Botón grande -->
+            <button class="welcome-cta-button" onclick="showcaseNext()">
+              Comenzar →
+            </button>
           </div>
         `;
 
