@@ -6129,7 +6129,7 @@ function renderDeudas() {
       <div class="card-header">
         <div><div class="card-title">📉 ${t('proyeccion_deuda','Proyección de deuda')}</div><div class="card-subtitle">${t('proyeccion_deuda_sub','Evolución del saldo total')}</div></div>
       </div>
-      <div class="chart-container" style="height:180px"><div id="chartDeudaProyeccion"></div></div>
+      <div class="chart-container"><div id="chartDeudaProyeccion"></div></div>
     </div>
     <div class="card">
       <div class="card-header">
@@ -8194,8 +8194,8 @@ function _chartScales(yCallback) {
   const isNarrow = typeof window !== 'undefined' && window.innerWidth < 480
   return {
     x: { grid: { color: 'transparent' }, border: { color: 'transparent' },
-      ticks: { color: labelColor(), font: { size: 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: isNarrow ? 6 : 12 } },
-    y: { grid: { color: gridColor() }, border: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: 11 }, callback: yCallback || (v => v) } }
+      ticks: { color: labelColor(), font: { size: isNarrow ? 9 : 11 }, autoSkip: true, maxRotation: 60, minRotation: 0, maxTicksLimit: isNarrow ? 6 : 12 } },
+    y: { grid: { color: gridColor() }, border: { color: 'transparent' }, ticks: { color: labelColor(), font: { size: isNarrow ? 9 : 11 }, callback: yCallback || (v => v) } }
   }
 }
 function destroyChart(id) {
@@ -12438,13 +12438,13 @@ function renderAnalisis() {
       <div class="card-header">
         <div><div class="card-title">📊 ${t('analisis_cashflow_titulo','Cashflow mensual')}</div><div class="card-subtitle">${t('ultimos_12_meses','Últimos 12 meses')}</div></div>
       </div>
-      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartCashflowBars"></canvas></div>
+      <div class="chart-container" style="min-width:0"><canvas id="chartCashflowBars"></canvas></div>
     </div>
     <div class="card" style="min-width:0">
       <div class="card-header">
         <div><div class="card-title">📈 ${t('evolucion_patrimonio','Patrimonio neto')}</div><div class="card-subtitle">${t('ultimos_12_meses','Últimos 12 meses')}</div></div>
       </div>
-      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartAnalisisPatrimonio"></canvas></div>
+      <div class="chart-container" style="min-width:0"><canvas id="chartAnalisisPatrimonio"></canvas></div>
     </div>
   </div>
 
@@ -12452,7 +12452,7 @@ function renderAnalisis() {
   <div class="grid-2 mn-section">
     <div class="card" style="min-width:0">
       <div class="card-header"><div class="card-title">🍩 ${t('analisis_ing_vs_gas','Ingresos vs Gastos')}</div><div class="card-subtitle">${t('tendencia_mensual','Tendencia 12 meses')}</div></div>
-      <div class="chart-container" style="height:170px;min-width:0"><canvas id="chartAnalisisTendencia"></canvas></div>
+      <div class="chart-container" style="min-width:0"><canvas id="chartAnalisisTendencia"></canvas></div>
     </div>
     <div class="card" style="min-width:0">
       <div class="card-header">
@@ -12591,7 +12591,7 @@ function renderAnalisis() {
       <div class="mn-insight-body">${projectionAlert.msg}</div>
     </div>
     <!-- Bar chart: 3 historical months + 1 projected -->
-    <div class="chart-container" style="height:240px;margin-bottom:16px"><canvas id="chartProximoMes"></canvas></div>
+    <div class="chart-container tall" style="margin-bottom:16px"><canvas id="chartProximoMes"></canvas></div>
     <!-- Summary cards -->
     <div class="mn-3col-grid">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;min-width:0">
@@ -12628,7 +12628,7 @@ function renderAnalisis() {
           <div style="font-size:.65rem;color:var(--text3);margin-top:2px">${t('en_12_meses','en 12 meses')}</div>
         </div>`).join('')}
     </div>
-    <div class="chart-container" style="height:200px"><canvas id="chartFinancialPlanner"></canvas></div>
+    <div class="chart-container"><canvas id="chartFinancialPlanner"></canvas></div>
     <div style="margin-top:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       ${planScenarios.map(s=>`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);font-weight:600"><span style="width:14px;height:3px;border-radius:99px;background:${s.color};display:inline-block"></span>${s.label}</div>`).join('')}
     </div>
@@ -12988,7 +12988,7 @@ function renderDebtAdvisor() {
   <!-- Gráfico evolución saldo -->
   <div style="margin-bottom:14px">
     <div style="font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:6px">📉 Evolución del saldo total</div>
-    <div class="chart-container" style="height:140px"><canvas id="chartDebtEvolution"></canvas></div>
+    <div class="chart-container"><canvas id="chartDebtEvolution"></canvas></div>
   </div>
 
   <!-- Orden de pago -->
@@ -13091,7 +13091,7 @@ function renderProjection() {
       <div><div style="font-size:.72rem;color:var(--text2);font-weight:600">Optimista</div><div style="font-size:.9rem;font-weight:700;color:var(--green)">${eur(last.optimista)}</div></div>
     </div>
   </div>
-  <div class="chart-container" style="height:160px"><canvas id="chartProjection"></canvas></div>
+  <div class="chart-container"><canvas id="chartProjection"></canvas></div>
   <div style="margin-top:10px;font-size:.75rem;color:var(--text3)">Proyección a 12 meses basada en tu cash flow histórico e inversiones.</div>`
 }
 
