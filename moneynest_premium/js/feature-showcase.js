@@ -638,15 +638,8 @@
               <div class="cta-feature">
                 <div class="cta-feature-icon">✓</div>
                 <div class="cta-feature-text">
-                  <strong>Funciona offline</strong>
-                  <span>No necesitas internet</span>
-                </div>
-              </div>
-              <div class="cta-feature">
-                <div class="cta-feature-icon">✓</div>
-                <div class="cta-feature-text">
-                  <strong>Sync en la nube</strong>
-                  <span>Opcional y encriptado</span>
+                  <strong>Funciona online</strong>
+                  <span>Accede desde cualquier lugar</span>
                 </div>
               </div>
               <div class="cta-feature">

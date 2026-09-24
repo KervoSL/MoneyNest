@@ -1044,7 +1044,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .cta-features {
   display: grid;
   grid-template-columns: 1fr;
-  gap: clamp(8px, 1.2vh, 10px);
+  gap: clamp(10px, 1.5vh, 12px);
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
@@ -1054,8 +1054,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .cta-feature {
   display: flex;
   align-items: flex-start;
-  gap: clamp(10px, 2vw, 12px);
-  padding: clamp(10px, 1.5vh, 14px) clamp(12px, 2vw, 16px);
+  gap: clamp(10px, 2vw, 14px);
+  padding: clamp(12px, 1.8vh, 16px) clamp(14px, 2.2vw, 18px);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
