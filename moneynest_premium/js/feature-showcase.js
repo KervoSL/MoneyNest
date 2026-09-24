@@ -235,8 +235,9 @@
       case 'welcome':
         return `
           <div class="welcome-premium">
-            <!-- Top bar: Logo izquierda + Login derecha -->
-            <div class="welcome-topbar">
+            <!-- Columna IZQUIERDA: Logo + Dashboard -->
+            <div class="welcome-left">
+              <!-- Logo arriba -->
               <div class="welcome-brand">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
                   <defs>
@@ -253,31 +254,9 @@
                 </svg>
                 <span class="welcome-brand-text">MoneyNest</span>
               </div>
-              <a href="#" class="welcome-login-link" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
-                Log in
-              </a>
-            </div>
 
-            <!-- Hero content centrado -->
-            <div class="welcome-hero">
-              <!-- Headline -->
-              <h1 class="welcome-headline">
-                Your money,<br>finally clear.
-              </h1>
-
-              <!-- Subheadline -->
-              <p class="welcome-subheadline">
-                Track everything that matters to your financial life — in one simple place.
-              </p>
-
-              <!-- CTA Primary -->
-              <button class="welcome-cta" onclick="showcaseNext()">
-                Get started
-              </button>
-            </div>
-
-            <!-- Dashboard simulado - EXACTO como el real de MoneyNest -->
-            <div class="welcome-dashboard-mockup">
+              <!-- Dashboard mockup debajo -->
+              <div class="welcome-dashboard-mockup">
               <!-- Sidebar falso -->
               <div class="wdm-sidebar">
                 <div class="wdm-logo">
@@ -301,7 +280,7 @@
                 <!-- Topbar -->
                 <div class="wdm-topbar">
                   <div class="wdm-topbar-title">Dashboard</div>
-                  <div class="wdm-topbar-balance">Disponible <span>0,00 €</span></div>
+                  <div class="wdm-topbar-balance">Disponible <span>2,450 €</span></div>
                 </div>
 
                 <!-- Saludo -->
@@ -313,22 +292,22 @@
                 <!-- Patrimonio Neto -->
                 <div class="wdm-networth">
                   <div class="wdm-networth-label">PATRIMONIO NETO</div>
-                  <div class="wdm-networth-value">0,00 €</div>
+                  <div class="wdm-networth-value">42,847 €</div>
                   <div class="wdm-networth-breakdown">
                     <div class="wdm-nw-item">
                       <span class="wdm-nw-icon">💰</span>
                       <span class="wdm-nw-label">Liquidez</span>
-                      <span class="wdm-nw-value">0,00 €</span>
+                      <span class="wdm-nw-value">10,650 €</span>
                     </div>
                     <div class="wdm-nw-item">
                       <span class="wdm-nw-icon">📈</span>
                       <span class="wdm-nw-label">Invertido</span>
-                      <span class="wdm-nw-value">0,00 €</span>
+                      <span class="wdm-nw-value">32,197 €</span>
                     </div>
                     <div class="wdm-nw-item">
                       <span class="wdm-nw-icon">🏠</span>
                       <span class="wdm-nw-label">Activos</span>
-                      <span class="wdm-nw-value">0,00 €</span>
+                      <span class="wdm-nw-value">18,000 €</span>
                     </div>
                     <div class="wdm-nw-item">
                       <span class="wdm-nw-icon">💳</span>
@@ -343,12 +322,43 @@
                   <div class="wdm-section-label">CUENTAS</div>
                   <div class="wdm-account-item">
                     <span class="wdm-account-dot"></span>
-                    <span class="wdm-account-name">Efectivo</span>
-                    <span class="wdm-account-value">0,00 €</span>
+                    <span class="wdm-account-name">Cuenta corriente</span>
+                    <span class="wdm-account-value">2,450 €</span>
+                  </div>
+                  <div class="wdm-account-item">
+                    <span class="wdm-account-dot" style="background:#6366F1"></span>
+                    <span class="wdm-account-name">Ahorros</span>
+                    <span class="wdm-account-value">8,200 €</span>
                   </div>
                 </div>
               </div>
             </div>
+            </div>
+            <!-- FIN columna izquierda -->
+
+            <!-- Columna DERECHA: Textos + CTA -->
+            <div class="welcome-right">
+              <!-- Headline -->
+              <h1 class="welcome-headline">
+                Your money,<br>finally clear.
+              </h1>
+
+              <!-- Subheadline -->
+              <p class="welcome-subheadline">
+                Track everything that matters to your financial life — in one simple place.
+              </p>
+
+              <!-- CTA Primary -->
+              <button class="welcome-cta" onclick="showcaseNext()">
+                Get started
+              </button>
+
+              <!-- Login link -->
+              <a href="#" class="welcome-login-link" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
+                Already have an account? <span>Log in</span>
+              </a>
+            </div>
+            <!-- FIN columna derecha -->
           </div>
         `;
 

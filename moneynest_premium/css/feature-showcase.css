@@ -502,10 +502,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 /* Container principal - diseño "ya estás en la app" */
 .welcome-premium {
   width: 100%;
-  max-width: min(1200px, 90vw);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(40px, 5vh, 60px);
+  max-width: min(1400px, 92vw);
+  display: grid;
+  grid-template-columns: 520px 1fr;
+  gap: clamp(48px, 6vw, 80px);
+  align-items: start;
   padding: clamp(48px, 7vh, 80px) clamp(48px, 6vw, 90px) clamp(56px, 8vh, 100px);
   position: relative;
   z-index: 1;
@@ -555,27 +556,25 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   TOP BAR (Logo izquierda + Login derecha)
+   COLUMNA IZQUIERDA (Logo + Dashboard)
    ────────────────────────────────────────────────────────────── */
-.welcome-topbar {
+.welcome-left {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  flex-direction: column;
+  gap: clamp(20px, 3vh, 28px);
   animation: welcomeFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
-  position: relative;
-  z-index: 2;
 }
 
 .welcome-brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 8px;
 }
 
 .welcome-brand-icon {
-  width: clamp(36px, 5vw, 44px);
-  height: clamp(36px, 5vw, 44px);
+  width: clamp(32px, 4.5vw, 40px);
+  height: clamp(32px, 4.5vw, 40px);
   display: block;
   position: relative;
   filter: drop-shadow(0 0 20px rgba(0, 212, 170, 0.4));
@@ -601,43 +600,23 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .welcome-brand-text {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #E8EFF7;
 }
 
-.welcome-login-link {
-  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
-  padding: 8px 20px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.welcome-login-link:hover {
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
 /* ──────────────────────────────────────────────────────────────
-   HERO SECTION (Centrado)
+   COLUMNA DERECHA (Textos + CTA)
    ────────────────────────────────────────────────────────────── */
-.welcome-hero {
+.welcome-right {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: clamp(18px, 3vh, 24px);
   justify-content: center;
-  text-align: center;
-  gap: clamp(20px, 3vh, 28px);
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  align-items: flex-start;
   animation: welcomeFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
+  padding-top: clamp(20px, 4vh, 40px);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -645,13 +624,14 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    ────────────────────────────────────────────────────────────── */
 .welcome-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: clamp(2.5rem, 6.5vw, 4.2rem);
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
   font-weight: 900;
-  letter-spacing: -0.045em;
-  line-height: 1.08;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
   color: #FFFFFF;
   margin: 0;
   text-shadow: 0 4px 35px rgba(0, 0, 0, 0.35);
+  text-align: left;
 }
 
 @keyframes welcomeHeadlineIn {
@@ -669,29 +649,29 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    SUBHEADLINE (breve, discreta)
    ────────────────────────────────────────────────────────────── */
 .welcome-subheadline {
-  font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
   font-weight: 500;
-  line-height: 1.65;
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.65);
-  max-width: min(660px, 88vw);
+  max-width: 100%;
   margin: 0;
+  text-align: left;
 }
 
 /* ──────────────────────────────────────────────────────────────
    CTA PRIMARY (claramente el elemento principal)
    ────────────────────────────────────────────────────────────── */
 .welcome-cta {
-  width: 100%;
-  max-width: min(360px, 88vw);
-  padding: clamp(17px, 2.7vh, 22px) clamp(30px, 4.8vw, 44px);
+  width: auto;
+  padding: clamp(13px, 2.2vh, 16px) clamp(28px, 4vw, 36px);
   font-family: inherit;
-  font-size: clamp(1.05rem, 2.4vw, 1.15rem);
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
   color: #0A0E17;
   background: linear-gradient(135deg, #00D4AA 0%, #00E4BA 100%);
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow:
@@ -732,12 +712,38 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   transform: translateY(-1px) scale(1);
 }
 
+/* ──────────────────────────────────────────────────────────────
+   LOGIN LINK (debajo del botón)
+   ────────────────────────────────────────────────────────────── */
+.welcome-login-link {
+  font-size: clamp(0.85rem, 1.8vw, 0.92rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.welcome-login-link span {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.welcome-login-link:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.welcome-login-link:hover span {
+  color: rgba(255, 255, 255, 0.95);
+}
+
 
 /* ──────────────────────────────────────────────────────────────
    DASHBOARD MOCKUP (simulación EXACTA del dashboard real)
    ────────────────────────────────────────────────────────────── */
 .welcome-dashboard-mockup {
   width: 100%;
+  max-width: 520px;
   display: flex;
   background: #0C1119;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -745,41 +751,47 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   overflow: hidden;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
   animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
-  min-height: 500px;
+  height: fit-content;
+  max-height: 600px;
 }
 
 /* ──────────────────────────────────────────────────────────────
    SIDEBAR FALSO
    ────────────────────────────────────────────────────────────── */
 .wdm-sidebar {
-  width: 220px;
+  width: 160px;
   background: #0A0E17;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 24px 16px;
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .wdm-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 16px;
 }
 
 .wdm-logo span {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.95);
   letter-spacing: -0.01em;
 }
 
+.wdm-logo svg {
+  width: 24px;
+  height: 24px;
+}
+
 .wdm-nav-item {
-  padding: 10px 12px;
-  font-size: 0.85rem;
+  padding: 8px 10px;
+  font-size: 0.8rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
@@ -799,11 +811,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .wdm-main {
   flex: 1;
   background: #0C1119;
-  padding: 24px 32px;
+  padding: 20px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
 /* Topbar */
@@ -811,36 +823,36 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .wdm-topbar-title {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
 }
 
 .wdm-topbar-balance {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
 .wdm-topbar-balance span {
   color: #00D4AA;
   font-weight: 700;
-  margin-left: 6px;
+  margin-left: 4px;
 }
 
 /* Saludo */
 .wdm-greeting {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .wdm-greeting-text {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
 }
@@ -850,7 +862,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 .wdm-greeting-date {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -858,58 +870,58 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .wdm-networth {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 14px;
+  padding: 18px;
 }
 
 .wdm-networth-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .wdm-networth-value {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 900;
   color: #00D4AA;
   letter-spacing: -0.03em;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .wdm-networth-breakdown {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 .wdm-nw-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: 6px;
+  padding: 12px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
+  border-radius: 10px;
   text-align: center;
 }
 
 .wdm-nw-icon {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
 }
 
 .wdm-nw-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.4);
   font-weight: 600;
 }
 
 .wdm-nw-value {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -917,37 +929,38 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .wdm-nw-positive {
   color: #10B981;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
 /* Cuentas */
 .wdm-accounts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .wdm-section-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2px;
 }
 
 .wdm-account-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .wdm-account-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #F59E0B;
   flex-shrink: 0;
@@ -955,13 +968,13 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .wdm-account-name {
   flex: 1;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
 }
 
 .wdm-account-value {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -1176,18 +1189,30 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   /* Welcome adjustments */
   .welcome-premium {
+    grid-template-columns: 1fr;
+    gap: clamp(32px, 5vh, 48px);
     padding: clamp(28px, 4.5vh, 48px) clamp(28px, 4.5vw, 56px);
   }
 
+  .welcome-left {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .welcome-right {
+    width: 100%;
+    padding-top: 0;
+  }
+
   .welcome-dashboard-mockup {
+    max-width: 100%;
     flex-direction: column;
-    min-height: 450px;
   }
 
   .wdm-sidebar {
     width: 100%;
     flex-direction: row;
-    padding: 16px;
+    padding: 14px;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     overflow-x: auto;
@@ -1195,11 +1220,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   .wdm-logo {
     margin-bottom: 0;
-    margin-right: 20px;
+    margin-right: 16px;
   }
 
   .wdm-main {
-    padding: 20px 24px;
+    padding: 18px 20px;
+    gap: 16px;
   }
 
   .wdm-networth-breakdown {
@@ -1255,11 +1281,33 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   .welcome-premium {
     padding: clamp(24px, 3.5vh, 40px) clamp(24px, 3.5vw, 40px);
     max-width: 100%;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .welcome-left {
+    width: 100%;
+  }
+
+  .welcome-right {
+    width: 100%;
+  }
+
+  .welcome-headline {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+  }
+
+  .welcome-subheadline {
+    font-size: clamp(0.88rem, 2vw, 1rem);
+  }
+
+  .welcome-cta {
+    width: 100%;
   }
 
   .welcome-dashboard-mockup {
     border-radius: 16px;
-    min-height: 400px;
+    max-width: 100%;
   }
 
   .wdm-sidebar {
@@ -1267,33 +1315,33 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   }
 
   .wdm-nav-item {
-    font-size: 0.8rem;
-    padding: 8px 10px;
+    font-size: 0.75rem;
+    padding: 7px 9px;
     white-space: nowrap;
   }
 
   .wdm-main {
-    padding: 16px 20px;
-    gap: 20px;
+    padding: 14px 16px;
+    gap: 14px;
   }
 
   .wdm-greeting-text {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 
   .wdm-networth-value {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
 
   .wdm-networth-breakdown {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .wdm-nw-item {
     flex-direction: row;
     justify-content: space-between;
-    padding: 12px 14px;
+    padding: 10px 12px;
   }
 
   .cta-features {
@@ -1348,26 +1396,34 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   .welcome-cta {
     max-width: 100%;
+    width: 100%;
   }
 
   .welcome-dashboard-mockup {
     border-radius: 14px;
+    max-width: 100%;
   }
 
   .wdm-sidebar {
     gap: 2px;
+    padding: 10px;
   }
 
   .wdm-main {
-    padding: 14px 16px;
+    padding: 12px 14px;
+    gap: 12px;
   }
 
   .wdm-greeting-text {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
   }
 
   .wdm-networth {
-    padding: 18px;
+    padding: 14px;
+  }
+
+  .wdm-networth-value {
+    font-size: 1.4rem;
   }
 }
 
