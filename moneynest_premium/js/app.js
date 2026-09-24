@@ -12286,6 +12286,62 @@ function renderAnalisis() {
     return { type: 'warn', icon: '⚠️', msg: `${t('proyeccion_ajustada', 'Proyección ajustada')}: ${eur(cfPlanner)}/${t('mes_lbl','mes')}. ${t('proyeccion_ajustada_msg','Margen de mejora disponible.')}` }
   })()
 
+  // ── Suscripciones activas ──
+  const _analisisSuscripcionesHtml = (() => {
+    const subsKeywords = ['netflix','spotify','amazon prime','hbo','disney','youtube premium','apple music','apple tv','google one','microsoft 365','office 365','adobe','dropbox','icloud','gym','gimnasio','suscripción','subscripción','monthly']
+    const excludeCategories = ['Vivienda','Alquiler','Hipoteca','Transporte','Alimentación','Salud','Seguros']
+    const excludeKeywords = ['alquiler','hipoteca','comunidad','seguro','luz','agua','gas','internet','telefon','móvil']
+    const seen = new Set()
+    const subs = []
+    S.gastos.forEach(g => {
+      if (g.tipo === TX_TYPES.GOAL_TRANSFER) return
+      const cL = (g.concepto||'').toLowerCase()
+      if (excludeCategories.includes(g.categoria||'')) return
+      if (excludeKeywords.some(k => cL.includes(k))) return
+      if (!g.recurrente && !subsKeywords.some(k => cL.includes(k))) return
+      const key = cL.slice(0,15)
+      if (seen.has(key)) return
+      seen.add(key)
+      subs.push({ nombre: g.concepto||'—', importe: Number(g.importe)||0, categoria: g.categoria||'', emoji: catEmoji(g.categoria), frecuencia: 'mensual', source: 'gastos' })
+    })
+    if (window.MNRecurring) {
+      MNRecurring.getRecurrings().filter(r => r.activa && r.type === 'gasto').forEach(r => {
+        const key = (r.nombre||'').toLowerCase().slice(0,15)
+        if (seen.has(key)) return
+        seen.add(key)
+        subs.push({ nombre: r.nombre||'—', importe: Number(r.importe)||0, categoria: r.categoria||'', emoji: r.emoji||catEmoji(r.categoria), frecuencia: r.frecuencia||'mensual', source: 'recurring' })
+      })
+    }
+    if (!subs.length) return ''
+    const toMonthly = s => s.frecuencia === 'anual' ? s.importe/12 : s.frecuencia === 'semanal' ? s.importe*4.33 : s.importe
+    const totalMes = subs.reduce((a,s) => a + toMonthly(s), 0)
+    const freqLabel = f => f === 'anual' ? t('anual','Anual') : f === 'semanal' ? t('semanal','Semanal') : t('mensual','Mensual')
+    return `
+  <!-- ── SUSCRIPCIONES ACTIVAS ─────────────────────────────── -->
+  <div class="card mn-section">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🔄 ${t('suscripciones_activas','Suscripciones activas')}</div>
+        <div class="card-subtitle">${subs.length} ${t('activas_lbl','activas')} · <strong style="color:var(--text)">${eur(totalMes)}/${t('mes_lbl','mes')}</strong> · ${eur(totalMes*12)}/${t('año_lbl','año')}</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('categoria','Categoría')}</th><th>${t('importe','Importe')}/mes</th><th>${t('frecuencia','Frecuencia')}</th></tr></thead>
+        <tbody>${subs.map(s=>`<tr>
+          <td class="td-main"><span style="margin-right:4px">${s.emoji}</span>${s.nombre}</td>
+          <td><span class="tag">${s.categoria||'—'}</span></td>
+          <td class="td-amount td-neg">−${eur(toMonthly(s))}</td>
+          <td><span class="badge badge-accent">${freqLabel(s.frecuencia)}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;padding:8px 12px;background:var(--red-dim);border-radius:var(--radius-sm);font-size:.75rem;color:var(--red)">
+      💡 ${t('suscripciones_tip','¿Todas siguen activas? Revisa periódicamente para ahorrar hasta')} <strong>${eur(totalMes*0.2)}/${t('mes_lbl','mes')}</strong>.
+    </div>
+  </div>`
+  })()
+
   const _analisisResumenHtml = `
   <!-- ── HEADER ────────────────────────────────────────────────── -->
   <div class="section-header mn-section">
@@ -12532,6 +12588,8 @@ function renderAnalisis() {
     <div class="card-header"><div class="card-title">🧠 ${t('insights_titulo','Insights personalizados')}</div><div class="card-subtitle">${t('insights_sub','Basados en tus datos reales')}</div></div>
     ${insightTips.map(tip=>`<div class="mn-insight mn-insight--${tip.cls}"><span class="mn-insight-icon">${tip.icon}</span><div class="mn-insight-body">${tip.txt}</div></div>`).join('')}
   </div>
+
+  ${_analisisSuscripcionesHtml}
 
   <!-- ── PREVISIÓN GASTOS ──────────────────────────────────────── -->
   <div class="card mn-section">
