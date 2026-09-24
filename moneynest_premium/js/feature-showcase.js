@@ -235,43 +235,46 @@
       case 'welcome':
         return `
           <div class="welcome-premium">
-            <!-- Branding -->
-            <div class="welcome-brand">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
-                <defs>
-                  <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00D4AA"/>
-                    <stop offset="100%" stop-color="#00A882"/>
-                  </linearGradient>
-                </defs>
-                <rect width="48" height="48" fill="none"/>
-                <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-                <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-                <polyline points="10,28 18,20 26,23 38,12" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="33,11 38,12 37,17" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span class="welcome-brand-text">MoneyNest</span>
+            <!-- Top bar: Logo izquierda + Login derecha -->
+            <div class="welcome-topbar">
+              <div class="welcome-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
+                  <defs>
+                    <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00D4AA"/>
+                      <stop offset="100%" stop-color="#00A882"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="48" height="48" fill="none"/>
+                  <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+                  <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                  <polyline points="10,28 18,20 26,23 38,12" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="33,11 38,12 37,17" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="welcome-brand-text">MoneyNest</span>
+              </div>
+              <a href="#" class="welcome-login-link" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
+                Log in
+              </a>
             </div>
 
-            <!-- Headline -->
-            <h1 class="welcome-headline">
-              Your money,<br>finally clear.
-            </h1>
+            <!-- Hero content centrado -->
+            <div class="welcome-hero">
+              <!-- Headline -->
+              <h1 class="welcome-headline">
+                Your money,<br>finally clear.
+              </h1>
 
-            <!-- Subheadline -->
-            <p class="welcome-subheadline">
-              Track everything that matters to your financial life — in one simple place.
-            </p>
+              <!-- Subheadline -->
+              <p class="welcome-subheadline">
+                Track everything that matters to your financial life — in one simple place.
+              </p>
 
-            <!-- CTA Primary -->
-            <button class="welcome-cta" onclick="showcaseNext()">
-              Get started
-            </button>
-
-            <!-- Login link (discreto) -->
-            <a href="#" class="welcome-login" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
-              Already have an account? <span>Log in</span>
-            </a>
+              <!-- CTA Primary -->
+              <button class="welcome-cta" onclick="showcaseNext()">
+                Get started
+              </button>
+            </div>
 
             <!-- Dashboard simulado (como si ya estuvieras en la app) -->
             <div class="welcome-dashboard-preview">

@@ -502,13 +502,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 /* Container principal - diseño "ya estás en la app" */
 .welcome-premium {
   width: 100%;
-  max-width: min(1100px, 88vw);
-  display: grid;
-  grid-template-rows: auto auto auto auto auto 1fr;
-  gap: clamp(28px, 4vh, 40px);
-  align-items: center;
-  justify-items: center;
-  text-align: center;
+  max-width: min(1200px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(40px, 5vh, 60px);
   padding: clamp(48px, 7vh, 80px) clamp(48px, 6vw, 90px) clamp(56px, 8vh, 100px);
   position: relative;
   z-index: 1;
@@ -558,25 +555,30 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   BRANDING
+   TOP BAR (Logo izquierda + Login derecha)
    ────────────────────────────────────────────────────────────── */
-.welcome-brand {
+.welcome-topbar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  animation: welcomeFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
-  grid-row: 1;
+  justify-content: space-between;
+  width: 100%;
+  animation: welcomeFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0s backwards;
   position: relative;
   z-index: 2;
 }
 
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .welcome-brand-icon {
-  width: clamp(48px, 6.5vw, 64px);
-  height: clamp(48px, 6.5vw, 64px);
+  width: clamp(36px, 5vw, 44px);
+  height: clamp(36px, 5vw, 44px);
   display: block;
   position: relative;
-  filter: drop-shadow(0 0 32px rgba(0, 212, 170, 0.45));
-  animation: welcomeLogoFloat 4s ease-in-out infinite, welcomeLogoGlow 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 212, 170, 0.4));
 }
 
 @keyframes welcomeLogoFloat {
@@ -599,11 +601,43 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .welcome-brand-text {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.3rem);
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   color: #E8EFF7;
-  text-shadow: 0 2px 20px rgba(255, 255, 255, 0.15);
+}
+
+.welcome-login-link {
+  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.welcome-login-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   HERO SECTION (Centrado)
+   ────────────────────────────────────────────────────────────── */
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: clamp(20px, 3vh, 28px);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: welcomeFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -617,10 +651,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   line-height: 1.08;
   color: #FFFFFF;
   margin: 0;
-  animation: welcomeHeadlineIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
-  grid-row: 2;
-  position: relative;
-  z-index: 2;
   text-shadow: 0 4px 35px rgba(0, 0, 0, 0.35);
 }
 
@@ -645,10 +675,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   color: rgba(255, 255, 255, 0.65);
   max-width: min(660px, 88vw);
   margin: 0;
-  animation: welcomeFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
-  grid-row: 3;
-  position: relative;
-  z-index: 2;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -672,10 +698,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     0 5px 22px rgba(0, 212, 170, 0.38),
     0 2px 5px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  animation: welcomeCtaIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
-  grid-row: 4;
   position: relative;
-  z-index: 2;
   overflow: hidden;
 }
 
@@ -709,45 +732,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   transform: translateY(-1px) scale(1);
 }
 
-@keyframes welcomeCtaIn {
-  from {
-    opacity: 0;
-    transform: translateY(18px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* ──────────────────────────────────────────────────────────────
-   LOGIN LINK (secundario, discreto)
-   ────────────────────────────────────────────────────────────── */
-.welcome-login {
-  font-size: clamp(0.9rem, 1.9vw, 1rem);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
-  text-decoration: none;
-  display: inline-block;
-  transition: color 0.2s ease;
-  animation: welcomeFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s backwards;
-  grid-row: 5;
-}
-
-.welcome-login span {
-  color: rgba(255, 255, 255, 0.65);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
-}
-
-.welcome-login:hover {
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.welcome-login:hover span {
-  color: rgba(255, 255, 255, 0.85);
-}
 
 /* ──────────────────────────────────────────────────────────────
    DASHBOARD PREVIEW (simulación de estar en la app)
@@ -763,13 +747,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards;
+  animation: welcomePeekIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
   position: relative;
   z-index: 2;
   overflow: hidden;
-  grid-row: 6;
-  align-self: start;
-  justify-self: stretch;
 }
 
 /* Header del dashboard */
