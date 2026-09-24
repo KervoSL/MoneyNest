@@ -47,7 +47,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 60px 40px;
+  padding: 60px 40px 60px 60px; /* Más margen izquierdo */
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -188,7 +188,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 28px 40px; /* Padding mínimo */
+  padding: 40px 50px; /* Padding intermedio - más espacio */
   overflow: hidden;
 
   /* Hidden by default */
@@ -236,10 +236,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
 
 .showcase-screen-content {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px; /* Más ancho */
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Gap mínimo */
+  gap: 18px; /* Gap intermedio */
 }
 
 /* Welcome screen content: centrado fullscreen */
@@ -256,17 +256,17 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
   align-items: center;
   align-self: flex-start; /* ← Alineado izquierda */
   gap: 6px;
-  font-size: 0.65rem;
+  font-size: 0.7rem; /* Un poco más grande */
   font-weight: 700;
   color: #00D4AA;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 8px;
+  margin-bottom: 10px; /* Más espacio */
 }
 
 .showcase-step-pill-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px; /* Un poco más grande */
+  height: 7px;
   border-radius: 50%;
   background: #00D4AA;
   animation: showcasePulse 2s ease infinite;
@@ -288,12 +288,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
    ────────────────────────────────────────────────────────────── */
 .showcase-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: 1.3rem; /* Más pequeño */
+  font-size: 1.7rem; /* Tamaño intermedio - más grande */
   font-weight: 800;
   color: white;
   letter-spacing: -0.05em;
-  line-height: 1.1;
-  margin: 0; /* Sin margen */
+  line-height: 1.15;
+  margin: 0 0 4px 0; /* Pequeño margen bottom */
 }
 
 .showcase-headline span {
@@ -301,10 +301,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
 }
 
 .showcase-lead {
-  font-size: 0.8rem; /* Más pequeño */
+  font-size: 0.9rem; /* Tamaño intermedio */
   color: rgba(255, 255, 255, 0.5);
-  line-height: 1.4;
-  margin-bottom: 12px; /* Menos margen */
+  line-height: 1.5;
+  margin-bottom: 16px; /* Espacio intermedio */
   font-weight: 400;
   max-width: 100%;
 }
@@ -317,7 +317,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px; /* Menos margen */
+  margin-bottom: 16px; /* Margen intermedio */
 }
 
 .showcase-visual > * {
@@ -328,12 +328,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
 /* Mockup window styling */
 .ob-visual-preview {
   width: 100%;
-  max-width: 340px; /* Mucho más pequeño */
+  max-width: 420px; /* Tamaño intermedio - más grande */
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   margin: 0;
   transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -345,39 +345,39 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
 
 .ob-preview-header {
   background: rgba(255, 255, 255, 0.04);
-  padding: 6px 10px; /* Más pequeño */
+  padding: 8px 12px; /* Tamaño intermedio */
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ob-preview-dot {
-  width: 6px; /* Más pequeño */
-  height: 6px;
+  width: 8px; /* Tamaño intermedio */
+  height: 8px;
   border-radius: 50%;
 }
 
 .ob-preview-title-bar {
   flex: 1;
-  height: 5px; /* Más pequeño */
+  height: 6px; /* Tamaño intermedio */
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 2px;
-  margin: 0 6px;
+  border-radius: 3px;
+  margin: 0 8px;
 }
 
 .ob-preview-body {
-  padding: 8px; /* Más pequeño */
-  font-size: 0.75rem; /* Mucho más pequeño */
+  padding: 12px; /* Tamaño intermedio - más espacio */
+  font-size: 0.85rem; /* Tamaño intermedio */
 }
 
-/* Reducir tamaños internos de mockups */
+/* Tamaños internos de mockups */
 .ob-preview-body > div {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
 }
 
 .ob-preview-body [style*="font-size"] {
-  font-size: 0.7rem !important;
+  font-size: 0.8rem !important;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -386,16 +386,16 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-left {
 .showcase-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px; /* Mínimo gap */
+  gap: 10px; /* Gap intermedio */
   width: 100%;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .showcase-btn {
   width: 100%;
-  padding: 10px 16px; /* Más pequeño */
-  border-radius: 10px;
-  font-size: 0.85rem; /* Más pequeño */
+  padding: 14px 20px; /* Tamaño intermedio - más grande */
+  border-radius: 12px;
+  font-size: 0.95rem; /* Tamaño intermedio */
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
