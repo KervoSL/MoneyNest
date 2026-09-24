@@ -1,9 +1,9 @@
 // ════════════════════════════════════════════════════════════════
 // FEATURE SHOWCASE
 // ════════════════════════════════════════════════════════════════
-// Shows 5 visual screens to new users BEFORE onboarding.
+// Shows 7 visual screens to new users BEFORE onboarding.
 // Order: Showcase → Onboarding → App
-// State flag: S.showcase.completed
+// State flag: mn_showcase_seen
 
 (function() {
   'use strict';
@@ -13,49 +13,49 @@
 
   const slides = [
     {
-      title: 'Tus finanzas personales, reinventadas',
+      title: 'Tus finanzas personales, <span>reinventadas</span>',
       subtitle: 'Todo lo que necesitas en una sola app',
       icon: '✨',
       visual: 'welcome',
       description: 'Controla ingresos, gastos, inversiones y patrimonio. Privado, seguro y sin conexión obligatoria.'
     },
     {
-      title: 'Dashboard inteligente',
+      title: 'Dashboard <span>inteligente</span>',
       subtitle: 'Todo en un vistazo',
       icon: '📊',
       visual: 'dashboard',
       description: 'Balance mensual, gráficos interactivos y estadísticas en tiempo real. Tu situación financiera en una sola pantalla.'
     },
     {
-      title: 'Cada euro bajo control',
+      title: 'Cada euro bajo <span>control</span>',
       subtitle: 'Movimientos organizados y categorizados',
       icon: '💸',
       visual: 'movements',
       description: 'Registra ingresos y gastos con categorías personalizables. Busca, filtra y exporta tus datos en cualquier momento.'
     },
     {
-      title: 'Haz crecer tu dinero',
+      title: 'Haz crecer tu <span>dinero</span>',
       subtitle: 'Portfolio completo con rentabilidad real',
       icon: '📈',
       visual: 'investments',
       description: 'Acciones, ETFs, fondos o criptomonedas. Calcula beneficios, pérdidas y rendimiento total de tu portfolio.'
     },
     {
-      title: 'Conoce tu riqueza real',
+      title: 'Conoce tu riqueza <span>real</span>',
       subtitle: 'Patrimonio neto actualizado',
       icon: '💰',
       visual: 'networth',
       description: 'Suma automática de cuentas, inversiones y activos. Resta tus deudas. Tu situación financiera completa.'
     },
     {
-      title: 'Ahorra con propósito',
+      title: 'Ahorra con <span>propósito</span>',
       subtitle: 'Objetivos visuales que te motivan',
       icon: '🎯',
       visual: 'goals',
       description: 'Crea metas con imagen, color y fecha límite. MoneyNest calcula cuánto ahorrar cada mes para conseguirlo.'
     },
     {
-      title: '¡Empieza gratis ahora!',
+      title: '¡Empieza <span>gratis</span> ahora!',
       subtitle: '100 movimientos de prueba, sin tarjeta',
       icon: '🚀',
       visual: 'cta',
@@ -89,7 +89,7 @@
     return true;
   };
 
-  // Render showcase UI
+  // Render showcase UI (ONCE - no rebuilds)
   function renderShowcase() {
     let overlay = document.getElementById('showcaseOverlay');
 
@@ -100,52 +100,131 @@
       document.body.appendChild(overlay);
     }
 
-    const slide = slides[currentSlide];
-    const isLastSlide = currentSlide === slides.length - 1;
+    // Check if already rendered
+    if (overlay.querySelector('.showcase-split')) {
+      updateActiveSlide();
+      return;
+    }
 
+    // Render all screens at once
     overlay.innerHTML = `
-      <div class="showcase-container">
-        <!-- Progress dots -->
+      <div class="showcase-split">
+        <!-- Progress dots (top center) -->
         <div class="showcase-dots">
           ${slides.map((_, i) => `
-            <div class="showcase-dot ${i === currentSlide ? 'active' : ''} ${i < currentSlide ? 'completed' : ''}"></div>
+            <div class="showcase-dot" data-index="${i}"></div>
           `).join('')}
         </div>
 
-        <!-- Visual mockup -->
-        <div class="showcase-visual">
-          ${renderVisual(slide.visual)}
+        <!-- Skip button (top right) -->
+        <button class="showcase-skip" onclick="showcaseComplete()">
+          Saltar
+        </button>
+
+        <!-- Left panel: branding -->
+        <div class="showcase-split-left">
+          <div class="showcase-left-content">
+            <!-- Logo -->
+            <div class="showcase-brand">
+              <div class="showcase-brand-icon">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="showcaseLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00D4AA"/>
+                      <stop offset="100%" stop-color="#00A882"/>
+                    </linearGradient>
+                  </defs>
+                  <polyline points="10,24 16,16 22,20 30,10" stroke="url(#showcaseLogoGrad)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="25,9 30,10 29,15" stroke="url(#showcaseLogoGrad)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="showcase-brand-name">MoneyNest</div>
+            </div>
+
+            <!-- Current slide info (changes with active slide) -->
+            <div class="showcase-left-info">
+              <div class="showcase-left-icon"></div>
+              <h3 class="showcase-left-title"></h3>
+            </div>
+          </div>
         </div>
 
-        <!-- Content -->
-        <div class="showcase-content">
-          <div class="showcase-icon">${slide.icon}</div>
-          <h1 class="showcase-title">${slide.title}</h1>
-          <h2 class="showcase-subtitle">${slide.subtitle}</h2>
-          <p class="showcase-description">${slide.description}</p>
-        </div>
+        <!-- Right panel: screens container -->
+        <div class="showcase-split-right">
+          ${slides.map((slide, index) => `
+            <div class="showcase-screen" data-screen="${index}">
+              <div class="showcase-screen-content">
+                <div class="showcase-visual">
+                  ${renderVisual(slide.visual)}
+                </div>
+                <div class="showcase-content">
+                  <h1 class="showcase-title">${slide.title}</h1>
+                  <h2 class="showcase-subtitle">${slide.subtitle}</h2>
+                  <p class="showcase-description">${slide.description}</p>
+                </div>
+              </div>
+            </div>
+          `).join('')}
 
-        <!-- Navigation -->
-        <div class="showcase-nav">
-          ${currentSlide > 0 ? `
+          <!-- Navigation (bottom) -->
+          <div class="showcase-nav">
             <button class="showcase-btn showcase-btn-back" onclick="showcasePrev()">
               ← Anterior
             </button>
-          ` : '<div></div>'}
-
-          <button class="showcase-btn showcase-btn-primary" onclick="${isLastSlide ? 'showcaseComplete()' : 'showcaseNext()'}">
-            ${isLastSlide ? 'Comenzar 🚀' : 'Siguiente →'}
-          </button>
+            <button class="showcase-btn showcase-btn-primary" onclick="showcaseNext()">
+              Siguiente →
+            </button>
+          </div>
         </div>
-
-        <!-- Skip option (only on first slides) -->
-        ${!isLastSlide ? `
-          <button class="showcase-skip" onclick="showcaseComplete()">
-            Saltar presentación
-          </button>
-        ` : ''}
       </div>
     `;
+
+    updateActiveSlide();
+  }
+
+  // Update which slide is active (CSS classes only, no DOM rebuild)
+  function updateActiveSlide() {
+    const overlay = document.getElementById('showcaseOverlay');
+    if (!overlay) return;
+
+    // Update progress dots
+    overlay.querySelectorAll('.showcase-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === currentSlide);
+      dot.classList.toggle('completed', i < currentSlide);
+    });
+
+    // Update screens visibility
+    overlay.querySelectorAll('.showcase-screen').forEach((screen, i) => {
+      const isActive = i === currentSlide;
+      const isPrev = i < currentSlide;
+      const isNext = i > currentSlide;
+
+      screen.classList.toggle('active', isActive);
+      screen.classList.toggle('prev', isPrev);
+      screen.classList.toggle('next', isNext);
+    });
+
+    // Update left panel info
+    const leftIcon = overlay.querySelector('.showcase-left-icon');
+    const leftTitle = overlay.querySelector('.showcase-left-title');
+    if (leftIcon && leftTitle) {
+      leftIcon.textContent = slides[currentSlide].icon;
+      leftTitle.textContent = slides[currentSlide].subtitle;
+    }
+
+    // Update navigation buttons
+    const backBtn = overlay.querySelector('.showcase-btn-back');
+    const nextBtn = overlay.querySelector('.showcase-btn-primary');
+
+    if (backBtn) {
+      backBtn.style.visibility = currentSlide > 0 ? 'visible' : 'hidden';
+    }
+
+    if (nextBtn) {
+      const isLastSlide = currentSlide === slides.length - 1;
+      nextBtn.textContent = isLastSlide ? 'Comenzar 🚀' : 'Siguiente →';
+      nextBtn.onclick = isLastSlide ? showcaseComplete : showcaseNext;
+    }
   }
 
   // Render visual mockups
@@ -192,7 +271,7 @@
 
       case 'dashboard':
         return `
-          <div class="ob-visual-preview showcase-scale">
+          <div class="ob-visual-preview">
             <div class="ob-preview-header">
               <div class="ob-preview-dot" style="background:#F43F5E"></div>
               <div class="ob-preview-dot" style="background:#F59E0B"></div>
@@ -226,7 +305,7 @@
 
       case 'movements':
         return `
-          <div class="ob-visual-preview showcase-scale">
+          <div class="ob-visual-preview">
             <div class="ob-preview-header">
               <div class="ob-preview-dot" style="background:#F43F5E"></div>
               <div class="ob-preview-dot" style="background:#F59E0B"></div>
@@ -278,9 +357,63 @@
           </div>
         `;
 
+      case 'investments':
+        return `
+          <div class="ob-visual-preview">
+            <div class="ob-preview-header">
+              <div class="ob-preview-dot" style="background:#F43F5E"></div>
+              <div class="ob-preview-dot" style="background:#F59E0B"></div>
+              <div class="ob-preview-dot" style="background:#10B981"></div>
+              <div class="ob-preview-title-bar"></div>
+            </div>
+            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="text-align:center;padding:16px;background:linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.05) 100%);border:1px solid rgba(99,102,241,0.2);border-radius:14px;">
+                <div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">📈 Portfolio total</div>
+                <div style="font-size:2rem;font-weight:900;color:#6366F1;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.04em;text-shadow:0 2px 20px rgba(99,102,241,0.3);">32.800 €</div>
+                <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;background:rgba(16,185,129,0.15);border-radius:20px;">
+                  <span style="font-size:.7rem;font-weight:800;color:#10B981;">↑ +3.680 €</span>
+                  <span style="font-size:.65rem;font-weight:700;color:rgba(16,185,129,0.7);">(+12,6%)</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#6366F1,#4F46E5);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(99,102,241,0.3);">📊</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Vanguard S&P 500</div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
+                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">18.500 €</span>
+                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+9,2%</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(245,158,11,0.3);">₿</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Bitcoin</div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
+                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">9.200 €</span>
+                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+28,3%</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(139,92,246,0.3);">🏢</div>
+                  <div style="flex:1;">
+                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Apple Inc.</div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
+                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">5.100 €</span>
+                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+7,1%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
       case 'networth':
         return `
-          <div class="ob-visual-preview showcase-scale">
+          <div class="ob-visual-preview">
             <div class="ob-preview-header">
               <div class="ob-preview-dot" style="background:#F43F5E"></div>
               <div class="ob-preview-dot" style="background:#F59E0B"></div>
@@ -319,63 +452,9 @@
           </div>
         `;
 
-      case 'investments':
-        return `
-          <div class="ob-visual-preview showcase-scale">
-            <div class="ob-preview-header">
-              <div class="ob-preview-dot" style="background:#F43F5E"></div>
-              <div class="ob-preview-dot" style="background:#F59E0B"></div>
-              <div class="ob-preview-dot" style="background:#10B981"></div>
-              <div class="ob-preview-title-bar"></div>
-            </div>
-            <div class="ob-preview-body" style="display:flex;flex-direction:column;gap:12px;">
-              <div style="text-align:center;padding:16px;background:linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.05) 100%);border:1px solid rgba(99,102,241,0.2);border-radius:14px;">
-                <div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">📈 Portfolio total</div>
-                <div style="font-size:2rem;font-weight:900;color:#6366F1;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.04em;text-shadow:0 2px 20px rgba(99,102,241,0.3);">32.800 €</div>
-                <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;background:rgba(16,185,129,0.15);border-radius:20px;">
-                  <span style="font-size:.7rem;font-weight:800;color:#10B981;">↑ +3.680 €</span>
-                  <span style="font-size:.65rem;font-weight:700;color:rgba(16,185,129,0.7);">(+12,6%)</span>
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;transition:all .2s;">
-                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#6366F1,#4F46E5);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(99,102,241,0.3);">📊</div>
-                  <div style="flex:1;">
-                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Vanguard S&P 500</div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
-                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">18.500 €</span>
-                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+9,2%</span>
-                    </div>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
-                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(245,158,11,0.3);">₿</div>
-                  <div style="flex:1;">
-                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Bitcoin</div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
-                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">9.200 €</span>
-                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+28,3%</span>
-                    </div>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
-                  <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 12px rgba(139,92,246,0.3);">🏢</div>
-                  <div style="flex:1;">
-                    <div style="font-size:.8rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:3px;">Apple Inc.</div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:.65rem;">
-                      <span style="color:rgba(255,255,255,0.5);font-weight:600;">5.100 €</span>
-                      <span style="padding:2px 8px;background:rgba(16,185,129,0.15);color:#10B981;font-weight:700;border-radius:6px;">+7,1%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-
       case 'goals':
         return `
-          <div class="ob-visual-preview showcase-scale">
+          <div class="ob-visual-preview">
             <div class="ob-preview-header">
               <div class="ob-preview-dot" style="background:#F43F5E"></div>
               <div class="ob-preview-dot" style="background:#F59E0B"></div>
@@ -497,32 +576,20 @@
     }
   }
 
-  // Navigation
+  // Navigation - CSS only, no DOM rebuild
   window.showcaseNext = function() {
     if (currentSlide < slides.length - 1) {
       currentSlide++;
-      renderShowcase();
-
-      // Animate transition
-      const container = document.querySelector('.showcase-container');
-      if (container) {
-        container.classList.add('showcase-slide-transition');
-        setTimeout(() => container.classList.remove('showcase-slide-transition'), 300);
-      }
+      updateActiveSlide();
+    } else {
+      showcaseComplete();
     }
   };
 
   window.showcasePrev = function() {
     if (currentSlide > 0) {
       currentSlide--;
-      renderShowcase();
-
-      // Animate transition
-      const container = document.querySelector('.showcase-container');
-      if (container) {
-        container.classList.add('showcase-slide-transition');
-        setTimeout(() => container.classList.remove('showcase-slide-transition'), 300);
-      }
+      updateActiveSlide();
     }
   };
 
@@ -560,11 +627,7 @@
     if (!overlay || overlay.style.display === 'none') return;
 
     if (e.key === 'ArrowRight' || e.key === 'Enter') {
-      if (currentSlide === slides.length - 1) {
-        showcaseComplete();
-      } else {
-        showcaseNext();
-      }
+      showcaseNext();
     } else if (e.key === 'ArrowLeft') {
       showcasePrev();
     } else if (e.key === 'Escape') {
