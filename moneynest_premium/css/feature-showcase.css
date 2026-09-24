@@ -47,7 +47,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 60px 40px 60px 60px; /* Más margen izquierdo */
+  padding: 60px 48px;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -92,7 +92,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .showcase-brand-icon {
@@ -612,11 +612,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .welcome-right {
   display: flex;
   flex-direction: column;
-  gap: clamp(18px, 3vh, 24px);
+  gap: 0;
   justify-content: center;
   align-items: flex-start;
   animation: welcomeFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
-  padding-top: clamp(20px, 4vh, 40px);
+  padding: 60px 64px;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -624,14 +624,18 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    ────────────────────────────────────────────────────────────── */
 .welcome-headline {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
-  font-weight: 900;
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.15;
   color: #FFFFFF;
-  margin: 0;
+  margin: 0 0 16px;
   text-shadow: 0 4px 35px rgba(0, 0, 0, 0.35);
   text-align: left;
+}
+
+.welcome-headline span {
+  color: #00D4AA;
 }
 
 @keyframes welcomeHeadlineIn {
@@ -649,12 +653,12 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    SUBHEADLINE (breve, discreta)
    ────────────────────────────────────────────────────────────── */
 .welcome-subheadline {
-  font-size: clamp(0.95rem, 2vw, 1.1rem);
-  font-weight: 500;
+  font-size: clamp(14px, 1.8vw, 20px);
+  font-weight: 400;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.65);
-  max-width: 100%;
-  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 480px;
+  margin: 0 0 40px;
   text-align: left;
 }
 
@@ -663,21 +667,18 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
    ────────────────────────────────────────────────────────────── */
 .welcome-cta {
   width: auto;
-  padding: clamp(13px, 2.2vh, 16px) clamp(28px, 4vw, 36px);
+  padding: 16px 32px;
   font-family: inherit;
-  font-size: clamp(0.95rem, 2vw, 1.05rem);
-  font-weight: 700;
+  font-size: clamp(0.88rem, 2vw, 1rem);
+  font-weight: 800;
   letter-spacing: -0.01em;
   color: #0A0E17;
-  background: linear-gradient(135deg, #00D4AA 0%, #00E4BA 100%);
+  background: linear-gradient(135deg, #00D4AA, #00A882);
   border: none;
-  border-radius: 12px;
+  border-radius: 13px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow:
-    0 5px 22px rgba(0, 212, 170, 0.38),
-    0 2px 5px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -701,11 +702,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 .welcome-cta:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow:
-    0 8px 35px rgba(0, 212, 170, 0.55),
-    0 3px 10px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 212, 170, 0.4);
 }
 
 .welcome-cta:active {
@@ -745,7 +743,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   width: 100%;
   max-width: 480px;
   display: flex;
-  background: #0C1119;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
@@ -1191,7 +1189,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   .welcome-premium {
     grid-template-columns: 1fr;
     gap: clamp(32px, 5vh, 48px);
-    padding: clamp(28px, 4.5vh, 48px) clamp(28px, 4.5vw, 56px);
+    padding: 32px 24px;
   }
 
   .welcome-left {
@@ -1201,7 +1199,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   .welcome-right {
     width: 100%;
-    padding-top: 0;
+    padding: 0;
   }
 
   .welcome-dashboard-mockup {
@@ -1279,7 +1277,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
   /* Welcome mobile */
   .welcome-premium {
-    padding: clamp(24px, 3.5vh, 40px) clamp(24px, 3.5vw, 40px);
+    padding: 32px 24px;
     max-width: 100%;
     grid-template-columns: 1fr;
     gap: 28px;

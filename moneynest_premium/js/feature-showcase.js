@@ -340,22 +340,22 @@
             <div class="welcome-right">
               <!-- Headline -->
               <h1 class="welcome-headline">
-                Your money,<br>finally clear.
+                Tu dinero,<br>bajo <span>control</span>.
               </h1>
 
               <!-- Subheadline -->
               <p class="welcome-subheadline">
-                Track everything that matters to your financial life — in one simple place.
+                Ingresos, gastos, inversiones y patrimonio en un solo lugar.
               </p>
 
               <!-- CTA Primary -->
               <button class="welcome-cta" onclick="showcaseNext()">
-                Get started
+                Comenzar gratis →
               </button>
 
               <!-- Login link -->
               <a href="#" class="welcome-login-link" onclick="event.preventDefault(); showcaseComplete(); setTimeout(() => window.showAuthModal?.('login'), 200)">
-                Already have an account? <span>Log in</span>
+                ¿Ya tienes cuenta? <span>Inicia sesión</span>
               </a>
             </div>
             <!-- FIN columna derecha -->
