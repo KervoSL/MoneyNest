@@ -12302,40 +12302,48 @@ function renderAnalisis() {
       const key = cL.slice(0,15)
       if (seen.has(key)) return
       seen.add(key)
-      subs.push({ nombre: g.concepto||'—', importe: Number(g.importe)||0, categoria: g.categoria||'', emoji: catEmoji(g.categoria), frecuencia: 'mensual', source: 'gastos' })
+      subs.push({ nombre: g.concepto||'—', importe: Number(g.importe)||0, categoria: g.categoria||'', emoji: catEmoji(g.categoria), frecuencia: 'mensual', proximaEjecucion: null })
     })
     if (window.MNRecurring) {
       MNRecurring.getRecurrings().filter(r => r.activa && r.type === 'gasto').forEach(r => {
         const key = (r.nombre||'').toLowerCase().slice(0,15)
         if (seen.has(key)) return
         seen.add(key)
-        subs.push({ nombre: r.nombre||'—', importe: Number(r.importe)||0, categoria: r.categoria||'', emoji: r.emoji||catEmoji(r.categoria), frecuencia: r.frecuencia||'mensual', source: 'recurring' })
+        subs.push({ nombre: r.nombre||'—', importe: Number(r.importe)||0, categoria: r.categoria||'', emoji: r.emoji||catEmoji(r.categoria), frecuencia: r.frecuencia||'mensual', proximaEjecucion: r.proximaEjecucion||null })
       })
     }
     if (!subs.length) return ''
     const toMonthly = s => s.frecuencia === 'anual' ? s.importe/12 : s.frecuencia === 'semanal' ? s.importe*4.33 : s.importe
     const totalMes = subs.reduce((a,s) => a + toMonthly(s), 0)
-    const freqLabel = f => f === 'anual' ? t('anual','Anual') : f === 'semanal' ? t('semanal','Semanal') : t('mensual','Mensual')
+    const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : '—'
+    subs.sort((a,b) => toMonthly(b) - toMonthly(a))
+    const groups = [
+      { key: 'mensual', label: t('mensuales','Mensuales'), items: subs.filter(s => s.frecuencia === 'mensual') },
+      { key: 'anual', label: t('anuales','Anuales'), items: subs.filter(s => s.frecuencia === 'anual') },
+      { key: 'semanal', label: t('semanales','Semanales'), items: subs.filter(s => s.frecuencia === 'semanal') },
+    ].filter(g => g.items.length > 0)
+    const renderGroup = g => `
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);padding:10px 0 6px">${g.label} (${g.items.length})</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('importe','Importe')}/${t('mes_lbl','mes')}</th><th>${t('proximo_pago','Próximo pago')}</th></tr></thead>
+          <tbody>${g.items.map(s=>`<tr>
+            <td class="td-main"><span style="margin-right:6px;font-size:1.1em">${s.emoji}</span>${s.nombre}</td>
+            <td class="td-amount td-neg">−${eur(toMonthly(s))}</td>
+            <td style="font-size:.78rem;color:var(--text2)">${fmtDate(s.proximaEjecucion)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`
     return `
   <!-- ── SUSCRIPCIONES ACTIVAS ─────────────────────────────── -->
   <div class="card mn-section">
     <div class="card-header">
       <div>
         <div class="card-title">🔄 ${t('suscripciones_activas','Suscripciones activas')}</div>
-        <div class="card-subtitle">${subs.length} ${t('activas_lbl','activas')} · <strong style="color:var(--text)">${eur(totalMes)}/${t('mes_lbl','mes')}</strong> · ${eur(totalMes*12)}/${t('año_lbl','año')}</div>
+        <div class="card-subtitle">${subs.length} ${t('activas_lbl','activas')} · <strong style="color:var(--text)">${eur(totalMes)}/${t('mes_lbl','mes')}</strong></div>
       </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('categoria','Categoría')}</th><th>${t('importe','Importe')}/mes</th><th>${t('frecuencia','Frecuencia')}</th></tr></thead>
-        <tbody>${subs.map(s=>`<tr>
-          <td class="td-main"><span style="margin-right:4px">${s.emoji}</span>${s.nombre}</td>
-          <td><span class="tag">${s.categoria||'—'}</span></td>
-          <td class="td-amount td-neg">−${eur(toMonthly(s))}</td>
-          <td><span class="badge badge-accent">${freqLabel(s.frecuencia)}</span></td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>
+    ${groups.map(renderGroup).join('')}
     <div style="margin-top:10px;padding:8px 12px;background:var(--red-dim);border-radius:var(--radius-sm);font-size:.75rem;color:var(--red)">
       💡 ${t('suscripciones_tip','¿Todas siguen activas? Revisa periódicamente para ahorrar hasta')} <strong>${eur(totalMes*0.2)}/${t('mes_lbl','mes')}</strong>.
     </div>
