@@ -1288,11 +1288,22 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 .obs-bank-dot {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: var(--c, #333);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.obs-bank-abbr {
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  line-height: 1;
 }
 
 .obs-bank-row > span:first-of-type {

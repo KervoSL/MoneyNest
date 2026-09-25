@@ -351,25 +351,26 @@
       case 'connect':
         return `
           <div class="obs-scene obs-connect">
-            <div class="obs-gcard obs-card-main obs-anim" style="--d:0">
-              <div class="obs-card-head">Conectar cuenta</div>
-              <div class="obs-bank-list">
-                <div class="obs-bank-row obs-anim" style="--d:1"><div class="obs-bank-dot" style="--c:#004481"></div><span>BBVA</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:2"><div class="obs-bank-dot" style="--c:#EC0000"></div><span>Santander</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:3"><div class="obs-bank-dot" style="--c:#007EAF"></div><span>CaixaBank</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:4"><div class="obs-bank-dot" style="--c:#6C3AED"></div><span>Revolut</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:5"><div class="obs-bank-dot" style="--c:#1A1A1A"></div><span>N26</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:6"><div class="obs-bank-dot" style="--c:#0065A4"></div><span>Openbank</span><span class="obs-chevron">›</span></div>
-              </div>
-            </div>
-            <div class="obs-gcard obs-connect-status obs-anim" style="--d:7">
+            <div class="obs-gcard obs-connect-status obs-anim" style="--d:0">
               <div class="obs-pulse-dot"></div>
               <span>Conexión segura</span>
               <span class="obs-status-enc">· Encriptación bancaria</span>
             </div>
+            <div class="obs-gcard obs-card-main obs-anim" style="--d:1">
+              <div class="obs-card-head">Conectar cuenta</div>
+              <div class="obs-bank-list" style="position:relative;max-height:232px;overflow:hidden">
+                <div class="obs-bank-row obs-anim" style="--d:2"><div class="obs-bank-dot" style="--c:#004481"><span class="obs-bank-abbr">BBVA</span></div><span>BBVA</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:3"><div class="obs-bank-dot" style="--c:#EC0000"><span class="obs-bank-abbr" style="font-size:14px;font-weight:900">S</span></div><span>Santander</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:4"><div class="obs-bank-dot" style="--c:#007BC4"><span class="obs-bank-abbr" style="font-size:16px">★</span></div><span>CaixaBank</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:5"><div class="obs-bank-dot" style="--c:#FF6200"><span class="obs-bank-abbr">ING</span></div><span>ING</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:6"><div class="obs-bank-dot" style="--c:#E8410A"><span class="obs-bank-abbr" style="font-size:9px">BKT</span></div><span>Bankinter</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:7"><div class="obs-bank-dot" style="--c:#006F5B"><span class="obs-bank-abbr">BS</span></div><span>Sabadell</span><span class="obs-chevron">›</span></div>
+                <div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(transparent,rgba(10,15,30,0.95));pointer-events:none"></div>
+              </div>
+            </div>
             <div class="obs-feature-strip obs-anim" style="--d:8">
               <div class="obs-feat-item"><span class="obs-feat-icon">🔒</span><div><strong>Conexión segura</strong><span>Tus datos siempre protegidos</span></div></div>
-              <div class="obs-feat-item"><span class="obs-feat-icon">⚡</span><div><strong>Sin complicaciones</strong><span>En menos de 2 minutos</span></div></div>
+              <div class="obs-feat-item"><span class="obs-feat-icon">🚀</span><div><strong>Sin complicaciones</strong><span>En menos de 2 minutos</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">🏦</span><div><strong>Todas tus cuentas</strong><span>En un único lugar</span></div></div>
             </div>
           </div>
