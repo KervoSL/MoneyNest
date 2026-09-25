@@ -82,7 +82,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0;
+  gap: 24px;
   width: 100%;
   max-width: 340px;
 }
@@ -92,7 +92,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 32px;
 }
 
 .showcase-brand-icon {
@@ -128,7 +127,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   color: #E8EFF7;
   letter-spacing: -0.04em;
   line-height: 1.2;
-  margin-bottom: 32px;
 }
 
 .showcase-left-tagline span {
@@ -244,10 +242,10 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   max-width: 580px;
   height: 100%;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto; /* pill / title / description / content / nav */
+  grid-template-rows: auto 1fr auto;
   gap: clamp(12px, 2vh, 18px);
   align-items: start;
-  padding: clamp(16px, 2vh, 24px) 0;
+  padding: 0;
 }
 
 /* Welcome screen content: full bleed for floating cards */
@@ -257,7 +255,14 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   flex-direction: column;
   gap: 0;
   align-items: center;
-  padding: clamp(24px, 3vh, 40px) 0;
+  padding: 0;
+  flex: 1;
+}
+
+.welcome-screen .showcase-visual {
+  flex: 1;
+  width: 100%;
+  height: 100%;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -295,6 +300,32 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   }
 }
 
+/* Step progress dots */
+.showcase-step-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.showcase-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.3s ease;
+}
+
+.showcase-step-dot.active {
+  background: #00D4AA;
+}
+
+/* Header group (dots + headline + description) */
+.showcase-header {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2vh, 18px);
+}
+
 /* ──────────────────────────────────────────────────────────────
    HEADLINE (title - grid row 2)
    ────────────────────────────────────────────────────────────── */
@@ -306,8 +337,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   letter-spacing: -0.05em;
   line-height: 1.15;
   margin: 0;
-  grid-row: 2;
-  align-self: start;
 }
 
 .showcase-headline span {
@@ -320,8 +349,6 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.55;
   margin: 0;
-  grid-row: 3;
-  align-self: start;
 }
 
 .showcase-lead {
@@ -339,9 +366,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .showcase-visual {
   width: 100%;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
-  grid-row: 4;
   align-self: stretch;
   margin: 0;
   overflow: hidden;
@@ -416,10 +442,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   flex-direction: column;
   gap: clamp(8px, 1.5vh, 10px);
   width: 100%;
-  grid-row: 5;
   align-self: end;
-  margin-top: auto; /* Empuja hacia abajo */
-  flex-shrink: 0; /* No se comprime */
+  flex-shrink: 0;
 }
 
 .showcase-btn {
@@ -515,11 +539,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   max-width: 100%;
   position: relative;
   z-index: 1;
-  min-height: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(40px, 6vh, 80px) clamp(24px, 4vw, 60px);
+  padding: clamp(24px, 3vh, 40px) clamp(24px, 4vw, 60px);
   overflow: hidden;
 }
 
@@ -812,7 +836,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .wc-cuentas {
   width: clamp(220px, 19vw, 280px);
-  bottom: 10%;
+  bottom: 4%;
   left: 2%;
   animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
 }
@@ -833,7 +857,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 
 .wc-objetivos {
   width: clamp(190px, 16vw, 230px);
-  bottom: 6%;
+  bottom: 2%;
   right: 3%;
   animation: wcFloat 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s backwards;
 }

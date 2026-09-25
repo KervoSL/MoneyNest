@@ -164,17 +164,14 @@
             <div class="showcase-screen ${index === 0 ? 'welcome-screen' : ''}" data-screen="${index}" data-visual="${slide.visual}">
               <div class="showcase-screen-content">
                 ${index === 0 ? '' : `
-                  <!-- Step indicator -->
-                  <div class="showcase-step-pill">
-                    <div class="showcase-step-pill-dot"></div>
-                    PASO ${index + 1} DE ${slides.length}
+                  <!-- Header: dots + headline + description -->
+                  <div class="showcase-header">
+                    <div class="showcase-step-dots">
+                      ${slides.map((_, i) => `<div class="showcase-step-dot${i === index ? ' active' : ''}"></div>`).join('')}
+                    </div>
+                    <h1 class="showcase-headline">${slide.title}</h1>
+                    <p class="showcase-description">${slide.description}</p>
                   </div>
-
-                  <!-- Headline -->
-                  <h1 class="showcase-headline">${slide.title}</h1>
-
-                  <!-- Description -->
-                  <p class="showcase-description">${slide.description}</p>
 
                   <!-- Visual mockup -->
                   <div class="showcase-visual">
