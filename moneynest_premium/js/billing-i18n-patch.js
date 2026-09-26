@@ -58,7 +58,7 @@
       // ── billing-ui.js — Paywall (overlay bloqueado) ─────────
       billing_lock_badge:             'Tu prueba ha expirado',
       billing_lock_title:             'Acceso bloqueado',
-      billing_lock_desc:              'Tu periodo de prueba gratuita de 24h ha concluido.<br>Desbloquea MoneyNest para siempre por un pago único de <strong>€6.99</strong>.',
+      billing_lock_desc:              'Has alcanzado el límite de 100 movimientos de tu prueba gratuita.<br>Desbloquea MoneyNest para siempre por un pago único de <strong>€6.99</strong>.',
       billing_lock_feat1:             '✅ Todos tus datos están seguros',
       billing_lock_feat2:             '✅ Acceso ilimitado sin suscripción',
       billing_lock_feat3:             '✅ Exportación PDF y Excel',
@@ -82,10 +82,10 @@
       billing_badge_pro_trial:        'Pro · Prueba',
       billing_badge_pro_active:       'Pro Activo',
 
-      // ── billing-ui.js — Plan Free Trial ─────────────────────
-      billing_plan_free_name:         'Free Trial',
+      // ── billing-ui.js — Plan Prueba gratuita ─────────────────
+      billing_plan_free_name:         'Prueba gratuita',
       billing_plan_free_price:        'Gratis',
-      billing_plan_free_period:       'Acceso 24 horas',
+      billing_plan_free_period:       'Hasta 100 movimientos',
 
       // ── billing-ui.js — Features compartidas ────────────────
       billing_plan_feat_pantallas:    '✓ 📱 Todas las pantallas',

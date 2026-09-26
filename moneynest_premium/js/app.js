@@ -109,6 +109,7 @@ let _lastTrialWarningShownAt = null
 // en init() ANTES de load() — en ese punto S todavia no existe.
 function _countTrialMovements() {
   try {
+    if (localStorage.getItem('mn7_demo_mode') === 'true') return 0
     const raw = localStorage.getItem(SK)
     if (!raw) return 0
     const data = JSON.parse(raw)
@@ -4142,6 +4143,7 @@ function save() {
   try {
     const user = getUser()
     if (user.plan === 'trial') {
+      if (typeof isDemoMode === 'function' && isDemoMode()) return
       const total = S.ingresos.length + S.gastos.length
       if (total >= TRIAL_MOVEMENT_LIMIT) {
         patchUser({ plan: 'locked_local' })
@@ -7783,28 +7785,28 @@ function renderConfiguracion() {
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ${t('page_configuracion')}</div><div class="page-sub">${t('cfg_personaliza_sub')} · v${VERSION}</div></div>
   </div>
 
-  <div class="grid-2">
-    <!-- Columna izquierda -->
-    <div style="display:flex;flex-direction:column;gap:20px">
+  <div style="max-width:720px;display:flex;flex-direction:column;gap:0">
 
-      <!-- Perfil -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">👤 ${t('cfg_perfil')}</div></div>
-        <div class="form-group" style="margin-bottom:12px">
-          <label>${t('cfg_nombre')}</label>
-          <input type="text" id="cfgNombre" value="${S.usuario.nombre||''}" placeholder="${t('cfg_nombre')}">
+    <!-- ── CUENTA ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">CUENTA</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:var(--text1)">👤 ${t('cfg_nombre')}</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="guardarPerfil()">${t('cfg_guardar')}</button>
-        ${((window.MNSupabaseAuth?.isLoggedIn?.() ?? false) && !window.MNSupabaseAuth?.getProvider?.()) ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="window.MNAuthUI?.showAuthModal?.('update-password')">🔑 ${t('cfg_btn_cambiar_password','Cambiar contraseña')}</button>` : ''}
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="text" id="cfgNombre" value="${S.usuario.nombre||''}" placeholder="${t('cfg_nombre')}" style="width:180px;font-size:.82rem">
+          <button class="btn btn-primary btn-sm" onclick="guardarPerfil()" style="white-space:nowrap">${t('cfg_guardar')}</button>
+        </div>
       </div>
-
-      </div>
-
-
-      <!-- Idioma -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">🌐 ${t('cfg_idioma')}</div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+      ${((window.MNSupabaseAuth?.isLoggedIn?.() ?? false) && !window.MNSupabaseAuth?.getProvider?.()) ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="font-size:.85rem;font-weight:700;color:var(--text1)">🔑 ${t('cfg_btn_cambiar_password','Contraseña')}</div>
+        <button class="btn btn-ghost btn-sm" onclick="window.MNAuthUI?.showAuthModal?.('update-password')">${t('cfg_btn_cambiar_password','Cambiar contraseña')}</button>
+      </div>` : ''}
+      <div style="padding:12px 0">
+        <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:8px">🌐 ${t('cfg_idioma')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${[['es','🇪🇸','Español'],['en','🇬🇧','English']].map(([code,flag,name])=>`
             <div onclick="setLang('${code}');renderConfiguracion()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--bg2);border:1.5px solid ${_currentLang===code?'var(--accent)':'var(--border)'};cursor:pointer;transition:all .15s;${_currentLang===code?'background:var(--accent-dim)':''}">
               <span style="font-size:1.1rem">${flag}</span>
@@ -7813,162 +7815,133 @@ function renderConfiguracion() {
             </div>`).join('')}
         </div>
       </div>
+    </div>
 
-      <!-- Apariencia -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">🎨 ${t('cfg_apariencia')}</div></div>
-        <div style="display:flex;gap:12px;margin-bottom:8px">
-          <div onclick="cfgSetTheme('dark')" style="flex:1;padding:16px 12px;border-radius:var(--radius-sm);background:#0F1420;border:2px solid ${isDark?'var(--accent)':'rgba(255,255,255,0.08)'};cursor:pointer;text-align:center;transition:all .15s">
-            <div style="font-size:1.4rem">🌙</div>
-            <div style="font-size:.8rem;color:#94A3B8;margin-top:6px;font-weight:700">${t('cfg_oscuro')}</div>
-            ${isDark?`<div style="font-size:.68rem;color:var(--accent);margin-top:2px">${t('cfg_activo')}</div>`:''}
-          </div>
-          <div onclick="cfgSetTheme('light')" style="flex:1;padding:16px 12px;border-radius:var(--radius-sm);background:#F8FAFC;border:2px solid ${!isDark?'var(--accent)':'#E2E8F0'};cursor:pointer;text-align:center;transition:all .15s">
-            <div style="font-size:1.4rem">☀️</div>
-            <div style="font-size:.8rem;color:#475569;margin-top:6px;font-weight:700">${t('cfg_claro')}</div>
-            ${!isDark?`<div style="font-size:.68rem;color:var(--accent);margin-top:2px">${t('cfg_activo')}</div>`:''}
-          </div>
+    <!-- ── APARIENCIA ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APARIENCIA</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="display:flex;gap:12px;margin-bottom:8px">
+        <div onclick="cfgSetTheme('dark')" style="flex:1;padding:14px 12px;border-radius:var(--radius-sm);background:#0F1420;border:2px solid ${isDark?'var(--accent)':'rgba(255,255,255,0.08)'};cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:1.2rem">🌙</div>
+          <div style="font-size:.78rem;color:#94A3B8;margin-top:4px;font-weight:700">${t('cfg_oscuro')}</div>
+          ${isDark?`<div style="font-size:.65rem;color:var(--accent);margin-top:2px">${t('cfg_activo')}</div>`:''}
         </div>
-        <div style="font-size:.75rem;color:var(--text3)">${t('cfg_apariencia_tip')}</div>
-      </div>
-
-      <!-- Datos -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">📦 ${t('cfg_datos')}</div><div class="card-subtitle">MoneyNest v${VERSION}</div></div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-export-panel')">${t('cfg_exportar_pdf')}</button>
-          <button class="btn btn-secondary btn-sm" onclick="dmExportMoneynest()">${t('cfg_backup_json')}</button>
-          <button class="btn btn-secondary btn-sm" id="driveBackupBtn" onclick="exportarADrive()" style="background:var(--indigo-dim);border-color:var(--indigo-dim);color:var(--indigo)">
-            ${t('cfg_drive')}
-            <span id="driveBackupStatus" style="font-size:.7rem;margin-left:6px;opacity:.8"></span>
-          </button>
-          <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-import-panel')" style="cursor:pointer;justify-content:flex-start">
-            ${t('cfg_importar')}
-          </button>
-          <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
-          <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
-          <div style="font-size:.72rem;color:var(--text3);margin:2px 0 8px">${t('cfg_borrar_todo_hint','Borra tus datos financieros, pero mantiene tu cuenta y tu plan activos.')}</div>
-          <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
-          <div style="font-size:.72rem;color:var(--text3);margin-top:2px">${t('cfg_eliminar_cuenta_hint','Elimina tu cuenta por completo, tu plan y todos tus datos. No se puede deshacer.')}</div>
+        <div onclick="cfgSetTheme('light')" style="flex:1;padding:14px 12px;border-radius:var(--radius-sm);background:#F8FAFC;border:2px solid ${!isDark?'var(--accent)':'#E2E8F0'};cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:1.2rem">☀️</div>
+          <div style="font-size:.78rem;color:#475569;margin-top:4px;font-weight:700">${t('cfg_claro')}</div>
+          ${!isDark?`<div style="font-size:.65rem;color:var(--accent);margin-top:2px">${t('cfg_activo')}</div>`:''}
         </div>
       </div>
+      <div style="font-size:.72rem;color:var(--text3)">${t('cfg_apariencia_tip')}</div>
+    </div>
 
-      <!-- Modo Demo -->
-      <div class="card" style="background:linear-gradient(160deg, var(--gold-dim), var(--card) 65%);border:1.5px solid rgba(245,158,11,.25)">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🔍 ${t('cfg_demo_titulo','Modo demo')}</div>
-            <div class="card-subtitle">${isDemoMode()
-              ? `<span style="color:var(--gold);font-weight:700">${t('cfg_demo_activo_lbl','● Activo')}</span>`
-              : t('cfg_demo_inactivo_lbl','Explorar la app con datos de ejemplo')}</div>
+    <!-- ── SEGURIDAD ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">SEGURIDAD</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:6px">🔒 ${t('cfg_pin_titulo','Bloqueo con PIN')}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-bottom:12px">${t('cfg_pin_sub','Pide un PIN cada vez que abras la app')}</div>
+      ${(() => {
+        const eligible = window.MNPinLock && window.MNPinLock.hasEligiblePlan()
+        if (!eligible) {
+          return `<div style="font-size:.82rem;color:var(--text2);line-height:1.6">
+            ${t('cfg_pin_bloqueado','Disponible con el plan Local o Pro.')}
+            <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%" onclick="goTo('facturacion')">${t('cfg_pin_ver_planes','Ver planes')}</button>
+          </div>`
+        }
+        const enabled = window.MNPinLock.isEnabled()
+        const timing = window.MNPinLock.getTiming()
+        return `
+          <div class="form-check" style="margin-bottom:${enabled?'14px':'0'}">
+            <input type="checkbox" id="pinToggle" ${enabled?'checked':''} onchange="_onPinToggle(this)">
+            <label for="pinToggle">${t('cfg_pin_activar','Activar bloqueo por PIN')}</label>
           </div>
-          ${isDemoMode() ? `<span style="font-size:.68rem;padding:3px 10px;background:var(--gold-dim);color:var(--gold);border-radius:99px;font-weight:700">DEMO</span>` : ''}
-        </div>
-        <div style="font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:16px">
-          ${isDemoMode()
-            ? t('cfg_demo_explicacion_activo','Estás viendo MoneyNest con datos de ejemplo generados automáticamente. Tus datos reales están a salvo y volverán al desactivar el modo demo.')
-            : t('cfg_demo_explicacion','Activa el modo demo para explorar todas las funciones de MoneyNest con datos de ejemplo realistas, sin afectar a tu información real. Ideal para hacerte una idea rápida antes de empezar a usar tus propios datos.')}
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${isDemoMode()
-            ? `<button class="btn btn-danger btn-sm" onclick="confirmar(t('confirm_salir_demo'),()=>{clearDemoData()},{titulo:t('confirm_salir_demo_titulo'),icono:'🏁',btnLabel:t('confirm_salir_demo_btn')})">${t('cfg_demo_salir','🏁 Desactivar demo')}</button>`
-            : `<button class="btn btn-secondary btn-sm" onclick="activateDemoWithConfig()" style="background:var(--gold-dim);border-color:rgba(245,158,11,.2);color:var(--gold);font-weight:700">${t('cfg_demo_activar','🚀 Activar modo demo')}</button>`}
-        </div>
+          ${enabled ? `
+            <div class="form-group" style="margin-bottom:10px">
+              <label>${t('cfg_pin_cuando','Bloquear')}</label>
+              <select id="pinTimingSelect" onchange="MNPinLock.setTiming(this.value)">
+                <option value="immediate" ${timing==='immediate'?'selected':''}>${t('cfg_pin_inmediato','Inmediatamente')}</option>
+                <option value="1min" ${timing==='1min'?'selected':''}>${t('cfg_pin_1min','Tras 1 minuto en segundo plano')}</option>
+                <option value="5min" ${timing==='5min'?'selected':''}>${t('cfg_pin_5min','Tras 5 minutos en segundo plano')}</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNPinLock.startSetup(()=>render())">${t('cfg_pin_cambiar','Cambiar PIN')}</button>
+          ` : ''}
+        `
+      })()}
+    </div>
+
+    <!-- ── NOTIFICACIONES ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">NOTIFICACIONES</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div id="mn-notif-settings-container"></div>
+    </div>
+
+    <!-- ── DATOS ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">DATOS</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-export-panel')">${t('cfg_exportar_pdf')}</button>
+        <button class="btn btn-secondary btn-sm" onclick="dmExportMoneynest()">${t('cfg_backup_json')}</button>
+        <button class="btn btn-secondary btn-sm" id="driveBackupBtn" onclick="exportarADrive()" style="background:var(--indigo-dim);border-color:var(--indigo-dim);color:var(--indigo)">
+          ${t('cfg_drive')}
+          <span id="driveBackupStatus" style="font-size:.7rem;margin-left:6px;opacity:.8"></span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-import-panel')" style="cursor:pointer;justify-content:flex-start">
+          ${t('cfg_importar')}
+        </button>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0">
+        <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
+        <div style="font-size:.72rem;color:var(--text3);margin:2px 0 8px">${t('cfg_borrar_todo_hint','Borra tus datos financieros, pero mantiene tu cuenta y tu plan activos.')}</div>
+        <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:2px">${t('cfg_eliminar_cuenta_hint','Elimina tu cuenta por completo, tu plan y todos tus datos. No se puede deshacer.')}</div>
       </div>
+    </div>
 
-      <!-- Instalar app -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">📲 ${t('install_cfg_titulo','Instalar app')}</div>
-            <div class="card-subtitle">${t('install_cfg_sub','Acceso rápido · offline · sin navegador')}</div>
-          </div>
-        </div>
+    <!-- ── APLICACIÓN ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APLICACIÓN</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:14px">
+        <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:6px">📲 ${t('install_cfg_titulo','Instalar app')}</div>
+        <div style="font-size:.72rem;color:var(--text3);margin-bottom:8px">${t('install_cfg_sub','Acceso rápido · offline · sin navegador')}</div>
         ${window.MNInstall ? window.MNInstall.renderInstallCard() : ''}
       </div>
-
-      <!-- Bloqueo con PIN -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">🔒 ${t('cfg_pin_titulo','Bloqueo con PIN')}</div>
-            <div class="card-subtitle">${t('cfg_pin_sub','Pide un PIN cada vez que abras la app')}</div>
-          </div>
+      <div style="padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:.85rem;font-weight:700;color:var(--text1)">🔍 ${t('cfg_demo_titulo','Modo demo')}</div>
+          ${isDemoMode() ? `<span style="font-size:.68rem;padding:3px 10px;background:var(--gold-dim);color:var(--gold);border-radius:99px;font-weight:700">DEMO</span>` : ''}
         </div>
-        ${(() => {
-          const eligible = window.MNPinLock && window.MNPinLock.hasEligiblePlan()
-          if (!eligible) {
-            return `<div style="font-size:.82rem;color:var(--text2);line-height:1.6">
-              ${t('cfg_pin_bloqueado','Disponible con el plan Local o Pro.')}
-              <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%" onclick="goTo('facturacion')">${t('cfg_pin_ver_planes','Ver planes')}</button>
-            </div>`
-          }
-          const enabled = window.MNPinLock.isEnabled()
-          const timing = window.MNPinLock.getTiming()
-          return `
-            <div class="form-check" style="margin-bottom:${enabled?'14px':'0'}">
-              <input type="checkbox" id="pinToggle" ${enabled?'checked':''} onchange="_onPinToggle(this)">
-              <label for="pinToggle">${t('cfg_pin_activar','Activar bloqueo por PIN')}</label>
-            </div>
-            ${enabled ? `
-              <div class="form-group" style="margin-bottom:10px">
-                <label>${t('cfg_pin_cuando','Bloquear')}</label>
-                <select id="pinTimingSelect" onchange="MNPinLock.setTiming(this.value)">
-                  <option value="immediate" ${timing==='immediate'?'selected':''}>${t('cfg_pin_inmediato','Inmediatamente')}</option>
-                  <option value="1min" ${timing==='1min'?'selected':''}>${t('cfg_pin_1min','Tras 1 minuto en segundo plano')}</option>
-                  <option value="5min" ${timing==='5min'?'selected':''}>${t('cfg_pin_5min','Tras 5 minutos en segundo plano')}</option>
-                </select>
-              </div>
-              <button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNPinLock.startSetup(()=>render())">${t('cfg_pin_cambiar','Cambiar PIN')}</button>
-            ` : ''}
-          `
-        })()}
+        <div style="font-size:.72rem;color:var(--text3);margin-bottom:10px">
+          ${isDemoMode()
+            ? t('cfg_demo_explicacion_activo','Estás viendo MoneyNest con datos de ejemplo. Tus datos reales están a salvo.')
+            : t('cfg_demo_explicacion','Explora MoneyNest con datos de ejemplo sin afectar tu información real.')}
+        </div>
+        ${isDemoMode()
+          ? `<button class="btn btn-danger btn-sm" onclick="confirmar(t('confirm_salir_demo'),()=>{clearDemoData()},{titulo:t('confirm_salir_demo_titulo'),icono:'🏁',btnLabel:t('confirm_salir_demo_btn')})">${t('cfg_demo_salir','🏁 Desactivar demo')}</button>`
+          : `<button class="btn btn-secondary btn-sm" onclick="activateDemoWithConfig()" style="background:var(--gold-dim);border-color:rgba(245,158,11,.2);color:var(--gold);font-weight:700">${t('cfg_demo_activar','🚀 Activar modo demo')}</button>`}
       </div>
-
-      <!-- Notificaciones -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">🔔 ${t('cfg_notificaciones') || 'Notificaciones'}</div></div>
-        <div id="mn-notif-settings-container"></div>
-      </div>
-
-      <!-- Info -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">ℹ️ ${t('cfg_info')}</div></div>
+      <div>
         <div class="stat-row"><span class="stat-key">${t('cfg_version_lbl')}</span><span class="stat-val" style="color:var(--accent);font-weight:800">MoneyNest v${VERSION} · ${_currentLang.toUpperCase()}</span></div>
         <div class="stat-row"><span class="stat-key">💰 ${t('page_ingresos')}</span><span class="stat-val">${S.ingresos.length}</span></div>
         <div class="stat-row"><span class="stat-key">💳 ${t('page_gastos')}</span><span class="stat-val">${S.gastos.length}</span></div>
         <div class="stat-row"><span class="stat-key">📈 ${t('page_inversiones')}</span><span class="stat-val">${S.inversiones.length}</span></div>
         <div class="stat-row"><span class="stat-key">📉 ${t('page_deudas')}</span><span class="stat-val">${S.deudas.length}</span></div>
         <div class="stat-row"><span class="stat-key">🎯 ${t('page_objetivos')}</span><span class="stat-val">${S.objetivos.length}</span></div>
-
-        <div style="margin-top:14px;display:flex;gap:14px;font-size:.78rem">
-          <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--text2)">🔒 ${_aut ? _aut('cfg_link_privacidad','Política de Privacidad') : 'Política de Privacidad'}</a>
-          <a href="./terms.html" target="_blank" rel="noopener" style="color:var(--text2)">📄 ${_aut ? _aut('cfg_link_terminos','Términos de Servicio') : 'Términos de Servicio'}</a>
+        <div style="margin-top:12px;display:flex;gap:12px;font-size:.78rem">
+          <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--text2)">🔒 ${_aut ? _aut('cfg_link_privacidad','Privacidad') : 'Privacidad'}</a>
+          <a href="./terms.html" target="_blank" rel="noopener" style="color:var(--text2)">📄 ${_aut ? _aut('cfg_link_terminos','Términos') : 'Términos'}</a>
         </div>
-
-        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary btn-sm" onclick="lanzarTutorial()">${t('cfg_ver_tutorial')}</button>
           <button class="btn btn-ghost btn-sm" onclick="if(confirm('¿Repetir el onboarding inicial? Se recargará la página.')){localStorage.removeItem('${OB_FLAG_KEY}');localStorage.removeItem('${TUT_FLAG_KEY}');location.reload()}" title="Volver a ver el onboarding completo">🔄 Repetir onboarding</button>
         </div>
       </div>
     </div>
 
-    <!-- Columna derecha: Categorías personalizadas se eliminó — ya tiene su propia sección en el sidebar -->
-    <div class="card" style="align-self:start">
-      <div class="card-header"><div class="card-title">🏷️ ${t('cfg_cats_titulo')}</div></div>
-      <div style="text-align:center;padding:16px 8px">
-        <div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">${t('cfg_cats_movido','La gestión de categorías ahora tiene su propia sección.')}</div>
-        <button class="btn btn-primary btn-sm" onclick="goTo('categorias')">🏷️ ${t('nav_categorias','Categorías')} →</button>
-      </div>
+    <!-- ── FAQ ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">PREGUNTAS FRECUENTES</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      ${_faqBodyHtml()}
     </div>
-  </div>
-
-  <!-- FAQ — ancho completo, todas las preguntas desplegadas (Bloque 6) -->
-  <div class="card" style="margin-top:20px;max-width:1100px">
-    <div class="card-header">
-      <div><div class="card-title">❓ ${t('cfg_faq_titulo','Preguntas frecuentes')}</div><div class="card-subtitle">${t('cfg_faq_sub','Dudas comunes sobre MoneyNest')}</div></div>
-    </div>
-    ${_faqBodyHtml()}
   </div>`
 
   // Notifications settings panel (post-render)
@@ -7998,12 +7971,10 @@ function renderFacturacion() {
   const localPrice = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
   const proPrice   = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
 
-  const state = e?.getServerState()
-  const trialEndsAt = state?.trial_ends_at ? new Date(state.trial_ends_at).getTime() : null
-  const msLeft = trialEndsAt ? Math.max(0, trialEndsAt - Date.now()) : 0
-  const hoursLeft = trialEndsAt ? Math.floor(msLeft / 3600000) : 24
-  const minsLeft = trialEndsAt ? Math.floor((msLeft % 3600000) / 60000) : 0
-  const trialPct = trialEndsAt ? Math.max(0, Math.min(100, (msLeft / (24*3600000)) * 100)) : 100
+  const _demoActive = typeof isDemoMode === 'function' && isDemoMode()
+  const trialUsed = _demoActive ? 0 : ((S.ingresos?.length || 0) + (S.gastos?.length || 0))
+  const trialRemaining = Math.max(0, TRIAL_MOVEMENT_LIMIT - trialUsed)
+  const trialPct = Math.min(100, (trialUsed / TRIAL_MOVEMENT_LIMIT) * 100)
 
   // ── Badge de estado global (esquina superior derecha) ──
   const statusBadge = isPro
@@ -8019,13 +7990,16 @@ function renderFacturacion() {
     <div class="mn-plan-trialbanner">
       <div>
         <div style="font-size:.95rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">⏱ ${_aut('cfg_trial_titulo','Estás en tu periodo de prueba gratuita')}</div>
-        <div style="font-size:.82rem;color:rgba(255,255,255,.75);margin-top:6px">${_aut('cfg_trial_sub','Te quedan')} <strong style="color:#fff">${hoursLeft}h ${minsLeft}m</strong> ${_aut('cfg_trial_sub2','para proteger tus datos permanentemente.')}</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.75);margin-top:6px">${trialRemaining > 0
+          ? `${_aut('cfg_trial_sub_mov','Te quedan')} <strong style="color:#fff">${trialRemaining} movimientos</strong> de ${TRIAL_MOVEMENT_LIMIT} para usar libremente.`
+          : `<strong style="color:#fff">Has alcanzado el límite de ${TRIAL_MOVEMENT_LIMIT} movimientos.</strong>`}</div>
       </div>
       <svg width="56" height="56" viewBox="0 0 56 56" style="flex-shrink:0">
-        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="4"/>
-        <circle cx="28" cy="28" r="24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"
+        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>
+        <circle cx="28" cy="28" r="24" fill="none" stroke="var(--accent,#00D4AA)" stroke-width="4" stroke-linecap="round"
           stroke-dasharray="${2*Math.PI*24}" stroke-dashoffset="${2*Math.PI*24*(1-trialPct/100)}"
           transform="rotate(-90 28 28)"/>
+        <text x="28" y="32" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${trialUsed}</text>
       </svg>
     </div>` : (isExpired ? `
     <div class="mn-plan-trialbanner" style="background:linear-gradient(135deg, rgba(244,63,94,.25), rgba(244,63,94,.08))">
@@ -8040,7 +8014,7 @@ function renderFacturacion() {
     <div class="mn-plan-card ${isTrial && !isExpired ? 'mn-plan-card--current' : ''}">
       ${isTrial && !isExpired ? `<div class="mn-plan-card__ribbon" style="background:var(--gold-dim);color:var(--gold)">${_aut('cfg_plan_actual_lbl','PLAN ACTUAL')}</div>` : ''}
       <div class="mn-plan-card__icon">⏱</div>
-      <div class="mn-plan-card__name">${_aut('plan_trial_name','Free Trial')}</div>
+      <div class="mn-plan-card__name">${_aut('plan_trial_name','Prueba gratuita')}</div>
       <div class="mn-plan-card__price">${_aut('cfg_gratis','Gratis')}</div>
       <div class="mn-plan-card__period">${_aut('cfg_trial_periodo','Hasta 100 movimientos')}</div>
       <ul class="mn-plan-card__feats">
@@ -13348,7 +13322,7 @@ function _obLeftHTML(step) {
   // STEP 4: Plan selector — left shows plan benefits
   if (step === 4) {
     const planInfo = {
-      trial: { icon: '🕐', color: '#F59E0B', label: 'Free Trial', desc: '24 horas gratuitas' },
+      trial: { icon: '🕐', color: '#F59E0B', label: 'Prueba gratuita', desc: '100 movimientos gratis' },
       local: { icon: '💾', color: '#10B981', label: 'Local', desc: 'Pago único 5€' },
     }
     const p = planInfo[obData.plan] || planInfo.trial
@@ -13546,7 +13520,7 @@ function _obRightHTML(step) {
           <span class="ob-pc-emoji">🕐</span>
           <span class="ob-pc-tag ob-pc-tag--free">Gratis</span>
         </div>
-        <div class="ob-pc-name">Free Trial</div>
+        <div class="ob-pc-name">Prueba gratuita</div>
         <div class="ob-pc-price-main">0<span class="ob-pc-cur">€</span></div>
         <div class="ob-pc-period">durante 24 horas</div>
         <div class="ob-pc-divider"></div>

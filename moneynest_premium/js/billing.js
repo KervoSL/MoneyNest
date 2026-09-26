@@ -29,7 +29,7 @@ const BK = {
 const BILLING_PLANS = Object.freeze({
   FREE_TRIAL: {
     id:          'free_trial',
-    name:        'Free Trial',
+    name:        'Prueba gratuita',
     price:       0,
     period:      null,
     trialDays:   1,
