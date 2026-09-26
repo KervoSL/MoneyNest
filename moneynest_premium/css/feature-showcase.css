@@ -47,7 +47,10 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
+  height: 100%;
   padding: 60px 48px;
+  gap: 24px;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -187,12 +190,11 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr); /* Single flexible row */
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   justify-items: center;
   padding: clamp(24px, 4vh, 48px) clamp(24px, 4vw, 60px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 
   /* Hidden by default */
   opacity: 0;
@@ -366,8 +368,8 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .showcase-visual {
   width: 100%;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   align-self: stretch;
   margin: 0;
   overflow: hidden;
@@ -377,12 +379,15 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .showcase-visual > * {
   width: 100%;
   max-width: 100%;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 /* Mockup window styling */
 .ob-visual-preview {
   width: 100%;
   max-width: clamp(340px, 63vw, 510px);
+  max-height: 100%;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 16px;
@@ -440,10 +445,16 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 .showcase-nav {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.5vh, 10px);
+  gap: 12px;
   width: 100%;
   align-self: end;
   flex-shrink: 0;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+/* Hide back button on the first feature screen (no going back from welcome) */
+.showcase-screen[data-screen="1"] .showcase-btn-back {
+  display: none;
 }
 
 .showcase-btn {
@@ -1127,6 +1138,9 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   flex-direction: column;
   gap: clamp(10px, 1.5vh, 16px);
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 /* ── Glassmorphic card ── */
