@@ -4,8 +4,8 @@
  *  Modelo de negocio:
  *    trial       → 24h de prueba gratuita (al registrarse)
  *    locked_local→ trial expirado, app bloqueada. Requiere Plan Local
- *    local       → pago único 5€. Datos en localStorage, sin expiración
- *    pro         → suscripción 3€/año (7 días gratis desde local).
+ *    local       → 0,99 €/mes · 10 €/año. Datos en localStorage, sin expiración
+ *    pro         → suscripción 1,99 €/mes · 20 €/año (7 días gratis desde local).
  *                  Si cancela → vuelve a local (nunca se bloquea de nuevo)
  *
  *  Uso (ES modules):
@@ -218,7 +218,7 @@ function upgradeTrial(email) {
 }
 
 /**
- * buyLocal(email?) — activa el Plan Local (pago único 5€).
+ * buyLocal(email?) — activa el Plan Local (0,99 €/mes · 10 €/año).
  * Llama a esta función DESPUÉS de confirmar el pago con tu pasarela.
  * @param {string} [email]
  * @returns {Object}
@@ -236,7 +236,7 @@ function buyLocal(email) {
 }
 
 /**
- * activatePro(email?) — activa el Plan Pro (3€/año).
+ * activatePro(email?) — activa el Plan Pro (1,99 €/mes · 20 €/año).
  * • Si !proTrialUsed: incluye 7 días de prueba gratuita.
  * • Llama DESPUÉS de confirmar suscripción con tu pasarela.
  * @param {string} [email]

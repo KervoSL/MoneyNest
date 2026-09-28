@@ -104,8 +104,8 @@ function renderTrialPill(elId) {
 function openPlanModal(context) {
   document.getElementById('planModalOverlay')?.remove();
   const b = window.MNBilling;
-  const local = b ? b.PLANS.LOCAL_LIFETIME : { price: 6.99 };
-  const pro   = b ? b.PLANS.PRO_ANNUAL     : { price: 14.99 };
+  const local = b ? b.PLANS.LOCAL_LIFETIME : { price: 10 };
+  const pro   = b ? b.PLANS.PRO_ANNUAL     : { price: 20 };
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';

@@ -246,7 +246,7 @@ function buildExportPanel() {
         <div class="dm-card-icon dm-card-icon--pdf">📄</div>
         <div class="dm-card-content">
           <div class="dm-card-title">Informe PDF completo ${lockBadge}</div>
-          <div class="dm-card-desc">Disponible con MoneyNest (6,99€)</div>
+          <div class="dm-card-desc">Disponible con MoneyNest (desde 0,99 €/mes)</div>
         </div>
       </button>`;
 
@@ -263,7 +263,7 @@ function buildExportPanel() {
         <div class="dm-card-icon dm-card-icon--excel">📊</div>
         <div class="dm-card-content">
           <div class="dm-card-title">Excel completo ${lockBadge}</div>
-          <div class="dm-card-desc">Disponible con MoneyNest (6,99€)</div>
+          <div class="dm-card-desc">Disponible con MoneyNest (desde 0,99 €/mes)</div>
         </div>
       </button>`;
 
@@ -304,7 +304,7 @@ function buildExportPanel() {
           background:linear-gradient(135deg,#00D4AA,#00A882);color:#0A0E17;
           border:none;border-radius:10px;padding:10px 20px;
           font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit;
-        ">🔓 Desbloquear MoneyNest — 6,99€ →</button>
+        ">🔓 Desbloquear MoneyNest — desde 0,99 €/mes →</button>
       </div>` : ''}
     </div>
 

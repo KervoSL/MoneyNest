@@ -17,7 +17,7 @@
       // ── billing.js — Pasos de compra mockBuyLocal ────────────
       billing_step_conectando:        'Conectando con el servidor de pagos…',
       billing_step_verificando:       'Verificando método de pago…',
-      billing_step_procesando:        'Procesando pago de 5,00 €…',
+      billing_step_procesando:        'Procesando pago…',
       billing_step_activando:         'Activando licencia…',
       billing_step_listo:             '¡Listo!',
 
@@ -58,13 +58,13 @@
       // ── billing-ui.js — Paywall (overlay bloqueado) ─────────
       billing_lock_badge:             'Tu prueba ha expirado',
       billing_lock_title:             'Acceso bloqueado',
-      billing_lock_desc:              'Has alcanzado el límite de 100 movimientos de tu prueba gratuita.<br>Desbloquea MoneyNest para siempre por un pago único de <strong>€6.99</strong>.',
+      billing_lock_desc:              'Has alcanzado el límite de 100 movimientos de tu prueba gratuita.<br>Desbloquea MoneyNest desde <strong>0,99 €/mes</strong>.',
       billing_lock_feat1:             '✅ Todos tus datos están seguros',
       billing_lock_feat2:             '✅ Acceso ilimitado sin suscripción',
       billing_lock_feat3:             '✅ Exportación PDF y Excel',
       billing_lock_feat4:             '✅ Sin publicidad, sin rastreo',
-      billing_lock_cta:               '🔓 Desbloquear para siempre — €6.99 único',
-      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, €6.99/año)',
+      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 0,99 €/mes',
+      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, 1,99 €/mes · 20 €/año)',
       billing_lock_restore_q:         '¿Ya tienes licencia?',
       billing_lock_restore_link:      'Restaurar acceso',
 
@@ -104,7 +104,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funciona offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Sin fecha de expiración',
       billing_plan_feat_privado:      '✓ 💾 Datos solo en tu dispositivo',
-      billing_plan_cta_local:         '🔓 Desbloquear Forever — €6.99',
+      billing_plan_cta_local:         '🔓 Desbloquear — 10 €/año',
       billing_plan_guarantee:         '✅ Pago único · Sin suscripción',
 
       // ── billing-ui.js — Plan Pro Annual ─────────────────────
@@ -116,10 +116,10 @@
       billing_plan_feat_backup:       '✓ 📦 Backup automático',
       billing_plan_feat_ai:           '✓ ✨ Insights con IA',
       billing_plan_feat_support:      '✓ ⭐ Soporte prioritario',
-      billing_plan_pro_price:         '€6.99 / año',
+      billing_plan_pro_price:         '20 €/año',
 
       // ── billing-ui.js — CTAs de compra ──────────────────────
-      billing_cta_activar_pro:        '⚡ Activar Pro — €6.99/año',
+      billing_cta_activar_pro:        '⚡ Activar Pro — 20 €/año',
       billing_cta_iniciar_trial:      '⚡ Iniciar 7 días gratis',
       billing_cta_try_pro:            '⚡ Probar 7 días gratis →',
 
@@ -130,7 +130,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Sin cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ Sin multi-dispositivo',
       billing_local_feat_no_backup:   '✗ 📦 Sin backup automático',
-      billing_local_paid:             '€6.99 — pagado ✓',
+      billing_local_paid:             '10 €/año — activo ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 días gratis',
       billing_local_account_title:    '⚙️ Tu cuenta Local',
@@ -205,7 +205,7 @@
 
       // ── billing-ui.js — Export gating ───────────────────────
       billing_export_tooltip:         'Disponible en Plan Local o Pro',
-      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — €6.99 único',
+      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — desde 0,99 €/mes',
 
       // ── billing-ui.js — Checkout / Éxito ────────────────────
       billing_success_local_title:    '¡Plan Local activado!',
@@ -248,7 +248,7 @@
     en: {
       billing_step_conectando:        'Connecting to payment server…',
       billing_step_verificando:       'Verifying payment method…',
-      billing_step_procesando:        'Processing payment of €6.99.00…',
+      billing_step_procesando:        'Processing payment…',
       billing_step_activando:         'Activating licence…',
       billing_step_listo:             'Done!',
       billing_step_iniciando_pro:     'Starting Pro subscription…',
@@ -278,13 +278,13 @@
 
       billing_lock_badge:             'Your trial has expired',
       billing_lock_title:             'Access locked',
-      billing_lock_desc:              'Your free 24h trial has ended.<br>Unlock MoneyNest forever with a one-time payment of <strong>€6.99</strong>.',
+      billing_lock_desc:              'Your free 24h trial has ended.<br>Unlock MoneyNest from <strong>€0.99/mo</strong>.',
       billing_lock_feat1:             '✅ All your data is safe',
       billing_lock_feat2:             '✅ Unlimited access, no subscription',
       billing_lock_feat3:             '✅ PDF and Excel export',
       billing_lock_feat4:             '✅ No ads, no tracking',
-      billing_lock_cta:               '🔓 Unlock forever — €6.99 one-time',
-      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €6.99/yr)',
+      billing_lock_cta:               '🔓 Unlock MoneyNest — from €0.99/mo',
+      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €1.99/mo · €20/yr)',
       billing_lock_restore_q:         'Already have a licence?',
       billing_lock_restore_link:      'Restore access',
 
@@ -318,7 +318,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Works offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Never expires',
       billing_plan_feat_privado:      '✓ 💾 Data stays on your device',
-      billing_plan_cta_local:         '🔓 Unlock Forever — €6.99',
+      billing_plan_cta_local:         '🔓 Unlock — €10/yr',
       billing_plan_guarantee:         '✅ One-time payment · No subscription',
 
       billing_plan_pro_name:          'Pro',
@@ -329,9 +329,9 @@
       billing_plan_feat_backup:       '✓ 📦 Automatic backup',
       billing_plan_feat_ai:           '✓ ✨ AI insights',
       billing_plan_feat_support:      '✓ ⭐ Priority support',
-      billing_plan_pro_price:         '€6.99 / year',
+      billing_plan_pro_price:         '€20/yr',
 
-      billing_cta_activar_pro:        '⚡ Activate Pro — €6.99/yr',
+      billing_cta_activar_pro:        '⚡ Activate Pro — €20/yr',
       billing_cta_iniciar_trial:      '⚡ Start 7-day free trial',
       billing_cta_try_pro:            '⚡ Try 7 days free →',
 
@@ -341,7 +341,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ No cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ No multi-device',
       billing_local_feat_no_backup:   '✗ 📦 No automatic backup',
-      billing_local_paid:             '€6.99 — paid ✓',
+      billing_local_paid:             '€10/yr — active ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 days free',
       billing_local_account_title:    '⚙️ Your Local account',
@@ -409,7 +409,7 @@
       billing_invoice_paid:           'Paid',
 
       billing_export_tooltip:         'Available with Local or Pro plan',
-      billing_export_blocked_toast:   '🔒 Export available with Local Plan — one-time €6.99',
+      billing_export_blocked_toast:   '🔒 Export available with Local Plan — from €0.99/mo',
 
       billing_success_local_title:    'Local plan activated!',
       billing_success_local_sub:      'Permanent access. You will never see the lock again.',
@@ -448,7 +448,7 @@
     fr: {
       billing_step_conectando:        'Connexion au serveur de paiement…',
       billing_step_verificando:       'Vérification du moyen de paiement…',
-      billing_step_procesando:        'Traitement du paiement de 5,00 €…',
+      billing_step_procesando:        'Traitement du paiement…',
       billing_step_activando:         'Activation de la licence…',
       billing_step_listo:             'Terminé !',
       billing_step_iniciando_pro:     'Démarrage de l\'abonnement Pro…',
@@ -478,13 +478,13 @@
 
       billing_lock_badge:             'Votre essai a expiré',
       billing_lock_title:             'Accès bloqué',
-      billing_lock_desc:              'Votre période d\'essai gratuite de 24h est terminée.<br>Débloquez MoneyNest pour toujours avec un paiement unique de <strong>5 €</strong>.',
+      billing_lock_desc:              'Votre période d\'essai gratuite de 24h est terminée.<br>Débloquez MoneyNest dès <strong>0,99 €/mois</strong>.',
       billing_lock_feat1:             '✅ Toutes vos données sont en sécurité',
       billing_lock_feat2:             '✅ Accès illimité sans abonnement',
       billing_lock_feat3:             '✅ Export PDF et Excel',
       billing_lock_feat4:             '✅ Sans publicité, sans pistage',
-      billing_lock_cta:               '🔓 Débloquer pour toujours — 5 € unique',
-      billing_lock_cta_note:          'Vous pourrez ajouter la synchronisation cloud plus tard (Plan Pro, 5 €/an)',
+      billing_lock_cta:               '🔓 Débloquer MoneyNest — dès 0,99 €/mois',
+      billing_lock_cta_note:          'Vous pourrez ajouter la synchronisation cloud plus tard (Plan Pro, 1,99 €/mois · 20 €/an)',
       billing_lock_restore_q:         'Vous avez déjà une licence ?',
       billing_lock_restore_link:      'Restaurer l\'accès',
 
@@ -518,7 +518,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Fonctionne hors ligne',
       billing_plan_feat_no_expiry:    '✓ 🔒 N\'expire jamais',
       billing_plan_feat_privado:      '✓ 💾 Données sur votre appareil uniquement',
-      billing_plan_cta_local:         '🔓 Débloquer pour toujours — 5 €',
+      billing_plan_cta_local:         '🔓 Débloquer — 10 €/an',
       billing_plan_guarantee:         '✅ Paiement unique · Sans abonnement',
 
       billing_plan_pro_name:          'Pro',
@@ -529,9 +529,9 @@
       billing_plan_feat_backup:       '✓ 📦 Sauvegarde automatique',
       billing_plan_feat_ai:           '✓ ✨ Insights IA',
       billing_plan_feat_support:      '✓ ⭐ Support prioritaire',
-      billing_plan_pro_price:         '5 € / an',
+      billing_plan_pro_price:         '20 €/an',
 
-      billing_cta_activar_pro:        '⚡ Activer Pro — 5 €/an',
+      billing_cta_activar_pro:        '⚡ Activer Pro — 20 €/an',
       billing_cta_iniciar_trial:      '⚡ Commencer l\'essai gratuit 7 jours',
       billing_cta_try_pro:            '⚡ Essayer 7 jours gratuits →',
 
@@ -541,7 +541,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Pas de sync cloud',
       billing_local_feat_no_multi:    '✗ 🖥️ Pas de multi-appareil',
       billing_local_feat_no_backup:   '✗ 📦 Pas de sauvegarde automatique',
-      billing_local_paid:             '5 € — payé ✓',
+      billing_local_paid:             '10 €/an — actif ✓',
       billing_local_upgrade_label:    'Mise à niveau',
       billing_trial_tag:              '7 jours gratuits',
       billing_local_account_title:    '⚙️ Votre compte Local',
@@ -609,7 +609,7 @@
       billing_invoice_paid:           'Payé',
 
       billing_export_tooltip:         'Disponible avec le Plan Local ou Pro',
-      billing_export_blocked_toast:   '🔒 Export disponible avec le Plan Local — 5 € unique',
+      billing_export_blocked_toast:   '🔒 Export disponible avec le Plan Local — dès 0,99 €/mois',
 
       billing_success_local_title:    'Plan Local activé !',
       billing_success_local_sub:      'Accès permanent. Vous ne verrez plus jamais le blocage.',
@@ -643,7 +643,7 @@
     de: {
       billing_step_conectando:        'Verbindung zum Zahlungsserver…',
       billing_step_verificando:       'Zahlungsmethode wird geprüft…',
-      billing_step_procesando:        'Zahlung von 5,00 € wird verarbeitet…',
+      billing_step_procesando:        'Zahlung wird verarbeitet…',
       billing_step_activando:         'Lizenz wird aktiviert…',
       billing_step_listo:             'Fertig!',
       billing_step_iniciando_pro:     'Pro-Abonnement wird gestartet…',
@@ -673,13 +673,13 @@
 
       billing_lock_badge:             'Ihre Testversion ist abgelaufen',
       billing_lock_title:             'Zugang gesperrt',
-      billing_lock_desc:              'Ihre kostenlose 24-Stunden-Testversion ist beendet.<br>Entsperren Sie MoneyNest für immer mit einer einmaligen Zahlung von <strong>5 €</strong>.',
+      billing_lock_desc:              'Ihre kostenlose 24-Stunden-Testversion ist beendet.<br>Entsperren Sie MoneyNest ab <strong>0,99 €/Monat</strong>.',
       billing_lock_feat1:             '✅ Alle Ihre Daten sind sicher',
       billing_lock_feat2:             '✅ Unbegrenzter Zugang ohne Abonnement',
       billing_lock_feat3:             '✅ PDF- und Excel-Export',
       billing_lock_feat4:             '✅ Keine Werbung, kein Tracking',
-      billing_lock_cta:               '🔓 Für immer freischalten — einmalig 5 €',
-      billing_lock_cta_note:          'Sie können später Cloud-Sync hinzufügen (Pro-Plan, 5 €/Jahr)',
+      billing_lock_cta:               '🔓 MoneyNest freischalten — ab 0,99 €/Monat',
+      billing_lock_cta_note:          'Sie können später Cloud-Sync hinzufügen (Pro-Plan, 1,99 €/Monat · 20 €/Jahr)',
       billing_lock_restore_q:         'Haben Sie bereits eine Lizenz?',
       billing_lock_restore_link:      'Zugang wiederherstellen',
 
@@ -713,7 +713,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funktioniert offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Läuft nie ab',
       billing_plan_feat_privado:      '✓ 💾 Daten nur auf Ihrem Gerät',
-      billing_plan_cta_local:         '🔓 Für immer freischalten — 5 €',
+      billing_plan_cta_local:         '🔓 Freischalten — 10 €/Jahr',
       billing_plan_guarantee:         '✅ Einmalige Zahlung · Kein Abonnement',
 
       billing_plan_pro_name:          'Pro',
@@ -724,9 +724,9 @@
       billing_plan_feat_backup:       '✓ 📦 Automatisches Backup',
       billing_plan_feat_ai:           '✓ ✨ KI-Einblicke',
       billing_plan_feat_support:      '✓ ⭐ Prioritäts-Support',
-      billing_plan_pro_price:         '5 € / Jahr',
+      billing_plan_pro_price:         '20 €/Jahr',
 
-      billing_cta_activar_pro:        '⚡ Pro aktivieren — 5 €/Jahr',
+      billing_cta_activar_pro:        '⚡ Pro aktivieren — 20 €/Jahr',
       billing_cta_iniciar_trial:      '⚡ 7-tägige Testversion starten',
       billing_cta_try_pro:            '⚡ 7 Tage kostenlos testen →',
 
@@ -736,7 +736,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Kein Cloud-Sync',
       billing_local_feat_no_multi:    '✗ 🖥️ Kein Multi-Gerät',
       billing_local_feat_no_backup:   '✗ 📦 Kein automatisches Backup',
-      billing_local_paid:             '5 € — bezahlt ✓',
+      billing_local_paid:             '10 €/Jahr — aktiv ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 Tage kostenlos',
       billing_local_account_title:    '⚙️ Ihr lokales Konto',
@@ -804,7 +804,7 @@
       billing_invoice_paid:           'Bezahlt',
 
       billing_export_tooltip:         'Verfügbar mit Local- oder Pro-Plan',
-      billing_export_blocked_toast:   '🔒 Export mit Local-Plan verfügbar — einmalig 5 €',
+      billing_export_blocked_toast:   '🔒 Export mit Local-Plan verfügbar — ab 0,99 €/Monat',
 
       billing_success_local_title:    'Lokaler Plan aktiviert!',
       billing_success_local_sub:      'Permanenter Zugang. Sie werden die Sperre nie wieder sehen.',
@@ -838,7 +838,7 @@
     it: {
       billing_step_conectando:        'Connessione al server di pagamento…',
       billing_step_verificando:       'Verifica del metodo di pagamento…',
-      billing_step_procesando:        'Elaborazione del pagamento di € 5,00…',
+      billing_step_procesando:        'Elaborazione del pagamento…',
       billing_step_activando:         'Attivazione della licenza…',
       billing_step_listo:             'Fatto!',
       billing_step_iniciando_pro:     'Avvio dell\'abbonamento Pro…',
@@ -868,13 +868,13 @@
 
       billing_lock_badge:             'La tua prova è scaduta',
       billing_lock_title:             'Accesso bloccato',
-      billing_lock_desc:              'Il tuo periodo di prova gratuita di 24h è terminato.<br>Sblocca MoneyNest per sempre con un pagamento unico di <strong>€ 5</strong>.',
+      billing_lock_desc:              'Il tuo periodo di prova gratuita di 24h è terminato.<br>Sblocca MoneyNest da <strong>0,99 €/mese</strong>.',
       billing_lock_feat1:             '✅ Tutti i tuoi dati sono al sicuro',
       billing_lock_feat2:             '✅ Accesso illimitato senza abbonamento',
       billing_lock_feat3:             '✅ Esportazione PDF ed Excel',
       billing_lock_feat4:             '✅ Nessuna pubblicità, nessun tracciamento',
-      billing_lock_cta:               '🔓 Sblocca per sempre — € 5 una tantum',
-      billing_lock_cta_note:          'Potrai aggiungere la sincronizzazione cloud in seguito (Piano Pro, € 5/anno)',
+      billing_lock_cta:               '🔓 Sblocca MoneyNest — da 0,99 €/mese',
+      billing_lock_cta_note:          'Potrai aggiungere la sincronizzazione cloud in seguito (Piano Pro, 1,99 €/mese · 20 €/anno)',
       billing_lock_restore_q:         'Hai già una licenza?',
       billing_lock_restore_link:      'Ripristina l\'accesso',
 
@@ -908,7 +908,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funziona offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Non scade mai',
       billing_plan_feat_privado:      '✓ 💾 Dati solo sul tuo dispositivo',
-      billing_plan_cta_local:         '🔓 Sblocca per sempre — € 5',
+      billing_plan_cta_local:         '🔓 Sblocca — 10 €/anno',
       billing_plan_guarantee:         '✅ Pagamento unico · Nessun abbonamento',
 
       billing_plan_pro_name:          'Pro',
@@ -919,9 +919,9 @@
       billing_plan_feat_backup:       '✓ 📦 Backup automatico',
       billing_plan_feat_ai:           '✓ ✨ Insights con IA',
       billing_plan_feat_support:      '✓ ⭐ Supporto prioritario',
-      billing_plan_pro_price:         '€ 5 / anno',
+      billing_plan_pro_price:         '20 €/anno',
 
-      billing_cta_activar_pro:        '⚡ Attiva Pro — € 5/anno',
+      billing_cta_activar_pro:        '⚡ Attiva Pro — 20 €/anno',
       billing_cta_iniciar_trial:      '⚡ Inizia 7 giorni gratuiti',
       billing_cta_try_pro:            '⚡ Prova 7 giorni gratis →',
 
@@ -931,7 +931,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Nessun cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ Nessun multi-dispositivo',
       billing_local_feat_no_backup:   '✗ 📦 Nessun backup automatico',
-      billing_local_paid:             '€ 5 — pagato ✓',
+      billing_local_paid:             '10 €/anno — attivo ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 giorni gratuiti',
       billing_local_account_title:    '⚙️ Il tuo account locale',
@@ -999,7 +999,7 @@
       billing_invoice_paid:           'Pagato',
 
       billing_export_tooltip:         'Disponibile con il Piano Locale o Pro',
-      billing_export_blocked_toast:   '🔒 Esportazione disponibile con Piano Locale — € 5 una tantum',
+      billing_export_blocked_toast:   '🔒 Esportazione disponibile con Piano Locale — da 0,99 €/mese',
 
       billing_success_local_title:    'Piano Locale attivato!',
       billing_success_local_sub:      'Accesso permanente. Non vedrai mai più il blocco.',
@@ -1033,7 +1033,7 @@
     pt: {
       billing_step_conectando:        'A ligar ao servidor de pagamento…',
       billing_step_verificando:       'A verificar o método de pagamento…',
-      billing_step_procesando:        'A processar pagamento de 5,00 €…',
+      billing_step_procesando:        'A processar pagamento…',
       billing_step_activando:         'A ativar a licença…',
       billing_step_listo:             'Concluído!',
       billing_step_iniciando_pro:     'A iniciar subscrição Pro…',
@@ -1063,13 +1063,13 @@
 
       billing_lock_badge:             'O teu teste expirou',
       billing_lock_title:             'Acesso bloqueado',
-      billing_lock_desc:              'O teu período de teste gratuito de 24h terminou.<br>Desbloqueia o MoneyNest para sempre com um pagamento único de <strong>5 €</strong>.',
+      billing_lock_desc:              'O teu período de teste gratuito de 24h terminou.<br>Desbloqueia o MoneyNest desde <strong>0,99 €/mês</strong>.',
       billing_lock_feat1:             '✅ Todos os teus dados estão seguros',
       billing_lock_feat2:             '✅ Acesso ilimitado sem subscrição',
       billing_lock_feat3:             '✅ Exportação PDF e Excel',
       billing_lock_feat4:             '✅ Sem publicidade, sem rastreamento',
-      billing_lock_cta:               '🔓 Desbloquear para sempre — 5 € único',
-      billing_lock_cta_note:          'Poderás adicionar sincronização na nuvem mais tarde (Plano Pro, 5 €/ano)',
+      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 0,99 €/mês',
+      billing_lock_cta_note:          'Poderás adicionar sincronização na nuvem mais tarde (Plano Pro, 1,99 €/mês · 20 €/ano)',
       billing_lock_restore_q:         'Já tens licença?',
       billing_lock_restore_link:      'Restaurar acesso',
 
@@ -1103,7 +1103,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funciona offline',
       billing_plan_feat_no_expiry:    '✓ 🔒 Nunca expira',
       billing_plan_feat_privado:      '✓ 💾 Dados apenas no teu dispositivo',
-      billing_plan_cta_local:         '🔓 Desbloquear para sempre — 5 €',
+      billing_plan_cta_local:         '🔓 Desbloquear — 10 €/ano',
       billing_plan_guarantee:         '✅ Pagamento único · Sem subscrição',
 
       billing_plan_pro_name:          'Pro',
@@ -1114,9 +1114,9 @@
       billing_plan_feat_backup:       '✓ 📦 Backup automático',
       billing_plan_feat_ai:           '✓ ✨ Insights com IA',
       billing_plan_feat_support:      '✓ ⭐ Suporte prioritário',
-      billing_plan_pro_price:         '5 € / ano',
+      billing_plan_pro_price:         '20 €/ano',
 
-      billing_cta_activar_pro:        '⚡ Ativar Pro — 5 €/ano',
+      billing_cta_activar_pro:        '⚡ Ativar Pro — 20 €/ano',
       billing_cta_iniciar_trial:      '⚡ Iniciar 7 dias grátis',
       billing_cta_try_pro:            '⚡ Experimentar 7 dias grátis →',
 
@@ -1126,7 +1126,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Sem sync na nuvem',
       billing_local_feat_no_multi:    '✗ 🖥️ Sem multi-dispositivo',
       billing_local_feat_no_backup:   '✗ 📦 Sem backup automático',
-      billing_local_paid:             '5 € — pago ✓',
+      billing_local_paid:             '10 €/ano — ativo ✓',
       billing_local_upgrade_label:    'Upgrade',
       billing_trial_tag:              '7 dias grátis',
       billing_local_account_title:    '⚙️ A tua conta local',
@@ -1194,7 +1194,7 @@
       billing_invoice_paid:           'Pago',
 
       billing_export_tooltip:         'Disponível com o Plano Local ou Pro',
-      billing_export_blocked_toast:   '🔒 Exportação disponível com Plano Local — 5 € único',
+      billing_export_blocked_toast:   '🔒 Exportação disponível com Plano Local — desde 0,99 €/mês',
 
       billing_success_local_title:    'Plano Local ativado!',
       billing_success_local_sub:      'Acesso permanente. Nunca mais verás o bloqueio.',
@@ -1226,7 +1226,7 @@
     _ca_removed: {
       billing_step_conectando:        'Connectant amb el servidor de pagaments…',
       billing_step_verificando:       'Verificant el mètode de pagament…',
-      billing_step_procesando:        'Processant el pagament de 5,00 €…',
+      billing_step_procesando:        'Processant el pagament…',
       billing_step_activando:         'Activant la llicència…',
       billing_step_listo:             'Fet!',
       billing_step_iniciando_pro:     'Iniciant la subscripció Pro…',
@@ -1253,13 +1253,13 @@
       billing_page_sub:               'Gestiona la teva subscripció i accés a MoneyNest',
       billing_lock_badge:             'La teva prova ha expirat',
       billing_lock_title:             'Accés bloquejat',
-      billing_lock_desc:              'El teu període de prova gratuïta de 24h ha conclòs.<br>Desbloqueja MoneyNest per sempre amb un pagament únic de <strong>5 €</strong>.',
+      billing_lock_desc:              'El teu període de prova gratuïta de 24h ha conclòs.<br>Desbloqueja MoneyNest des de <strong>0,99 €/mes</strong>.',
       billing_lock_feat1:             '✅ Totes les teves dades estan segures',
       billing_lock_feat2:             '✅ Accés il·limitat sense subscripció',
       billing_lock_feat3:             '✅ Exportació PDF i Excel',
       billing_lock_feat4:             '✅ Sense publicitat, sense seguiment',
-      billing_lock_cta:               '🔓 Desbloqueja per sempre — 5 € únic',
-      billing_lock_cta_note:          'Podràs afegir sincronització al núvol més tard (Pla Pro, 5 €/any)',
+      billing_lock_cta:               '🔓 Desbloqueja MoneyNest — des de 0,99 €/mes',
+      billing_lock_cta_note:          'Podràs afegir sincronització al núvol més tard (Pla Pro, 1,99 €/mes · 20 €/any)',
       billing_lock_restore_q:         'Ja tens llicència?',
       billing_lock_restore_link:      'Restaurar accés',
       billing_trial_banner_ending:    '⚠️ La teva prova s\'acaba aviat',
@@ -1287,7 +1287,7 @@
       billing_plan_feat_offline:      '✓ 🔌 Funciona sense connexió',
       billing_plan_feat_no_expiry:    '✓ 🔒 No expira mai',
       billing_plan_feat_privado:      '✓ 💾 Dades només al teu dispositiu',
-      billing_plan_cta_local:         '🔓 Desbloqueja per sempre — 5 €',
+      billing_plan_cta_local:         '🔓 Desbloqueja — 10 €/any',
       billing_plan_guarantee:         '✅ Pagament únic · Sense subscripció',
       billing_plan_pro_name:          'Pro',
       billing_plan_pro_period_unit:   '/ any',
@@ -1297,8 +1297,8 @@
       billing_plan_feat_backup:       '✓ 📦 Còpia de seguretat automàtica',
       billing_plan_feat_ai:           '✓ ✨ Insights amb IA',
       billing_plan_feat_support:      '✓ ⭐ Suport prioritari',
-      billing_plan_pro_price:         '5 € / any',
-      billing_cta_activar_pro:        '⚡ Activar Pro — 5 €/any',
+      billing_plan_pro_price:         '20 €/any',
+      billing_cta_activar_pro:        '⚡ Activar Pro — 20 €/any',
       billing_cta_iniciar_trial:      '⚡ Iniciar 7 dies gratis',
       billing_cta_try_pro:            '⚡ Prova 7 dies gratis →',
       billing_local_vs_title:         'El teu pla vs Pro',
@@ -1307,7 +1307,7 @@
       billing_local_feat_no_cloud:    '✗ ☁️ Sense cloud sync',
       billing_local_feat_no_multi:    '✗ 🖥️ Sense multi-dispositiu',
       billing_local_feat_no_backup:   '✗ 📦 Sense còpia automàtica',
-      billing_local_paid:             '5 € — pagat ✓',
+      billing_local_paid:             '10 €/any — actiu ✓',
       billing_local_upgrade_label:    'Millora',
       billing_trial_tag:              '7 dies gratis',
       billing_local_account_title:    '⚙️ El teu compte Local',
@@ -1368,7 +1368,7 @@
       billing_invoice_tag_pro:        'Pro',
       billing_invoice_paid:           'Pagat',
       billing_export_tooltip:         'Disponible amb el Pla Local o Pro',
-      billing_export_blocked_toast:   '🔒 Exportació disponible amb Pla Local — 5 € únic',
+      billing_export_blocked_toast:   '🔒 Exportació disponible amb Pla Local — des de 0,99 €/mes',
       billing_success_local_title:    'Pla Local activat!',
       billing_success_local_sub:      'Accés permanent. Mai tornaràs a veure el bloqueig.',
       billing_success_pro_title:      'Benvingut a Pro!',

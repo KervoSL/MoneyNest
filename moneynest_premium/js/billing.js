@@ -5,8 +5,8 @@
  *
  *  Planes:
  *    FREE_TRIAL   → 24h acceso completo (auto-asignado)
- *    LOCAL_LIFETIME → pago único 5€, offline-first, sin expiración
- *    PRO_ANNUAL   → 3€/año, 7 días trial desde local, cloud sync
+ *    LOCAL_LIFETIME → 0,99 €/mes · 10 €/año, offline-first, sin expiración
+ *    PRO_ANNUAL   → 1,99 €/mes · 20 €/año, 7 días trial desde local, cloud sync
  *
  *  Todo funciona con localStorage. Arquitectura lista para reemplazar
  *  con Stripe/Paddle/Supabase en producción.
@@ -237,7 +237,7 @@ function getTrialTimeLeft() {
 // ════════════════════════════════════════════════════════════════
 
 /**
- * Simula compra del plan Local Lifetime (5€ pago único)
+ * Simula compra del plan Local Lifetime (0,99 €/mes · 10 €/año)
  * En producción: redirigir a Stripe checkout → webhook → activateLocal()
  */
 async function mockBuyLocal(opts = {}) {
