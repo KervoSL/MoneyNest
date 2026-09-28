@@ -6,8 +6,8 @@ const MNStripeConfig = Object.freeze({
   // ninguna clave de test configurada en Supabase.
   publishableKey: 'pk_live_51T57NbFWll222Kpac9uR0087YoUUATVJCxRg3TzYSC7y0EacJnpooDne5ty7vZOEGrkqA35mj6Rf5unOsDiMzBlp00h0Q8bEJt',
   prices: {
-    local: 'price_1U68YVFWll222KpaCJ6WrKWg',  // MoneyNest Local — LIVE, 6,99€/año (recurring)
-    pro:   'price_1U68YaFWll222Kpa4mynzdAp',  // MoneyNest Pro — LIVE, 14,99€/año (recurring)
+    local: 'price_1U68YVFWll222KpaCJ6WrKWg',  // [NEEDS_STRIPE_UPDATE] MoneyNest Local — was 6,99€/año, now 0,99€/mes or 10€/año
+    pro:   'price_1U68YaFWll222Kpa4mynzdAp',  // [NEEDS_STRIPE_UPDATE] MoneyNest Pro — was 14,99€/año, now 1,99€/mes or 20€/año
   },
   products: {
     local: 'prod_USDdaHgyW9lPe6',

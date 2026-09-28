@@ -19,6 +19,8 @@
 // ────────────────────────────────────────────────────────────────
 
 let _lastScenario = null;   // para evitar re-renders innecesarios
+let _uiBillingPeriod = 'annual';
+function _toggleBillingPeriod(p) { _uiBillingPeriod = p; renderBillingPage(); }
 
 function _b() { return window.MNBilling; }
 
@@ -133,6 +135,12 @@ function _renderTrial(content) {
   const r = 28, circ = 2 * Math.PI * r;
   const offset   = (circ * (1 - pct)).toFixed(2);
   const isEnding = tl.ms > 0 && tl.ms < 4 * 60 * 60 * 1000;
+  const isAnnual = _uiBillingPeriod === 'annual';
+  const _lp = b.PLANS.LOCAL_LIFETIME;
+  const _pp = b.PLANS.PRO_ANNUAL;
+  const localDisplayPrice = isAnnual ? _lp.price : _lp.priceMonthly;
+  const proDisplayPrice   = isAnnual ? _pp.price : _pp.priceMonthly;
+  const periodSuffix      = isAnnual ? '/año' : '/mes';
 
   const trialBannerSub = t('billing_trial_banner_sub').replace('{time}', `<strong id="trialCountdownTime">${tl.label || '0m'}</strong>`);
 
@@ -175,6 +183,10 @@ function _renderTrial(content) {
     <div class="billing-section" style="padding:28px">
       <div class="billing-section-title">${t('billing_plans_section_title')}</div>
       <div class="mn-section-sub">${t('billing_plans_section_sub')}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;max-width:420px">
+        <button onclick="_toggleBillingPeriod('monthly')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${!isAnnual?'background:#00D4AA;color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Mensual</button>
+        <button onclick="_toggleBillingPeriod('annual')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${isAnnual?'background:#00D4AA;color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Anual — ahorra 2 meses</button>
+      </div>
       <div class="mn-trial-grid">
 
         <!-- Free Trial (dim, actual) -->
@@ -204,9 +216,11 @@ function _renderTrial(content) {
           <div class="mn-plan-card__name">${t('billing_plan_local_name')}</div>
           <div class="mn-plan-card__price-block">
             <span class="mn-price-currency mn-price-currency--local">€</span>
-            <span class="mn-price-amount mn-price-amount--local">5</span>
+            <span class="mn-price-amount mn-price-amount--local">${localDisplayPrice}</span>
+            <span style="font-size:.85rem;font-weight:600;color:rgba(255,255,255,.5)">${periodSuffix}</span>
           </div>
-          <div class="mn-plan-card__period">${t('billing_plan_local_period')}</div>
+          ${isAnnual ? `<div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px">equivale a ${(_lp.price/12).toFixed(2).replace('.',',')} €/mes</div>` : ''}
+          <div class="mn-plan-card__period">${isAnnual ? '10 €/año · ahorra 2 meses' : t('billing_plan_local_period')}</div>
           <ul class="mn-plan-card__features">
             <li>${t('billing_plan_feat_ilimitados')}</li>
             <li>${t('billing_plan_feat_excel')}</li>
@@ -225,18 +239,12 @@ function _renderTrial(content) {
         <div class="mn-plan-card mn-plan-card--pro">
           <div class="mn-plan-card__icon">⚡</div>
           <div class="mn-plan-card__name">${t('billing_plan_pro_name')}</div>
-          <!-- Price breakdown: Local 5€ + Pro 5€/yr -->
-          <div class="mn-plan-card__price-block mn-price-stack">
-            <div class="mn-price-row mn-price-row--local">
-              <span class="mn-price-row-label">Local</span>
-              <span class="mn-price-row-amount">5€ <span style="font-size:.65rem;font-weight:600;opacity:.6">único</span></span>
-            </div>
-            <div class="mn-price-row-plus">+</div>
-            <div class="mn-price-row mn-price-row--pro-yr">
-              <span class="mn-price-row-label">Pro</span>
-              <span class="mn-price-row-amount">5€ <span style="font-size:.65rem;font-weight:600;opacity:.6">/año</span></span>
-            </div>
+          <div class="mn-plan-card__price-block">
+            <span class="mn-price-currency" style="color:#A78BFA">€</span>
+            <span class="mn-price-amount" style="color:#A78BFA">${proDisplayPrice}</span>
+            <span style="font-size:.85rem;font-weight:600;color:rgba(255,255,255,.5)">${periodSuffix}</span>
           </div>
+          ${isAnnual ? `<div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px">equivale a ${(_pp.price/12).toFixed(2).replace('.',',')} €/mes</div>` : ''}
           <div class="mn-plan-card__period" style="color:rgba(255,255,255,0.4);font-size:.72rem">${t('billing_plan_pro_trial_included')}</div>
           <ul class="mn-plan-card__features">
             <li>${t('billing_plan_feat_cloud')}</li>
@@ -363,7 +371,7 @@ function _renderLocal(content) {
             </div>
           </div>
           <div class="mn-dual-card__price-row">
-            <span class="mn-dual-price mn-dual-price--pro">${t('billing_plan_pro_price')}</span>
+            <span class="mn-dual-price mn-dual-price--pro">${_b().PLANS.PRO_ANNUAL.price} €/año</span>
             ${!trialUsed ? `<span class="mn-dual-trial-tag">${t('billing_trial_tag')}</span>` : ''}
           </div>
           <button class="mn-dual-card__cta" onclick="MNBillingUI.startActivatePro()">
@@ -487,7 +495,7 @@ function _renderPro(content) {
         <div class="mn-sub-stat">
           <div class="mn-sub-stat__icon">💶</div>
           <div class="mn-sub-stat__label">${t('billing_sub_stat_importe')}</div>
-          <div class="mn-sub-stat__value">${t('billing_plan_pro_price')}</div>
+          <div class="mn-sub-stat__value">${_b().PLANS.PRO_ANNUAL.price} €/año</div>
         </div>
         <div class="mn-sub-stat">
           <div class="mn-sub-stat__icon">☁️</div>

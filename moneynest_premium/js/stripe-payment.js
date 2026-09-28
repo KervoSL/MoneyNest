@@ -670,7 +670,7 @@ window.MNPayment = (() => {
       // ── Apple Pay / Google Pay via Payment Request Button ──
       try {
         const amountCents = data.pricing?.finalAmount
-          || (priceId === MNStripeConfig.prices.local ? 699 : 1499);
+          || (priceId === MNStripeConfig.prices.local ? 1000 : 2000); // [NEEDS_STRIPE_UPDATE] annual cents
         const paymentRequest = stripe.paymentRequest({
           country: 'ES',
           currency: 'eur',

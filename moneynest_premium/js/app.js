@@ -7785,11 +7785,15 @@ function renderConfiguracion() {
     <div><div class="page-h1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> ${t('page_configuracion')}</div><div class="page-sub">${t('cfg_personaliza_sub')} · v${VERSION}</div></div>
   </div>
 
-  <div style="max-width:720px;display:flex;flex-direction:column;gap:0">
+  <style>#cfgGrid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1200px}#cfgGrid>div{min-width:0}@media(max-width:768px){#cfgGrid{grid-template-columns:1fr}}</style>
+  <div id="cfgGrid">
+
+    <!-- ── LEFT COLUMN ── -->
+    <div style="display:flex;flex-direction:column;gap:0">
 
     <!-- ── CUENTA ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">CUENTA</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)">
         <div>
           <div style="font-size:.85rem;font-weight:700;color:var(--text1)">👤 ${t('cfg_nombre')}</div>
@@ -7819,7 +7823,7 @@ function renderConfiguracion() {
 
     <!-- ── APARIENCIA ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APARIENCIA</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="display:flex;gap:12px;margin-bottom:8px">
         <div onclick="cfgSetTheme('dark')" style="flex:1;padding:14px 12px;border-radius:var(--radius-sm);background:#0F1420;border:2px solid ${isDark?'var(--accent)':'rgba(255,255,255,0.08)'};cursor:pointer;text-align:center;transition:all .15s">
           <div style="font-size:1.2rem">🌙</div>
@@ -7835,9 +7839,14 @@ function renderConfiguracion() {
       <div style="font-size:.72rem;color:var(--text3)">${t('cfg_apariencia_tip')}</div>
     </div>
 
+    </div><!-- /left column -->
+
+    <!-- ── RIGHT COLUMN ── -->
+    <div style="display:flex;flex-direction:column;gap:0">
+
     <!-- ── SEGURIDAD ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">SEGURIDAD</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:6px">🔒 ${t('cfg_pin_titulo','Bloqueo con PIN')}</div>
       <div style="font-size:.72rem;color:var(--text3);margin-bottom:12px">${t('cfg_pin_sub','Pide un PIN cada vez que abras la app')}</div>
       ${(() => {
@@ -7872,13 +7881,13 @@ function renderConfiguracion() {
 
     <!-- ── NOTIFICACIONES ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">NOTIFICACIONES</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div id="mn-notif-settings-container"></div>
     </div>
 
     <!-- ── DATOS ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">DATOS</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-export-panel')">${t('cfg_exportar_pdf')}</button>
         <button class="btn btn-secondary btn-sm" onclick="dmExportMoneynest()">${t('cfg_backup_json')}</button>
@@ -7897,9 +7906,12 @@ function renderConfiguracion() {
       </div>
     </div>
 
-    <!-- ── APLICACIÓN ── -->
+    </div><!-- /right column -->
+
+    <!-- ── APLICACIÓN (full width) ── -->
+    <div style="grid-column:1/-1">
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APLICACIÓN</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:14px">
         <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:6px">📲 ${t('install_cfg_titulo','Instalar app')}</div>
         <div style="font-size:.72rem;color:var(--text3);margin-bottom:8px">${t('install_cfg_sub','Acceso rápido · offline · sin navegador')}</div>
@@ -7936,12 +7948,16 @@ function renderConfiguracion() {
         </div>
       </div>
     </div>
+    </div><!-- /aplicación full-width -->
 
-    <!-- ── FAQ ── -->
+    <!-- ── FAQ (full width) ── -->
+    <div style="grid-column:1/-1">
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">PREGUNTAS FRECUENTES</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       ${_faqBodyHtml()}
     </div>
+    </div><!-- /faq full-width -->
+
   </div>`
 
   // Notifications settings panel (post-render)
@@ -7959,6 +7975,9 @@ function renderConfiguracion() {
   // local mock cache.
   if (document.getElementById('mn-sub-status-info')) _loadRealSubscriptionStatus()
 }
+let _billingPeriod = 'annual'
+function _setBillingPeriod(p) { _billingPeriod = p; renderFacturacion() }
+
 function renderFacturacion() {
   const el = document.getElementById('content')
   if (!el) return
@@ -7968,8 +7987,15 @@ function renderFacturacion() {
   const isLocal   = e ? e.isLocal() : false
   const isExpired = e ? e.isTrialExpired() : false
   const pink      = '#EC4899'
-  const localPrice = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME.price : 6.99
-  const proPrice   = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL.price : 14.99
+  const _lp = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME : { price:10, priceMonthly:0.99 }
+  const _pp = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL : { price:20, priceMonthly:1.99 }
+  const isAnnual = _billingPeriod === 'annual'
+  const localPrice = isAnnual ? _lp.price : _lp.priceMonthly
+  const proPrice   = isAnnual ? _pp.price : _pp.priceMonthly
+  const localPeriodLabel = isAnnual ? '/año' : '/mes'
+  const proPeriodLabel   = isAnnual ? '/año' : '/mes'
+  const localEquiv = isAnnual ? `equivale a ${(_lp.price/12).toFixed(2).replace('.',',')} €/mes` : ''
+  const proEquiv   = isAnnual ? `equivale a ${(_pp.price/12).toFixed(2).replace('.',',')} €/mes` : ''
 
   const _demoActive = typeof isDemoMode === 'function' && isDemoMode()
   const trialUsed = _demoActive ? 0 : ((S.ingresos?.length || 0) + (S.gastos?.length || 0))
@@ -8033,8 +8059,9 @@ function renderFacturacion() {
       ${isLocal ? `<div class="mn-plan-card__ribbon" style="background:var(--accent-dim);color:var(--accent)">✓ ${_aut('cfg_plan_actual_lbl','PLAN ACTUAL')}</div>` : ''}
       <div class="mn-plan-card__icon">💾</div>
       <div class="mn-plan-card__name">${_aut('plan_local_name','MoneyNest Local')}</div>
-      <div class="mn-plan-card__price">${eur(localPrice)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
-      <div class="mn-plan-card__period">${_aut('cfg_sin_permanencia','Sin permanencia')}</div>
+      <div class="mn-plan-card__price">${eur(localPrice)}<span>${localPeriodLabel}</span></div>
+      ${localEquiv ? `<div style="font-size:.72rem;color:var(--text3);margin-top:-4px">${localEquiv}</div>` : ''}
+      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2','10 €/año · ahorra 2 meses') : _aut('cfg_sin_permanencia','Sin permanencia')}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">${_aut('plan_feat_ilimitado','Datos ilimitados')}</li>
         <li class="ok">${_aut('plan_feat_exportar_excel','Exportar Excel/PDF')}</li>
@@ -8043,7 +8070,7 @@ function renderFacturacion() {
       </ul>
       ${isLocal
         ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
-        : `<button class="mn-plan-btn-local" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}</button>`}
+        : `<button class="mn-plan-btn-local" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}${localPeriodLabel}</button>`}
     </div>`
 
   const cardPro = `
@@ -8051,8 +8078,9 @@ function renderFacturacion() {
       <div class="mn-plan-card__ribbon ${isPro ? '' : 'mn-plan-card__ribbon--pro'}" style="${isPro ? `background:${pink}22;color:${pink}` : ''}">${isPro ? '✓ '+_aut('cfg_plan_actual_lbl','PLAN ACTUAL') : '⭐ '+_aut('cfg_mas_elegido','MÁS ELEGIDO')}</div>
       <div class="mn-plan-card__icon">☁️</div>
       <div class="mn-plan-card__name">${_aut('plan_pro_name','MoneyNest Pro')}</div>
-      <div class="mn-plan-card__price" style="color:${pink}">${eur(proPrice)}<span>/${_aut('plan_periodo_ano','año')}</span></div>
-      <div class="mn-plan-card__period">${_aut('cfg_pro_trial_incluido','7 días de prueba incluidos')}</div>
+      <div class="mn-plan-card__price" style="color:${pink}">${eur(proPrice)}<span>${proPeriodLabel}</span></div>
+      ${proEquiv ? `<div style="font-size:.72rem;color:var(--text3);margin-top:-4px">${proEquiv}</div>` : ''}
+      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2_pro','20 €/año · ahorra 2 meses') : _aut('cfg_pro_trial_incluido','7 días de prueba incluidos')}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
         <li class="ok">${_aut('plan_feat_cloud','Sincronización cloud')}</li>
@@ -8097,6 +8125,10 @@ function renderFacturacion() {
     <div>
       <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">${_aut('cfg_elige_plan','Elige tu plan')}</div>
       <div style="font-size:.82rem;color:var(--text3);margin-bottom:14px">${_aut('cfg_elige_plan_sub','Sin permanencia. Cambia cuando quieras.')}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;max-width:420px">
+        <button onclick="_setBillingPeriod('monthly')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${!isAnnual?'background:var(--accent);color:#0A0E17':'background:transparent;color:var(--text2)'}">${_aut('billing_mensual','Mensual')}</button>
+        <button onclick="_setBillingPeriod('annual')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${isAnnual?'background:var(--accent);color:#0A0E17':'background:transparent;color:var(--text2)'}">${_aut('billing_anual','Anual — ahorra 2 meses')}</button>
+      </div>
       <div class="mn-plan-grid">
         ${cardTrial}
         ${cardLocal}

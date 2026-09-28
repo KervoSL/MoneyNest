@@ -44,12 +44,13 @@ const BILLING_PLANS = Object.freeze({
   LOCAL_LIFETIME: {
     id:          'local_lifetime',
     name:        'Local Lifetime',
-    price:       6.99,
-    period:      'once',
+    price:       10,            // annual — [NEEDS_STRIPE_UPDATE]
+    priceMonthly: 0.99,         // monthly — [NEEDS_STRIPE_UPDATE]
+    period:      'year',
     trialDays:   0,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'no_expiry'],
     cloudSync:   false,
-    lifetime:    true,
+    lifetime:    false,
     color:       '#00D4AA',
     colorDark:   '#00A882',
     icon:        '💾',
@@ -58,7 +59,8 @@ const BILLING_PLANS = Object.freeze({
   PRO_ANNUAL: {
     id:          'pro_annual',
     name:        'Pro',
-    price:       14.99,
+    price:       20,            // annual — [NEEDS_STRIPE_UPDATE]
+    priceMonthly: 1.99,         // monthly — [NEEDS_STRIPE_UPDATE]
     period:      'year',
     trialDays:   7,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'cloud_sync', 'multi_device', 'priority_support', 'ai_insights'],
@@ -329,7 +331,7 @@ function activateLocal(email = null) {
     cancelledAt:   null,
     updatedAt:     now,
   });
-  _addInvoice({ plan: 'local_lifetime', amount: 6.99, currency: 'EUR', status: 'paid', email });
+  _addInvoice({ plan: 'local_lifetime', amount: BILLING_PLANS.LOCAL_LIFETIME.price, currency: 'EUR', status: 'paid', email });
   // Sync with MNAuth
   if (window.MNAuth?.buyLocal) window.MNAuth.buyLocal(email);
   document.dispatchEvent(new CustomEvent('mn:billing:activated', { detail: { plan: 'local_lifetime', sub } }));
