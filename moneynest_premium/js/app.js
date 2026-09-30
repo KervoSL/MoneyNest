@@ -8080,7 +8080,7 @@ function renderFacturacion() {
       </ul>
       ${isLocal
         ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
-        : `<button class="mn-plan-btn-local" onclick="MNAuthUI._doConfirmPlan('local')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}${localPeriodLabel}</button>`}
+        : `<button class="mn-plan-btn-local" onclick="MNAuthUI._doConfirmPlan(_billingPeriod==='annual'?'local_yearly':'local_monthly')">🔓 ${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(localPrice)}${localPeriodLabel}</button>`}
     </div>`
 
   const cardPro = `
@@ -8099,7 +8099,7 @@ function renderFacturacion() {
       </ul>
       ${isPro
         ? `<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ ${_aut('cfg_plan_actual_btn','Plan actual')}</button>`
-        : `<button class="mn-plan-btn-pro" onclick="MNAuthUI._doConfirmPlan('pro')">⚡ ${_aut('cfg_btn_iniciar_prueba_pro','Iniciar 7 días gratis')}</button>`}
+        : `<button class="mn-plan-btn-pro" onclick="MNAuthUI._doConfirmPlan(_billingPeriod==='annual'?'pro_yearly':'pro_monthly')">⚡ ${_aut('cfg_btn_iniciar_prueba_pro','Iniciar 7 días gratis')}</button>`}
     </div>`
 
   // ── Estado de suscripción real (solo si hay plan de pago activo) ──
@@ -8135,9 +8135,9 @@ function renderFacturacion() {
     <div>
       <div style="font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">${_aut('cfg_elige_plan','Elige tu plan')}</div>
       <div style="font-size:.82rem;color:var(--text3);margin-bottom:14px">${_aut('cfg_elige_plan_sub','Sin permanencia. Cambia cuando quieras.')}</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;max-width:420px">
-        <button onclick="_setBillingPeriod('monthly')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${!isAnnual?'background:var(--accent);color:#0A0E17':'background:transparent;color:var(--text2)'}">${_aut('billing_mensual','Mensual')}</button>
-        <button onclick="_setBillingPeriod('annual')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${isAnnual?'background:var(--accent);color:#0A0E17':'background:transparent;color:var(--text2)'}">${_aut('billing_anual','Anual — ahorra 2 meses')}</button>
+      <div style="display:inline-flex;background:rgba(255,255,255,.06);border-radius:99px;padding:4px;gap:4px;margin-bottom:24px">
+        <button onclick="_setBillingPeriod('monthly')" style="padding:8px 22px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${!isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.45)'}">${_aut('billing_mensual','Mensual')}</button>
+        <button onclick="_setBillingPeriod('annual')" style="padding:8px 22px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.45)'}">${_aut('billing_anual','Anual · ahorra hasta 4 €')}</button>
       </div>
       <div class="mn-plan-grid">
         ${cardTrial}

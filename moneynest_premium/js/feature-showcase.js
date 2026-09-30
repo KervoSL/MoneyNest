@@ -359,10 +359,10 @@
             <div class="obs-gcard obs-card-main obs-anim" style="--d:1">
               <div class="obs-card-head">Conectar cuenta</div>
               <div class="obs-bank-list" style="position:relative;max-height:232px;overflow:hidden">
-                <div class="obs-bank-row obs-anim" style="--d:2"><div class="obs-bank-dot" style="--c:#004481"><span class="obs-bank-abbr">BBVA</span></div><span>BBVA</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:2"><div class="obs-bank-dot" style="--c:#004481"><span class="obs-bank-abbr" style="font-size:10px;font-weight:800">BBVA</span></div><span>BBVA</span><span class="obs-chevron">›</span></div>
                 <div class="obs-bank-row obs-anim" style="--d:3"><div class="obs-bank-dot" style="--c:#EC0000"><span class="obs-bank-abbr" style="font-size:14px;font-weight:900">S</span></div><span>Santander</span><span class="obs-chevron">›</span></div>
                 <div class="obs-bank-row obs-anim" style="--d:4"><div class="obs-bank-dot" style="--c:#007BC4"><span class="obs-bank-abbr" style="font-size:16px">★</span></div><span>CaixaBank</span><span class="obs-chevron">›</span></div>
-                <div class="obs-bank-row obs-anim" style="--d:5"><div class="obs-bank-dot" style="--c:#FF6200"><span class="obs-bank-abbr">ING</span></div><span>ING</span><span class="obs-chevron">›</span></div>
+                <div class="obs-bank-row obs-anim" style="--d:5"><div class="obs-bank-dot" style="--c:#FF6200"><span class="obs-bank-abbr" style="font-size:10px;font-weight:900;letter-spacing:0.5px">ING</span></div><span>ING</span><span class="obs-chevron">›</span></div>
                 <div class="obs-bank-row obs-anim" style="--d:6"><div class="obs-bank-dot" style="--c:#E8410A"><span class="obs-bank-abbr" style="font-size:9px">BKT</span></div><span>Bankinter</span><span class="obs-chevron">›</span></div>
                 <div class="obs-bank-row obs-anim" style="--d:7"><div class="obs-bank-dot" style="--c:#006F5B"><span class="obs-bank-abbr">BS</span></div><span>Sabadell</span><span class="obs-chevron">›</span></div>
                 <div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(transparent,rgba(10,15,30,0.95));pointer-events:none"></div>
@@ -392,6 +392,10 @@
                     <div class="obs-anim" style="--d:5"><span class="obs-dot" style="--c:#475569"></span>Otros<b>27%</b></div>
                   </div>
                 </div>
+                <div style="text-align:center;margin-top:8px">
+                  <div style="font-size:.75rem;font-weight:700;color:#fff">2.847,30 €</div>
+                  <div style="font-size:.65rem;color:rgba(255,255,255,.4)">este mes · <span style="color:#F43F5E">-3,2%</span> vs anterior</div>
+                </div>
               </div>
               <div class="obs-gcard obs-expenses-feed obs-anim" style="--d:3">
                 <div class="obs-card-head">Movimientos recientes</div>
@@ -399,10 +403,11 @@
                   <div class="obs-tx-row obs-anim" style="--d:4"><div class="obs-tx-icon" style="background:linear-gradient(135deg,#F43F5E,#E11D48)">🛒</div><div class="obs-tx-info"><strong>Mercadona</strong><span>Hoy</span></div><span class="obs-tx-neg">-48,30 €</span></div>
                   <div class="obs-tx-row obs-anim" style="--d:5"><div class="obs-tx-icon" style="background:linear-gradient(135deg,#6366F1,#4F46E5)">🎬</div><div class="obs-tx-info"><strong>Netflix</strong><span>Hoy</span></div><span class="obs-tx-neg">-12,99 €</span></div>
                   <div class="obs-tx-row obs-anim" style="--d:6"><div class="obs-tx-icon" style="background:linear-gradient(135deg,#10B981,#059669)">💼</div><div class="obs-tx-info"><strong>Sueldo</strong><span>Hoy</span></div><span class="obs-tx-pos">+2.450,00 €</span></div>
+                  <div class="obs-tx-row obs-anim" style="--d:7"><div class="obs-tx-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA)">🏠</div><div class="obs-tx-info"><strong>Alquiler</strong><span>Hoy</span></div><span class="obs-tx-neg">-850,00 €</span></div>
                 </div>
               </div>
             </div>
-            <div class="obs-feature-strip obs-anim" style="--d:7">
+            <div class="obs-feature-strip obs-anim" style="--d:8">
               <div class="obs-feat-item"><span class="obs-feat-icon">🤖</span><div><strong>Categorización automática</strong><span>Más del 90% de precisión</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">📊</span><div><strong>Gráficos y estadísticas</strong><span>Visualiza tus hábitos</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">🎨</span><div><strong>Personaliza categorías</strong><span>Adáptalo a tu estilo de vida</span></div></div>

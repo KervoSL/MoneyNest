@@ -1316,9 +1316,9 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
 }
 
 .obs-bank-dot {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background: var(--c, #333);
   flex-shrink: 0;
   display: flex;
@@ -1899,7 +1899,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   }
 
   .showcase-description { font-size: 0.8rem; }
-  .obs-bank-dot { width: 28px; height: 28px; }
+  .obs-bank-dot { width: 26px; height: 26px; }
   .obs-donut { width: 60px; height: 60px; }
 
   .showcase-btn {
@@ -1965,7 +1965,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   .obs-feature-strip { gap: 6px; }
   .obs-feat-item { padding: 8px 10px; }
   .obs-feat-item strong { font-size: 0.68rem; }
-  .obs-bank-dot { width: 26px; height: 26px; }
+  .obs-bank-dot { width: 24px; height: 24px; }
 
   .welcome-premium {
     padding: 24px 16px;

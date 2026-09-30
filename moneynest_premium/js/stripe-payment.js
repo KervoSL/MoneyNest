@@ -302,26 +302,39 @@ window.MNPayment = (() => {
 
   function _setPlanSummary(priceId) {
     const isLocal = _isLocalPrice(priceId);
+    const planKey = _planKeyForPrice(priceId);
+    const isYearly = planKey.endsWith('_yearly');
+
+    const titleText = isLocal
+      ? (isYearly ? 'MoneyNest Local — 9,99 €/año' : 'MoneyNest Local — 1 €/mes')
+      : (isYearly ? 'MoneyNest Pro — 19,99 €/año'  : 'MoneyNest Pro — 2 €/mes');
+
     const titleEl = document.getElementById('mnPoTitle');
-    if (titleEl) titleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 9,99 €/año')
-      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 19,99 €/año');
+    if (titleEl) titleEl.textContent = _spt(isLocal ? 'payment_local_plan_title' : 'payment_pro_plan_title', titleText);
 
     const rightTitleEl = document.getElementById('mnPoRightTitle');
-    if (rightTitleEl) rightTitleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 9,99 €/año')
-      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 19,99 €/año');
+    if (rightTitleEl) rightTitleEl.textContent = _spt(isLocal ? 'payment_local_plan_title' : 'payment_pro_plan_title', titleText);
+
+    const localPrice = isYearly
+      ? '9<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span>'
+      : '1<span class="mnpo-left-cur">€</span>';
+    const proPrice = isYearly
+      ? '19<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span>'
+      : '2<span class="mnpo-left-cur">€</span>';
+    const periodLabel = isYearly ? 'al año' : 'al mes';
+
+    const logoSvg = '<svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M4 16L8 9l3 4 4-6 4 4" stroke="#00D4AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
     document.getElementById('mnPoPlanSummary').innerHTML = isLocal ? `
       <div class="mnpo-left-inner mnpo-left-inner--local">
         <div class="mnpo-left-brand">
-          <div class="mnpo-left-logo"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M4 16L8 9l3 4 4-6 4 4" stroke="#00D4AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="mnpo-left-logo">${logoSvg}</div>
           <span>MoneyNest</span>
         </div>
         <div class="mnpo-left-emoji">💾</div>
         <div class="mnpo-left-plan-name">MoneyNest Local</div>
-        <div class="mnpo-left-price">9<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
-        <div class="mnpo-left-period">al año</div>
+        <div class="mnpo-left-price">${localPrice}</div>
+        <div class="mnpo-left-period">${periodLabel}</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Acceso ilimitado a todo</li>
@@ -332,13 +345,13 @@ window.MNPayment = (() => {
       </div>` : `
       <div class="mnpo-left-inner mnpo-left-inner--pro">
         <div class="mnpo-left-brand">
-          <div class="mnpo-left-logo"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M4 16L8 9l3 4 4-6 4 4" stroke="#00D4AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="mnpo-left-logo">${logoSvg}</div>
           <span>MoneyNest</span>
         </div>
         <div class="mnpo-left-emoji">☁️</div>
         <div class="mnpo-left-plan-name">MoneyNest Pro</div>
-        <div class="mnpo-left-price">19<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
-        <div class="mnpo-left-period">al año</div>
+        <div class="mnpo-left-price">${proPrice}</div>
+        <div class="mnpo-left-period">${periodLabel}</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
           <li>Todo lo de Local</li>
