@@ -8071,7 +8071,7 @@ function renderFacturacion() {
       <div class="mn-plan-card__name">${_aut('plan_local_name','MoneyNest Local')}</div>
       <div class="mn-plan-card__price">${eur(localPrice)}<span>${localPeriodLabel}</span></div>
       ${localEquiv ? `<div style="font-size:.72rem;color:var(--text3);margin-top:-4px">${localEquiv}</div>` : ''}
-      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2','10 €/año · ahorra 2 meses') : _aut('cfg_sin_permanencia','Sin permanencia')}</div>
+      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2','9,99 €/año · ahorra 2 meses') : _aut('cfg_sin_permanencia','Sin permanencia')}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">${_aut('plan_feat_ilimitado','Datos ilimitados')}</li>
         <li class="ok">${_aut('plan_feat_exportar_excel','Exportar Excel/PDF')}</li>
@@ -8090,7 +8090,7 @@ function renderFacturacion() {
       <div class="mn-plan-card__name">${_aut('plan_pro_name','MoneyNest Pro')}</div>
       <div class="mn-plan-card__price" style="color:${pink}">${eur(proPrice)}<span>${proPeriodLabel}</span></div>
       ${proEquiv ? `<div style="font-size:.72rem;color:var(--text3);margin-top:-4px">${proEquiv}</div>` : ''}
-      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2_pro','20 €/año · ahorra 2 meses') : _aut('cfg_pro_trial_incluido','7 días de prueba incluidos')}</div>
+      <div class="mn-plan-card__period">${isAnnual ? _aut('billing_ahorra_2_pro','19,99 €/año · ahorra 2 meses') : _aut('cfg_pro_trial_incluido','7 días de prueba incluidos')}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">${_aut('plan_feat_todo_local','Todo lo de Local')}</li>
         <li class="ok">${_aut('plan_feat_cloud','Sincronización cloud')}</li>
@@ -13360,7 +13360,7 @@ function _obLeftHTML(step) {
   if (step === 4) {
     const planInfo = {
       trial: { icon: '🕐', color: '#F59E0B', label: 'Prueba gratuita', desc: '100 movimientos gratis' },
-      local: { icon: '💾', color: '#10B981', label: 'Local', desc: '10 €/año' },
+      local: { icon: '💾', color: '#10B981', label: 'Local', desc: '9,99 €/año' },
     }
     const p = planInfo[obData.plan] || planInfo.trial
     return `
@@ -14912,7 +14912,7 @@ function _showManagePlanPlaceholder() {
 }
 
 function _showPaymentPrompt(email) {
-  const priceId = window.MNStripeConfig?.prices?.local
+  const priceId = window.MNStripeConfig?.prices?.local?.yearly
   if (!priceId || !window.MNPayment) return
 
   const overlay = document.createElement('div')
@@ -14923,7 +14923,7 @@ function _showPaymentPrompt(email) {
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:2.5rem;margin-bottom:10px">🎉</div>
         <div style="font-size:1.25rem;font-weight:800;color:var(--text);margin-bottom:6px">Todo listo, ${S.usuario.nombre || 'hola'}!</div>
-        <div style="font-size:.87rem;color:var(--text2);line-height:1.6">MoneyNest Local, directamente en tu dispositivo. 10 € al año.</div>
+        <div style="font-size:.87rem;color:var(--text2);line-height:1.6">MoneyNest Local, directamente en tu dispositivo. 9,99 € al año.</div>
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 22px;margin-bottom:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -14932,7 +14932,7 @@ function _showPaymentPrompt(email) {
             <div style="font-size:.75rem;color:var(--text2)">Suscripción anual</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:1.6rem;font-weight:900;color:var(--accent)">10 €</div>
+            <div style="font-size:1.6rem;font-weight:900;color:var(--accent)">9,99 €</div>
             <div style="font-size:.68rem;color:var(--text3)">/año · IVA incluido</div>
           </div>
         </div>
@@ -14946,7 +14946,7 @@ function _showPaymentPrompt(email) {
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button onclick="window._startStripeCheckout('local')" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent);color:#042b20;font-size:.95rem;font-weight:800;cursor:pointer;font-family:inherit">
-          🔓 Comprar MoneyNest — 10 €/año
+          🔓 Comprar MoneyNest — 9,99 €/año
         </button>
         <button onclick="document.getElementById('mn-payment-prompt').remove();window._popScrollLock&&window._popScrollLock()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">
           Ahora no — recordar más tarde
@@ -14964,7 +14964,7 @@ function _showPaymentPrompt(email) {
   overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); if (typeof window._popScrollLock === 'function') window._popScrollLock() } })
 
   window._startStripeCheckout = function(type) {
-    const pid = window.MNStripeConfig?.prices?.[type === 'bundle' ? 'pro' : 'local'] || priceId
+    const pid = window.MNStripeConfig?.prices?.[type === 'bundle' ? 'pro' : 'local']?.yearly || priceId
     overlay.remove()
     // Release THIS overlay's own scroll-lock push before MNPayment.open()
     // makes its own — otherwise the counter ends up one push ahead with
@@ -15683,7 +15683,7 @@ function _faqBodyHtml() {
       { q: t('faq_q13','¿Qué pasa si reseteo la app?'), a: t('faq_a13','El reset elimina <strong>todos los datos permanentemente</strong>. Exporta siempre una copia de seguridad antes.') },
     ]},
     { group: '💳 ' + t('faq_g_plan','Plan y facturación'), color: 'var(--gold)', items: [
-      { q: t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), a: t('faq_a_local_pro','<strong>Local</strong> (10 €/año) te da acceso ilimitado a MoneyNest en este dispositivo. <strong>Pro</strong> (20 €/año) añade Cloud: sincronización automática entre dispositivos, backup y restauración.') },
+      { q: t('faq_q_local_pro','¿Cuál es la diferencia entre Local y Pro?'), a: t('faq_a_local_pro','<strong>Local</strong> (9,99 €/año) te da acceso ilimitado a MoneyNest en este dispositivo. <strong>Pro</strong> (19,99 €/año) añade Cloud: sincronización automática entre dispositivos, backup y restauración.') },
       { q: t('faq_q_cloud','¿Cómo funciona Cloud?'), a: t('faq_a_cloud','Con el plan Pro, tus datos se sincronizan automáticamente en la nube. Así puedes acceder a tu información desde cualquier dispositivo y siempre tienes una copia de seguridad actualizada.') },
       { q: t('faq_q_recuperar','¿Cómo recupero mis datos si cambio de dispositivo?'), a: t('faq_a_recuperar','Si ya tienes una licencia, usa <strong>Restaurar acceso</strong> desde la pantalla de inicio de sesión con el email de tu compra. Si eres Pro, tus datos se sincronizan automáticamente al iniciar sesión.') },
     ]},

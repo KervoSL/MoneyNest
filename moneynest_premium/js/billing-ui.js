@@ -139,10 +139,13 @@ function renderBillingPage() {
   const pink     = '#EC4899';
 
   // ── Movement counter (recalculated on every render) ──
-  const trialUsed = (typeof _countTrialMovements === 'function')
-    ? _countTrialMovements()
-    : ((window.S?.ingresos?.length || 0) + (window.S?.gastos?.length || 0));
-  const LIMIT = window.TRIAL_MOVEMENT_LIMIT || 100;
+  const isDemoActive = window.MNAuth?.getUser?.()?.demoMode
+    || (typeof isDemoMode === 'function' && isDemoMode());
+  const trialUsed = isDemoActive ? 0 : (
+    (window.S?.ingresos?.length || 0) +
+    (window.S?.gastos?.length  || 0)
+  );
+  const LIMIT = 100;
   const trialRemaining = Math.max(0, LIMIT - trialUsed);
   const trialPct = Math.min(100, (trialUsed / LIMIT) * 100);
 
@@ -398,7 +401,7 @@ function _renderTrial(content) {
             <span style="font-size:.85rem;font-weight:600;color:rgba(255,255,255,.5)">${periodSuffix}</span>
           </div>
           ${isAnnual ? `<div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px">equivale a ${(_lp.price/12).toFixed(2).replace('.',',')} €/mes</div>` : ''}
-          <div class="mn-plan-card__period">${isAnnual ? '10 €/año · ahorra 2 meses' : t('billing_plan_local_period')}</div>
+          <div class="mn-plan-card__period">${isAnnual ? '9,99 €/año · ahorra 2 meses' : t('billing_plan_local_period')}</div>
           <ul class="mn-plan-card__features">
             <li>${t('billing_plan_feat_ilimitados')}</li>
             <li>${t('billing_plan_feat_excel')}</li>

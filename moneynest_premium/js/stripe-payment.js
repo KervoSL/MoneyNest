@@ -304,13 +304,13 @@ window.MNPayment = (() => {
     const isLocal = _isLocalPrice(priceId);
     const titleEl = document.getElementById('mnPoTitle');
     if (titleEl) titleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 10 €/año')
-      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 20 €/año');
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 9,99 €/año')
+      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 19,99 €/año');
 
     const rightTitleEl = document.getElementById('mnPoRightTitle');
     if (rightTitleEl) rightTitleEl.textContent = isLocal
-      ? _spt('payment_local_plan_title', 'MoneyNest Local — 10 €/año')
-      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 20 €/año');
+      ? _spt('payment_local_plan_title', 'MoneyNest Local — 9,99 €/año')
+      : _spt('payment_pro_plan_title',   'MoneyNest Pro — 19,99 €/año');
 
     document.getElementById('mnPoPlanSummary').innerHTML = isLocal ? `
       <div class="mnpo-left-inner mnpo-left-inner--local">
