@@ -407,7 +407,7 @@
     }
 
     // Create new profile — trigger should have done this, but fallback
-    const trialEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const trialEndsAt = '9999-12-31T23:59:59.999Z';
     const { data: created, error: insertErr } = await sb
       .from('profiles')
       .insert({
@@ -488,7 +488,7 @@
     const serverPlan = profile.plan || 'trial';
     const trialEndsAt = profile.trial_ends_at
       ? new Date(profile.trial_ends_at).getTime()
-      : (localUser.trialEndsAt || Date.now() + 24 * 60 * 60 * 1000);
+      : null;
 
     const proTrialEndsAt = profile.pro_trial_ends_at
       ? new Date(profile.pro_trial_ends_at).getTime()

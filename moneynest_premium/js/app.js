@@ -49,7 +49,7 @@ const SK = 'mn7_data'
 //  Inline version of /js/auth.js (kept in sync with that file)
 // ════════════════════════════════════════════════════════════════
 const USER_KEY  = 'mn_user'
-const TRIAL_DAYS = 1 // 24 horas (v2 — ver js/auth.js)
+const TRIAL_DAYS = 1 // legacy — trial is now movement-based (100 movements, see TRIAL_MOVEMENT_LIMIT)
 
 const PLANS = Object.freeze({ GUEST:'trial', TRIAL:'trial', LOCKED_LOCAL:'locked_local', LOCAL:'local' })
 window.PLANS = PLANS
@@ -146,19 +146,16 @@ function downgradeGuest() {
 }
 // v2 aliases
 function buyLocal(email)    { return patchUser({ plan:'local', trialEndsAt:null, cloudEnabled:false, upgradedAt:Date.now(), ...(email?{email}:{}) }) }
-function trialMsLeft()      { const u=getUser(); if(u.plan!=='trial'||!u.trialEndsAt) return 0; return Math.max(0,u.trialEndsAt-Date.now()) }
+function trialMsLeft()      { return Infinity }
 function isLocked()         { return getUser().plan === 'locked_local' }
 function isLocal()          { return getUser().plan === 'local' }
 
 function trialDaysLeft() {
-  const user = getUser()
-  if (user.plan !== 'trial' || !user.trialEndsAt) return 0
-  return Math.max(0, Math.ceil((user.trialEndsAt - Date.now()) / 86400000))
+  return Infinity
 }
 
 function isTrialExpired() {
-  const user = getUser()
-  return user.plan === 'trial' && !!user.trialEndsAt && Date.now() > user.trialEndsAt
+  return false
 }
 
 function isGuest() { return getUser().plan === 'locked_local'; }
@@ -190,23 +187,23 @@ function bloquearApp(user) {
         <div class="mn-lock-plans-grid" id="mn-lock-plans-grid">
           <div style="background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0));border:1.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column">
             <div style="font-size:.95rem;font-weight:800;color:#fff;margin-bottom:2px">MoneyNest Local</div>
-            <div style="font-size:1.9rem;font-weight:900;color:#00D4AA;margin:6px 0 2px">10 €</div>
+            <div style="font-size:1.9rem;font-weight:900;color:#00D4AA;margin:6px 0 2px">9,99 €</div>
             <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">al año</div>
             <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;flex:1">
               ${['Acceso ilimitado','Datos locales','Sin Cloud','Sin sincronización'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#00D4AA">✓</span> ${f}</li>`).join('')}
             </ul>
-            <button class="mn-lock-plan-btn" data-plan="local" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(0,212,170,.4);background:rgba(0,212,170,.08);color:#00D4AA;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Local — 10 €/año</button>
+            <button class="mn-lock-plan-btn" data-plan="local_yearly" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(0,212,170,.4);background:rgba(0,212,170,.08);color:#00D4AA;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Local — 9,99 €/año</button>
           </div>
 
           <div style="background:linear-gradient(160deg,rgba(236,72,153,.1),rgba(255,255,255,0) 60%);border:1.5px solid rgba(236,72,153,.4);border-radius:20px;padding:24px 22px;display:flex;flex-direction:column;position:relative">
             <span style="position:absolute;top:-10px;right:16px;background:#EC4899;color:#fff;font-size:.62rem;font-weight:800;padding:3px 10px;border-radius:99px">☁️ CLOUD</span>
             <div style="font-size:.95rem;font-weight:800;color:#fff;margin-bottom:2px">MoneyNest Pro</div>
-            <div style="font-size:1.9rem;font-weight:900;color:#EC4899;margin:6px 0 2px">20 €</div>
+            <div style="font-size:1.9rem;font-weight:900;color:#EC4899;margin:6px 0 2px">19,99 €</div>
             <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">al año</div>
             <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;flex:1">
               ${['Todo lo de Local','Cloud','Sincronización','Backup automático','Restauración','Varios dispositivos'].map(f => `<li style="font-size:.8rem;color:rgba(255,255,255,.75)"><span style="color:#EC4899">✓</span> ${f}</li>`).join('')}
             </ul>
-            <button class="mn-lock-plan-btn" data-plan="pro" style="width:100%;padding:14px;border-radius:12px;border:none;background:#EC4899;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Pro — 20 €/año</button>
+            <button class="mn-lock-plan-btn" data-plan="pro_yearly" style="width:100%;padding:14px;border-radius:12px;border:none;background:#EC4899;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit">Elegir Pro — 19,99 €/año</button>
           </div>
         </div>
 
@@ -238,7 +235,8 @@ function bloquearApp(user) {
       // Fallback to the mock plan modal, then the legacy Stripe flow,
       // only if the primary path somehow isn't loaded.
       if (window.MNAuthUI) { MNAuthUI.openPlanModal('trial_expired_lock'); return }
-      const priceId = window.MNStripeConfig?.prices?.[plan]
+      const _p = window.MNStripeConfig?.prices
+      const priceId = plan === 'local_yearly' ? _p?.local?.yearly : plan === 'pro_yearly' ? _p?.pro?.yearly : plan === 'local_monthly' ? _p?.local?.monthly : _p?.pro?.monthly
       if (!window.MNPayment || !priceId) {
         console.error('[bloquearApp] No se pudo iniciar el checkout', { hasMNPayment: !!window.MNPayment, priceId })
         _showLockError('No se pudo iniciar el pago. Recarga la página e inténtalo de nuevo.')
@@ -466,7 +464,7 @@ const TRANSLATIONS = {
     nav_billing: 'Plan & Facturación',
     nav_cerrar_sesion: 'Cerrar sesión',
     // Auth UI i18n
-    auth_cuenta:'Cuenta MoneyNest',auth_iniciar_sesion:'Iniciar sesión',auth_crear_cuenta_titulo:'Crear cuenta',auth_crear_cuenta:'Crear cuenta →',auth_crear_y_empezar:'Crear cuenta y empezar →',auth_ya_tienes:'¿Ya tienes cuenta?',auth_iniciar_sesion_link:'Iniciar sesión',auth_nuevo:'¿Nuevo en MoneyNest?',auth_email:'Correo electrónico',auth_password:'Contraseña',auth_password_nueva:'Contraseña (mín. 8 caracteres)',auth_confirmar_password:'Confirmar contraseña',auth_entrar:'Entrar',auth_entrando:'Entrando…',auth_enviando:'Enviando…',auth_creando:'Creando cuenta…',auth_guardando:'Guardando…',auth_olvide_contrasena:'¿Olvidaste tu contraseña?',auth_recuperar:'Recuperar acceso',auth_resetear:'Resetear contraseña',auth_reset_desc:'Te enviaremos un enlace para restablecer tu contraseña.',auth_enviar_enlace:'Enviar enlace de reseteo',auth_volver_login:'Volver al login',auth_seguridad:'Seguridad',auth_nueva_contrasena:'Nueva contraseña',auth_nueva_pw_desc:'Elige una contraseña segura para tu cuenta.',auth_guardar_contrasena:'Guardar contraseña',auth_o:'o continúa con email',auth_24h_gratis:'24h gratis',auth_24h_desc:'Registrarte activa tu prueba gratuita. Sin tarjeta.',auth_plan_prueba:'⏳ Plan de prueba',auth_tiempo_restante:'tiempo de prueba restante',auth_trial_restante:'Tiempo de prueba restante',auth_registrate_desc:'Regístrate para que tu trial de 24h quede asociado a tu email.',auth_crear_cuenta_gratis:'Crear cuenta gratuita →',auth_ya_tengo_cuenta:'Ya tengo cuenta — Iniciar sesión',auth_desbloquear_ahora:'Desbloquear ahora',auth_plan_local_desc:'Con MoneyNest (desde 0,99 €/mes) nunca expira.',auth_comprar_local:'Comprar MoneyNest — desde 0,99 €/mes →',auth_comprar_local_cta:'Comprar MoneyNest — desde 0,99 €/mes →',auth_que_pasa:'¿Qué pasa cuando expire?',auth_plan_local_cta_desc:'La app se bloqueará. Con MoneyNest (desde 0,99 €/mes) se desbloquea para siempre.',auth_acceso_bloqueado:'Acceso bloqueado',auth_prueba_expirada:'Tu prueba de 24 horas ha expirado.',auth_datos_seguros:'Tus datos están a salvo.',auth_plan_local:'Plan Local',auth_pago_unico:'pago único',auth_feat_acceso_inmediato:'Acceso inmediato sin expiración',auth_feat_datos:'Todos tus datos conservados',auth_feat_ilimitado:'Ilimitado: movimientos, categorías',auth_feat_export:'Exportación PDF y Excel',auth_restaurar:'¿Ya compraste? Restaurar acceso',auth_plan_local_activo:'Plan Local activo',auth_acceso_desbloqueado:'Acceso desbloqueado',auth_datos_locales:'Tus datos se guardan en este dispositivo.',auth_sesion_activa:'Sesión activa',auth_activar_nube:'Activa la sincronización en la nube',auth_plan_pro:'Plan Pro',auth_año:'año',auth_feat_sync:'Sincronización multi-dispositivo',auth_feat_backup:'Backup automático',auth_feat_soporte:'Soporte prioritario',auth_feat_beta:'Funciones beta primero',auth_pro_note_used:'Prueba gratuita ya usada.',auth_plan_pro_activo:'Plan Pro activo',auth_gracias_pro:'¡Gracias por ser Pro!',auth_suscripcion_activa:'suscripción activa',auth_prueba_activa:'Prueba gratuita activa',auth_hasta:'hasta el',auth_feat_cloud:'Cloud sync',auth_feat_backups:'Backups auto',auth_vincular_pago_desc:'Vincula un método de pago antes de que expire la prueba.',auth_vincular_pago:'Vincular método de pago',auth_cancelar_pro:'Cancelar suscripción Pro',auth_cancelar_pro_nota:'Si cancelas, tu plan vuelve a Local.',auth_cerrar_sesion:'Cerrar sesión',auth_sesion_cerrada:'Sesión cerrada.',auth_sesion_iniciada:'Sesión iniciada correctamente.',auth_cuenta_creada:'¡Cuenta creada y sesión iniciada!',auth_confirma_email:'¡Cuenta creada! Revisa tu email para confirmar.',auth_revisa_email:'Revisa tu bandeja de entrada para confirmar tu cuenta.',auth_enlace_enviado:'Enlace enviado. Revisa tu email.',auth_pw_actualizada:'Contraseña actualizada correctamente.',auth_ver_plan:'Ver mi plan',auth_tu_plan:'Tu plan actual',auth_plan_local_badge:'Local',auth_bloqueado:'Bloqueado',auth_confirmar_cancelar_pro:'¿Seguro que quieres cancelar el Plan Pro?',auth_pro_cancelado:'Plan Pro cancelado. Sigues con Plan Local.',auth_error_campos:'Rellena todos los campos.',auth_error_email:'Email no válido.',auth_error_pw_corta:'La contraseña debe tener al menos 8 caracteres.',auth_error_pw_no_coincide:'Las contraseñas no coinciden.',auth_error_credenciales:'Email o contraseña incorrectos.',auth_error_no_confirmado:'Confirma tu email antes de entrar.',auth_error_email_existe:'Este email ya está registrado.',auth_error_rate:'Demasiados intentos. Espera unos minutos.',auth_error_rate_reset:'Demasiadas solicitudes. Espera 1 hora.',auth_error_oauth:'Error al conectar con el proveedor.',auth_error_generico:'Se produjo un error. Inténtalo de nuevo.',
+    auth_cuenta:'Cuenta MoneyNest',auth_iniciar_sesion:'Iniciar sesión',auth_crear_cuenta_titulo:'Crear cuenta',auth_crear_cuenta:'Crear cuenta →',auth_crear_y_empezar:'Crear cuenta y empezar →',auth_ya_tienes:'¿Ya tienes cuenta?',auth_iniciar_sesion_link:'Iniciar sesión',auth_nuevo:'¿Nuevo en MoneyNest?',auth_email:'Correo electrónico',auth_password:'Contraseña',auth_password_nueva:'Contraseña (mín. 8 caracteres)',auth_confirmar_password:'Confirmar contraseña',auth_entrar:'Entrar',auth_entrando:'Entrando…',auth_enviando:'Enviando…',auth_creando:'Creando cuenta…',auth_guardando:'Guardando…',auth_olvide_contrasena:'¿Olvidaste tu contraseña?',auth_recuperar:'Recuperar acceso',auth_resetear:'Resetear contraseña',auth_reset_desc:'Te enviaremos un enlace para restablecer tu contraseña.',auth_enviar_enlace:'Enviar enlace de reseteo',auth_volver_login:'Volver al login',auth_seguridad:'Seguridad',auth_nueva_contrasena:'Nueva contraseña',auth_nueva_pw_desc:'Elige una contraseña segura para tu cuenta.',auth_guardar_contrasena:'Guardar contraseña',auth_o:'o continúa con email',auth_24h_gratis:'Prueba gratuita',auth_24h_desc:'100 movimientos gratis. Sin tarjeta.',auth_plan_prueba:'⏳ Plan de prueba',auth_tiempo_restante:'tiempo de prueba restante',auth_trial_restante:'Tiempo de prueba restante',auth_registrate_desc:'Regístrate para vincular tu cuenta. 100 movimientos gratis.',auth_crear_cuenta_gratis:'Crear cuenta gratuita →',auth_ya_tengo_cuenta:'Ya tengo cuenta — Iniciar sesión',auth_desbloquear_ahora:'Desbloquear ahora',auth_plan_local_desc:'Con MoneyNest (desde 1 €/mes) sin límites.',auth_comprar_local:'Comprar MoneyNest — desde 1 €/mes →',auth_comprar_local_cta:'Comprar MoneyNest — desde 1 €/mes →',auth_que_pasa:'¿Qué pasa cuando expire?',auth_plan_local_cta_desc:'Al llegar a 100 movimientos se bloqueará. Con MoneyNest (desde 1 €/mes) se desbloquea para siempre.',auth_acceso_bloqueado:'Acceso bloqueado',auth_prueba_expirada:'Has alcanzado el límite de 100 movimientos.',auth_datos_seguros:'Tus datos están a salvo.',auth_plan_local:'Plan Local',auth_pago_unico:'pago único',auth_feat_acceso_inmediato:'Acceso inmediato sin expiración',auth_feat_datos:'Todos tus datos conservados',auth_feat_ilimitado:'Ilimitado: movimientos, categorías',auth_feat_export:'Exportación PDF y Excel',auth_restaurar:'¿Ya compraste? Restaurar acceso',auth_plan_local_activo:'Plan Local activo',auth_acceso_desbloqueado:'Acceso desbloqueado',auth_datos_locales:'Tus datos se guardan en este dispositivo.',auth_sesion_activa:'Sesión activa',auth_activar_nube:'Activa la sincronización en la nube',auth_plan_pro:'Plan Pro',auth_año:'año',auth_feat_sync:'Sincronización multi-dispositivo',auth_feat_backup:'Backup automático',auth_feat_soporte:'Soporte prioritario',auth_feat_beta:'Funciones beta primero',auth_pro_note_used:'Prueba gratuita ya usada.',auth_plan_pro_activo:'Plan Pro activo',auth_gracias_pro:'¡Gracias por ser Pro!',auth_suscripcion_activa:'suscripción activa',auth_prueba_activa:'Prueba gratuita activa',auth_hasta:'hasta el',auth_feat_cloud:'Cloud sync',auth_feat_backups:'Backups auto',auth_vincular_pago_desc:'Vincula un método de pago antes de que expire la prueba.',auth_vincular_pago:'Vincular método de pago',auth_cancelar_pro:'Cancelar suscripción Pro',auth_cancelar_pro_nota:'Si cancelas, tu plan vuelve a Local.',auth_cerrar_sesion:'Cerrar sesión',auth_sesion_cerrada:'Sesión cerrada.',auth_sesion_iniciada:'Sesión iniciada correctamente.',auth_cuenta_creada:'¡Cuenta creada y sesión iniciada!',auth_confirma_email:'¡Cuenta creada! Revisa tu email para confirmar.',auth_revisa_email:'Revisa tu bandeja de entrada para confirmar tu cuenta.',auth_enlace_enviado:'Enlace enviado. Revisa tu email.',auth_pw_actualizada:'Contraseña actualizada correctamente.',auth_ver_plan:'Ver mi plan',auth_tu_plan:'Tu plan actual',auth_plan_local_badge:'Local',auth_bloqueado:'Bloqueado',auth_confirmar_cancelar_pro:'¿Seguro que quieres cancelar el Plan Pro?',auth_pro_cancelado:'Plan Pro cancelado. Sigues con Plan Local.',auth_error_campos:'Rellena todos los campos.',auth_error_email:'Email no válido.',auth_error_pw_corta:'La contraseña debe tener al menos 8 caracteres.',auth_error_pw_no_coincide:'Las contraseñas no coinciden.',auth_error_credenciales:'Email o contraseña incorrectos.',auth_error_no_confirmado:'Confirma tu email antes de entrar.',auth_error_email_existe:'Este email ya está registrado.',auth_error_rate:'Demasiados intentos. Espera unos minutos.',auth_error_rate_reset:'Demasiadas solicitudes. Espera 1 hora.',auth_error_oauth:'Error al conectar con el proveedor.',auth_error_generico:'Se produjo un error. Inténtalo de nuevo.',
     // Topbar
     disponible: 'Disponible',
     exportar: 'Exportar',
@@ -1007,7 +1005,7 @@ const TRANSLATIONS = {
     nav_configuracion: 'Settings', nav_faq: 'FAQ', nav_sugerencias: 'Suggestions',
     nav_billing: 'Plan & Billing',
     nav_cerrar_sesion: 'Sign out',
-    auth_cuenta:'MoneyNest Account',auth_iniciar_sesion:'Sign in',auth_crear_cuenta_titulo:'Create account',auth_crear_cuenta:'Create account →',auth_crear_y_empezar:'Create account and start →',auth_ya_tienes:'Already have an account?',auth_iniciar_sesion_link:'Sign in',auth_nuevo:'New to MoneyNest?',auth_email:'Email address',auth_password:'Password',auth_password_nueva:'Password (min. 8 characters)',auth_confirmar_password:'Confirm password',auth_entrar:'Sign in',auth_entrando:'Signing in…',auth_enviando:'Sending…',auth_creando:'Creating account…',auth_guardando:'Saving…',auth_olvide_contrasena:'Forgot your password?',auth_recuperar:'Recover access',auth_resetear:'Reset password',auth_reset_desc:'We will send you a link to reset your password.',auth_enviar_enlace:'Send reset link',auth_volver_login:'Back to login',auth_seguridad:'Security',auth_nueva_contrasena:'New password',auth_nueva_pw_desc:'Choose a strong password for your MoneyNest account.',auth_guardar_contrasena:'Save password',auth_o:'or continue with email',auth_24h_gratis:'24h free',auth_24h_desc:'Signing up activates your free trial. No card required.',auth_plan_prueba:'⏳ Trial plan',auth_tiempo_restante:'trial time remaining',auth_trial_restante:'Trial time remaining',auth_registrate_desc:'Sign up to link your 24h trial to your email.',auth_crear_cuenta_gratis:'Create free account →',auth_ya_tengo_cuenta:'Already have an account — Sign in',auth_desbloquear_ahora:'Unlock now',auth_plan_local_desc:'With MoneyNest (from €0.99/mo) it never expires.',auth_comprar_local:'Buy MoneyNest — from €0.99/mo →',auth_comprar_local_cta:'Buy MoneyNest — from €0.99/mo →',auth_que_pasa:'What happens when it expires?',auth_plan_local_cta_desc:'The app will lock. With MoneyNest (from €0.99/mo) it unlocks forever.',auth_acceso_bloqueado:'Access locked',auth_prueba_expirada:'Your 24-hour trial has expired.',auth_datos_seguros:'Your data is safe — just unlock the app.',auth_plan_local:'Local Plan',auth_pago_unico:'one-time',auth_feat_acceso_inmediato:'Immediate access, no expiry',auth_feat_datos:'All your data preserved',auth_feat_ilimitado:'Unlimited entries and categories',auth_feat_export:'PDF and Excel export',auth_restaurar:'Already purchased? Restore access',auth_plan_local_activo:'Local Plan active',auth_acceso_desbloqueado:'Access unlocked',auth_datos_locales:'Your data is stored on this device.',auth_sesion_activa:'Session active',auth_activar_nube:'Activate cloud sync',auth_plan_pro:'Pro Plan',auth_año:'year',auth_feat_sync:'Multi-device sync',auth_feat_backup:'Automatic backups',auth_feat_soporte:'Priority support',auth_feat_beta:'Beta features first',auth_pro_note_used:'Free trial already used.',auth_plan_pro_activo:'Pro Plan active',auth_gracias_pro:'Thanks for being Pro!',auth_suscripcion_activa:'subscription active',auth_prueba_activa:'Free trial active',auth_hasta:'until',auth_feat_cloud:'Cloud sync',auth_feat_backups:'Auto backups',auth_vincular_pago_desc:'Link a payment method before your trial expires.',auth_vincular_pago:'Link payment method',auth_cancelar_pro:'Cancel Pro subscription',auth_cancelar_pro_nota:'If you cancel, your plan reverts to Local.',auth_cerrar_sesion:'Sign out',auth_sesion_cerrada:'Signed out.',auth_sesion_iniciada:'Signed in successfully.',auth_cuenta_creada:'Account created and signed in!',auth_confirma_email:'Account created! Check your email to confirm.',auth_revisa_email:'Check your inbox to confirm your account.',auth_enlace_enviado:'Link sent. Check your email.',auth_pw_actualizada:'Password updated successfully.',auth_ver_plan:'View my plan',auth_tu_plan:'Your current plan',auth_plan_local_badge:'Local',auth_bloqueado:'Locked',auth_confirmar_cancelar_pro:'Are you sure you want to cancel Pro?',auth_pro_cancelado:'Pro cancelled. You still have Local plan.',auth_error_campos:'Fill in all fields.',auth_error_email:'Invalid email.',auth_error_pw_corta:'Password must be at least 8 characters.',auth_error_pw_no_coincide:'Passwords do not match.',auth_error_credenciales:'Incorrect email or password.',auth_error_no_confirmado:'Confirm your email before signing in.',auth_error_email_existe:'This email is already registered.',auth_error_rate:'Too many attempts. Please wait a few minutes.',auth_error_rate_reset:'Too many requests. Wait 1 hour.',auth_error_oauth:'Error connecting to provider.',auth_error_generico:'An error occurred. Please try again.',
+    auth_cuenta:'MoneyNest Account',auth_iniciar_sesion:'Sign in',auth_crear_cuenta_titulo:'Create account',auth_crear_cuenta:'Create account →',auth_crear_y_empezar:'Create account and start →',auth_ya_tienes:'Already have an account?',auth_iniciar_sesion_link:'Sign in',auth_nuevo:'New to MoneyNest?',auth_email:'Email address',auth_password:'Password',auth_password_nueva:'Password (min. 8 characters)',auth_confirmar_password:'Confirm password',auth_entrar:'Sign in',auth_entrando:'Signing in…',auth_enviando:'Sending…',auth_creando:'Creating account…',auth_guardando:'Saving…',auth_olvide_contrasena:'Forgot your password?',auth_recuperar:'Recover access',auth_resetear:'Reset password',auth_reset_desc:'We will send you a link to reset your password.',auth_enviar_enlace:'Send reset link',auth_volver_login:'Back to login',auth_seguridad:'Security',auth_nueva_contrasena:'New password',auth_nueva_pw_desc:'Choose a strong password for your MoneyNest account.',auth_guardar_contrasena:'Save password',auth_o:'or continue with email',auth_24h_gratis:'Free trial',auth_24h_desc:'100 entries free. No card required.',auth_plan_prueba:'⏳ Trial plan',auth_tiempo_restante:'trial time remaining',auth_trial_restante:'Trial time remaining',auth_registrate_desc:'Sign up to link your account. 100 entries free.',auth_crear_cuenta_gratis:'Create free account →',auth_ya_tengo_cuenta:'Already have an account — Sign in',auth_desbloquear_ahora:'Unlock now',auth_plan_local_desc:'With MoneyNest (from €1/mo) no limits.',auth_comprar_local:'Buy MoneyNest — from €1/mo →',auth_comprar_local_cta:'Buy MoneyNest — from €1/mo →',auth_que_pasa:'What happens when it expires?',auth_plan_local_cta_desc:'At 100 entries the app locks. With MoneyNest (from €1/mo) it unlocks forever.',auth_acceso_bloqueado:'Access locked',auth_prueba_expirada:'You have reached the 100-entry limit.',auth_datos_seguros:'Your data is safe — just unlock the app.',auth_plan_local:'Local Plan',auth_pago_unico:'one-time',auth_feat_acceso_inmediato:'Immediate access, no expiry',auth_feat_datos:'All your data preserved',auth_feat_ilimitado:'Unlimited entries and categories',auth_feat_export:'PDF and Excel export',auth_restaurar:'Already purchased? Restore access',auth_plan_local_activo:'Local Plan active',auth_acceso_desbloqueado:'Access unlocked',auth_datos_locales:'Your data is stored on this device.',auth_sesion_activa:'Session active',auth_activar_nube:'Activate cloud sync',auth_plan_pro:'Pro Plan',auth_año:'year',auth_feat_sync:'Multi-device sync',auth_feat_backup:'Automatic backups',auth_feat_soporte:'Priority support',auth_feat_beta:'Beta features first',auth_pro_note_used:'Free trial already used.',auth_plan_pro_activo:'Pro Plan active',auth_gracias_pro:'Thanks for being Pro!',auth_suscripcion_activa:'subscription active',auth_prueba_activa:'Free trial active',auth_hasta:'until',auth_feat_cloud:'Cloud sync',auth_feat_backups:'Auto backups',auth_vincular_pago_desc:'Link a payment method before your trial expires.',auth_vincular_pago:'Link payment method',auth_cancelar_pro:'Cancel Pro subscription',auth_cancelar_pro_nota:'If you cancel, your plan reverts to Local.',auth_cerrar_sesion:'Sign out',auth_sesion_cerrada:'Signed out.',auth_sesion_iniciada:'Signed in successfully.',auth_cuenta_creada:'Account created and signed in!',auth_confirma_email:'Account created! Check your email to confirm.',auth_revisa_email:'Check your inbox to confirm your account.',auth_enlace_enviado:'Link sent. Check your email.',auth_pw_actualizada:'Password updated successfully.',auth_ver_plan:'View my plan',auth_tu_plan:'Your current plan',auth_plan_local_badge:'Local',auth_bloqueado:'Locked',auth_confirmar_cancelar_pro:'Are you sure you want to cancel Pro?',auth_pro_cancelado:'Pro cancelled. You still have Local plan.',auth_error_campos:'Fill in all fields.',auth_error_email:'Invalid email.',auth_error_pw_corta:'Password must be at least 8 characters.',auth_error_pw_no_coincide:'Passwords do not match.',auth_error_credenciales:'Incorrect email or password.',auth_error_no_confirmado:'Confirm your email before signing in.',auth_error_email_existe:'This email is already registered.',auth_error_rate:'Too many attempts. Please wait a few minutes.',auth_error_rate_reset:'Too many requests. Wait 1 hour.',auth_error_oauth:'Error connecting to provider.',auth_error_generico:'An error occurred. Please try again.',
     disponible: 'Available',
     exportar: 'Export',
     theme_dark: 'Dark mode', theme_light: 'Light mode',
@@ -7979,6 +7977,10 @@ let _billingPeriod = 'annual'
 function _setBillingPeriod(p) { _billingPeriod = p; renderFacturacion() }
 
 function renderFacturacion() {
+  if (window.MNBillingUI && MNBillingUI.renderBillingPage) {
+    MNBillingUI.renderBillingPage();
+    return;
+  }
   const el = document.getElementById('content')
   if (!el) return
   const e = window.MNEntitlements
@@ -13280,12 +13282,7 @@ let obData = { nombre: '', email: '', password: '', mode: 'personal', lang: 'es'
 function _obLeftHTML(step) {
   const brand = `
     <div class="ob-brand">
-      <div class="ob-brand-icon">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <path d="M4 16 L8 9 L11 13 L15 7 L19 11" stroke="#0A0E17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <span class="ob-brand-name">MoneyNest</span>
+      ${LOGO_DARK}
     </div>`
 
   // STEP 1: Auth — left panel shows language selector + brand tagline
@@ -13311,7 +13308,7 @@ function _obLeftHTML(step) {
       <div class="ob-left-trust">
         <div class="ob-trust-item"><span class="ob-stat-dot green" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981;flex-shrink:0"></span><span>Datos 100% privados</span></div>
         <div class="ob-trust-item"><span class="ob-stat-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#6366F1;flex-shrink:0"></span><span>Sin rastreo publicitario</span></div>
-        <div class="ob-trust-item"><span class="ob-stat-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00D4AA;flex-shrink:0"></span><span>Prueba gratuita 24h</span></div>
+        <div class="ob-trust-item"><span class="ob-stat-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00D4AA;flex-shrink:0"></span><span>100 movimientos gratis</span></div>
       </div>
     </div>`
   }
@@ -13420,7 +13417,7 @@ function _obRightHTML(step) {
       : `${t('ob_auth_reg_h1','Crea tu')}<br><span class="ob-headline-accent">${t('ob_auth_reg_h2','cuenta gratis')}</span>`}</div>
     <p class="ob-lead">${isLogin
       ? t('ob_auth_login_lead','Inicia sesión para continuar con tus datos.')
-      : t('ob_auth_reg_lead','Sin tarjeta. Sin compromisos. 24h de prueba incluidas.')}</p>
+      : t('ob_auth_reg_lead','Sin tarjeta. Sin compromisos. 100 movimientos gratis.')}</p>
 
     <div class="ob-fields">
       <div class="ob-field-wrap">
@@ -13554,10 +13551,10 @@ function _obRightHTML(step) {
         </div>
         <div class="ob-pc-name">Prueba gratuita</div>
         <div class="ob-pc-price-main">0<span class="ob-pc-cur">€</span></div>
-        <div class="ob-pc-period">durante 24 horas</div>
+        <div class="ob-pc-period">100 movimientos</div>
         <div class="ob-pc-divider"></div>
         <ul class="ob-pc-feats">
-          <li class="ok">Acceso completo 24h</li>
+          <li class="ok">100 movimientos incluidos</li>
           <li class="ok">Todos los módulos</li>
           <li class="no">Sin sincronización cloud</li>
         </ul>
@@ -15016,7 +15013,7 @@ function _setTutDone()  { try { localStorage.setItem(TUT_FLAG_KEY, 'true') } cat
 // Primera pantalla que ve cualquiera que abre MoneyNest por primera
 // vez: elegir entre explorar con datos de ejemplo (sin registrarse,
 // 30 minutos) o crear la cuenta directamente. Nunca reemplaza el
-// trial real de 24h con cuenta — es solo un vistazo previo, más corto
+// trial real de 100 movimientos con cuenta — es solo un vistazo previo, más corto
 // y sin ningún compromiso.
 // ════════════════════════════════════════════════════════════════
 
@@ -15051,7 +15048,7 @@ function _showPreOnboardingChoiceScreen() {
           <span style="font-size:1.7rem;flex-shrink:0">🚀</span>
           <span style="flex:1">
             <span style="display:block;font-size:.95rem;font-weight:800;color:#04150F">Crear mi cuenta</span>
-            <span style="display:block;font-size:.78rem;color:rgba(4,21,15,.7);margin-top:2px">Prueba gratis 24h con tus propios datos</span>
+            <span style="display:block;font-size:.78rem;color:rgba(4,21,15,.7);margin-top:2px">Prueba gratis — 100 movimientos</span>
           </span>
           <span style="color:rgba(4,21,15,.6);flex-shrink:0">→</span>
         </button>
@@ -17975,7 +17972,7 @@ function _authStartTrial() {
   if (gg) gg.style.display = 'none';
   _renderAuthBadge();
   _renderTrialPill();
-  toast(t('toast_trial_activada','⏳ ¡Prueba de 24h activada! Explora todas las funciones.'));
+  toast(t('toast_trial_activada','⏳ ¡Prueba gratuita activada! Explora todas las funciones.'));
 }
 
 function _authActivatePro() {
@@ -18006,7 +18003,7 @@ function _showGuestGateModal() {
   modal.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border2);border-radius:24px;width:min(420px,calc(100vw-32px));padding:36px 32px;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.6);animation:smCardIn .4s cubic-bezier(0.22,1,0.36,1) forwards">
       <div style="font-size:3rem;margin-bottom:12px">🔒</div>
-      <div style="font-size:1.25rem;font-weight:800;color:var(--text);letter-spacing:-.04em;margin-bottom:8px">Tu prueba de 24h ha expirado</div>
+      <div style="font-size:1.25rem;font-weight:800;color:var(--text);letter-spacing:-.04em;margin-bottom:8px">Has alcanzado el límite de 100 movimientos</div>
       <div style="font-size:.85rem;color:var(--text2);line-height:1.6;margin-bottom:28px">Tus datos están a salvo. Elige un plan para seguir usando MoneyNest.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         

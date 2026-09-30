@@ -4,9 +4,9 @@
  *  Mock Subscription Engine — preparado para conectar backend
  *
  *  Planes:
- *    FREE_TRIAL   → 24h acceso completo (auto-asignado)
- *    LOCAL_LIFETIME → 0,99 €/mes · 10 €/año, offline-first, sin expiración
- *    PRO_ANNUAL   → 1,99 €/mes · 20 €/año, 7 días trial desde local, cloud sync
+ *    FREE_TRIAL   → 100 movimientos gratis (auto-asignado)
+ *    LOCAL_LIFETIME → 1 €/mes · 9,99 €/año, offline-first, sin expiración
+ *    PRO_ANNUAL   → 2 €/mes · 19,99 €/año, 7 días trial desde local, cloud sync
  *
  *  Todo funciona con localStorage. Arquitectura lista para reemplazar
  *  con Stripe/Paddle/Supabase en producción.
@@ -33,7 +33,7 @@ const BILLING_PLANS = Object.freeze({
     price:       0,
     period:      null,
     trialDays:   1,
-    features:    ['full_access_24h', 'all_screens', 'local_data', 'export_pdf'],
+    features:    ['100_movements_free', 'all_screens', 'local_data', 'export_pdf'],
     cloudSync:   false,
     lifetime:    false,
     color:       '#6366F1',
@@ -44,8 +44,8 @@ const BILLING_PLANS = Object.freeze({
   LOCAL_LIFETIME: {
     id:          'local_lifetime',
     name:        'Local Lifetime',
-    price:       10,            // annual — [NEEDS_STRIPE_UPDATE]
-    priceMonthly: 0.99,         // monthly — [NEEDS_STRIPE_UPDATE]
+    price:       9.99,           // annual
+    priceMonthly: 1,             // monthly
     period:      'year',
     trialDays:   0,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'no_expiry'],
@@ -59,8 +59,8 @@ const BILLING_PLANS = Object.freeze({
   PRO_ANNUAL: {
     id:          'pro_annual',
     name:        'Pro',
-    price:       20,            // annual — [NEEDS_STRIPE_UPDATE]
-    priceMonthly: 1.99,         // monthly — [NEEDS_STRIPE_UPDATE]
+    price:       19.99,          // annual
+    priceMonthly: 2,             // monthly
     period:      'year',
     trialDays:   7,
     features:    ['unlimited_data', 'all_screens', 'local_data', 'export_pdf', 'export_excel', 'offline_first', 'cloud_sync', 'multi_device', 'priority_support', 'ai_insights'],
@@ -76,7 +76,7 @@ const BILLING_PLANS = Object.freeze({
 // ─── Subscription states ──────────────────────────────────────────
 const SUB_STATES = Object.freeze({
   ACTIVE_TRIAL:      'active_trial',
-  TRIAL_ENDING:      'trial_ending',
+
   EXPIRED_TRIAL:     'expired_trial',
   LOCAL_ACTIVE:      'local_active',
   PRO_TRIALING:      'pro_trialing',
@@ -93,7 +93,7 @@ function _defaultSub() {
     plan:           'free_trial',
     state:          SUB_STATES.ACTIVE_TRIAL,
     startedAt:      now,
-    expiresAt:      now + 24 * 60 * 60 * 1000,
+    expiresAt:      null,
     nextBillingAt:  null,
     cancelledAt:    null,
     proTrialUsed:   false,
@@ -171,9 +171,7 @@ function _syncWithMNAuth() {
 
   if (planChanged || isAuthLocked) {
     sub.plan = mappedPlan;
-    if (authUser.trialEndsAt) sub.expiresAt = authUser.trialEndsAt;
-    // If auth says locked, force expiresAt to past so _computeState returns expired_trial
-    if (isAuthLocked) sub.expiresAt = Date.now() - 1;
+    // _computeState now checks auth.plan directly, not expiresAt
     sub.state = _computeState(sub);
     saveSub(sub);
   }
@@ -182,8 +180,8 @@ function _syncWithMNAuth() {
 function _computeState(sub) {
   const now = Date.now();
   if (sub.plan === 'free_trial') {
-    if (now > sub.expiresAt) return SUB_STATES.EXPIRED_TRIAL;
-    if (sub.expiresAt - now < 4 * 60 * 60 * 1000) return SUB_STATES.TRIAL_ENDING;
+    const authUser = window.MNAuth?.getUser?.() || {};
+    if (authUser.plan === 'locked_local') return SUB_STATES.EXPIRED_TRIAL;
     return SUB_STATES.ACTIVE_TRIAL;
   }
   if (sub.plan === 'local_lifetime') return SUB_STATES.LOCAL_ACTIVE;
@@ -202,34 +200,12 @@ function _computeState(sub) {
 let _trialInterval = null;
 
 function _startTrialCountdown() {
-  if (_trialInterval) clearInterval(_trialInterval);
-  _trialInterval = setInterval(() => {
-    const sub = getSub();
-    if (!sub) return;
-    if (sub.plan !== 'free_trial') { clearInterval(_trialInterval); return; }
-    const state = _computeState(sub);
-    if (state !== sub.state) {
-      sub.state = state;
-      saveSub(sub);
-      if (state === SUB_STATES.EXPIRED_TRIAL) {
-        clearInterval(_trialInterval);
-        document.dispatchEvent(new CustomEvent('mn:billing:trialExpired'));
-      }
-      if (state === SUB_STATES.TRIAL_ENDING) {
-        document.dispatchEvent(new CustomEvent('mn:billing:trialEnding'));
-      }
-    }
-  }, 30000); // check every 30s
+  // No-op: trial is movement-based (100 movements), not time-based.
+  // Movement enforcement happens in app.js checkAccess() / save().
 }
 
 function getTrialTimeLeft() {
-  const sub = getSub();
-  if (!sub || sub.plan !== 'free_trial') return { ms: 0, hours: 0, minutes: 0, label: '' };
-  const ms = Math.max(0, sub.expiresAt - Date.now());
-  const hours = Math.floor(ms / 3600000);
-  const minutes = Math.floor((ms % 3600000) / 60000);
-  const label = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  return { ms, hours, minutes, label, expired: ms === 0 };
+  return { ms: Infinity, hours: 0, minutes: 0, label: '', expired: false };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -237,7 +213,7 @@ function getTrialTimeLeft() {
 // ════════════════════════════════════════════════════════════════
 
 /**
- * Simula compra del plan Local Lifetime (0,99 €/mes · 10 €/año)
+ * Simula compra del plan Local Lifetime (1 €/mes · 9,99 €/año)
  * En producción: redirigir a Stripe checkout → webhook → activateLocal()
  */
 async function mockBuyLocal(opts = {}) {
@@ -425,7 +401,7 @@ function getSubStatus() {
   let statusColor = planDef.color;
   switch (state) {
     case SUB_STATES.ACTIVE_TRIAL:   statusLabel = _bt('billing_status_trial_activo');      statusColor = '#6366F1'; break;
-    case SUB_STATES.TRIAL_ENDING:   statusLabel = _bt('billing_status_trial_finalizando'); statusColor = '#F59E0B'; break;
+
     case SUB_STATES.EXPIRED_TRIAL:  statusLabel = _bt('billing_status_trial_expirado');    statusColor = '#F43F5E'; break;
     case SUB_STATES.LOCAL_ACTIVE:   statusLabel = _bt('billing_status_local');             statusColor = '#00D4AA'; break;
     case SUB_STATES.PRO_TRIALING:   statusLabel = _bt('billing_status_pro_trial');         statusColor = '#A78BFA'; break;

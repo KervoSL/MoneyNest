@@ -58,13 +58,13 @@
       // ── billing-ui.js — Paywall (overlay bloqueado) ─────────
       billing_lock_badge:             'Tu prueba ha expirado',
       billing_lock_title:             'Acceso bloqueado',
-      billing_lock_desc:              'Has alcanzado el límite de 100 movimientos de tu prueba gratuita.<br>Desbloquea MoneyNest desde <strong>0,99 €/mes</strong>.',
+      billing_lock_desc:              'Has alcanzado el límite de 100 movimientos de tu prueba gratuita.<br>Desbloquea MoneyNest desde <strong>1 €/mes</strong>.',
       billing_lock_feat1:             '✅ Todos tus datos están seguros',
       billing_lock_feat2:             '✅ Acceso ilimitado sin suscripción',
       billing_lock_feat3:             '✅ Exportación PDF y Excel',
       billing_lock_feat4:             '✅ Sin publicidad, sin rastreo',
-      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 0,99 €/mes',
-      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, 1,99 €/mes · 20 €/año)',
+      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 1 €/mes',
+      billing_lock_cta_note:          'Después podrás añadir sincronización en la nube (Plan Pro, 2 €/mes · 19,99 €/año)',
       billing_lock_restore_q:         '¿Ya tienes licencia?',
       billing_lock_restore_link:      'Restaurar acceso',
 
@@ -205,7 +205,7 @@
 
       // ── billing-ui.js — Export gating ───────────────────────
       billing_export_tooltip:         'Disponible en Plan Local o Pro',
-      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — desde 0,99 €/mes',
+      billing_export_blocked_toast:   '🔒 Exportación disponible en Plan Local — desde 1 €/mes',
 
       // ── billing-ui.js — Checkout / Éxito ────────────────────
       billing_success_local_title:    '¡Plan Local activado!',
@@ -278,13 +278,13 @@
 
       billing_lock_badge:             'Your trial has expired',
       billing_lock_title:             'Access locked',
-      billing_lock_desc:              'Your free 24h trial has ended.<br>Unlock MoneyNest from <strong>€0.99/mo</strong>.',
+      billing_lock_desc:              'You\'ve reached the 100-movement free trial limit.<br>Unlock MoneyNest from <strong>€1/mo</strong>.',
       billing_lock_feat1:             '✅ All your data is safe',
       billing_lock_feat2:             '✅ Unlimited access, no subscription',
       billing_lock_feat3:             '✅ PDF and Excel export',
       billing_lock_feat4:             '✅ No ads, no tracking',
-      billing_lock_cta:               '🔓 Unlock MoneyNest — from €0.99/mo',
-      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €1.99/mo · €20/yr)',
+      billing_lock_cta:               '🔓 Unlock MoneyNest — from €1/mo',
+      billing_lock_cta_note:          'You can add cloud sync later (Pro Plan, €2/mo · €19.99/yr)',
       billing_lock_restore_q:         'Already have a licence?',
       billing_lock_restore_link:      'Restore access',
 
@@ -301,7 +301,7 @@
 
       billing_plan_free_name:         'Free Trial',
       billing_plan_free_price:        'Free',
-      billing_plan_free_period:       '24-hour access',
+      billing_plan_free_period:       'Up to 100 movements',
 
       billing_plan_feat_pantallas:    '✓ 📱 All screens',
       billing_plan_feat_datos_locales:'✓ 💾 Local data',
@@ -409,7 +409,7 @@
       billing_invoice_paid:           'Paid',
 
       billing_export_tooltip:         'Available with Local or Pro plan',
-      billing_export_blocked_toast:   '🔒 Export available with Local Plan — from €0.99/mo',
+      billing_export_blocked_toast:   '🔒 Export available with Local Plan — from €1/mo',
 
       billing_success_local_title:    'Local plan activated!',
       billing_success_local_sub:      'Permanent access. You will never see the lock again.',
@@ -478,13 +478,13 @@
 
       billing_lock_badge:             'Votre essai a expiré',
       billing_lock_title:             'Accès bloqué',
-      billing_lock_desc:              'Votre période d\'essai gratuite de 24h est terminée.<br>Débloquez MoneyNest dès <strong>0,99 €/mois</strong>.',
+      billing_lock_desc:              'Vous avez atteint la limite de 100 mouvements de votre essai gratuit.<br>Débloquez MoneyNest dès <strong>1 €/mois</strong>.',
       billing_lock_feat1:             '✅ Toutes vos données sont en sécurité',
       billing_lock_feat2:             '✅ Accès illimité sans abonnement',
       billing_lock_feat3:             '✅ Export PDF et Excel',
       billing_lock_feat4:             '✅ Sans publicité, sans pistage',
-      billing_lock_cta:               '🔓 Débloquer MoneyNest — dès 0,99 €/mois',
-      billing_lock_cta_note:          'Vous pourrez ajouter la synchronisation cloud plus tard (Plan Pro, 1,99 €/mois · 20 €/an)',
+      billing_lock_cta:               '🔓 Débloquer MoneyNest — dès 1 €/mois',
+      billing_lock_cta_note:          'Vous pourrez ajouter la synchronisation cloud plus tard (Plan Pro, 2 €/mois · 19,99 €/an)',
       billing_lock_restore_q:         'Vous avez déjà une licence ?',
       billing_lock_restore_link:      'Restaurer l\'accès',
 
@@ -501,7 +501,7 @@
 
       billing_plan_free_name:         'Essai gratuit',
       billing_plan_free_price:        'Gratuit',
-      billing_plan_free_period:       'Accès 24 heures',
+      billing_plan_free_period:       'Jusqu\'à 100 mouvements',
 
       billing_plan_feat_pantallas:    '✓ 📱 Tous les écrans',
       billing_plan_feat_datos_locales:'✓ 💾 Données locales',
@@ -609,7 +609,7 @@
       billing_invoice_paid:           'Payé',
 
       billing_export_tooltip:         'Disponible avec le Plan Local ou Pro',
-      billing_export_blocked_toast:   '🔒 Export disponible avec le Plan Local — dès 0,99 €/mois',
+      billing_export_blocked_toast:   '🔒 Export disponible avec le Plan Local — dès 1 €/mois',
 
       billing_success_local_title:    'Plan Local activé !',
       billing_success_local_sub:      'Accès permanent. Vous ne verrez plus jamais le blocage.',
@@ -673,13 +673,13 @@
 
       billing_lock_badge:             'Ihre Testversion ist abgelaufen',
       billing_lock_title:             'Zugang gesperrt',
-      billing_lock_desc:              'Ihre kostenlose 24-Stunden-Testversion ist beendet.<br>Entsperren Sie MoneyNest ab <strong>0,99 €/Monat</strong>.',
+      billing_lock_desc:              'Sie haben das Limit von 100 Bewegungen Ihrer kostenlosen Testversion erreicht.<br>Entsperren Sie MoneyNest ab <strong>1 €/Monat</strong>.',
       billing_lock_feat1:             '✅ Alle Ihre Daten sind sicher',
       billing_lock_feat2:             '✅ Unbegrenzter Zugang ohne Abonnement',
       billing_lock_feat3:             '✅ PDF- und Excel-Export',
       billing_lock_feat4:             '✅ Keine Werbung, kein Tracking',
-      billing_lock_cta:               '🔓 MoneyNest freischalten — ab 0,99 €/Monat',
-      billing_lock_cta_note:          'Sie können später Cloud-Sync hinzufügen (Pro-Plan, 1,99 €/Monat · 20 €/Jahr)',
+      billing_lock_cta:               '🔓 MoneyNest freischalten — ab 1 €/Monat',
+      billing_lock_cta_note:          'Sie können später Cloud-Sync hinzufügen (Pro-Plan, 2 €/Monat · 19,99 €/Jahr)',
       billing_lock_restore_q:         'Haben Sie bereits eine Lizenz?',
       billing_lock_restore_link:      'Zugang wiederherstellen',
 
@@ -696,7 +696,7 @@
 
       billing_plan_free_name:         'Kostenlose Testversion',
       billing_plan_free_price:        'Kostenlos',
-      billing_plan_free_period:       '24-Stunden-Zugang',
+      billing_plan_free_period:       'Bis zu 100 Bewegungen',
 
       billing_plan_feat_pantallas:    '✓ 📱 Alle Bildschirme',
       billing_plan_feat_datos_locales:'✓ 💾 Lokale Daten',
@@ -804,7 +804,7 @@
       billing_invoice_paid:           'Bezahlt',
 
       billing_export_tooltip:         'Verfügbar mit Local- oder Pro-Plan',
-      billing_export_blocked_toast:   '🔒 Export mit Local-Plan verfügbar — ab 0,99 €/Monat',
+      billing_export_blocked_toast:   '🔒 Export mit Local-Plan verfügbar — ab 1 €/Monat',
 
       billing_success_local_title:    'Lokaler Plan aktiviert!',
       billing_success_local_sub:      'Permanenter Zugang. Sie werden die Sperre nie wieder sehen.',
@@ -868,13 +868,13 @@
 
       billing_lock_badge:             'La tua prova è scaduta',
       billing_lock_title:             'Accesso bloccato',
-      billing_lock_desc:              'Il tuo periodo di prova gratuita di 24h è terminato.<br>Sblocca MoneyNest da <strong>0,99 €/mese</strong>.',
+      billing_lock_desc:              'Hai raggiunto il limite di 100 movimenti della prova gratuita.<br>Sblocca MoneyNest da <strong>1 €/mese</strong>.',
       billing_lock_feat1:             '✅ Tutti i tuoi dati sono al sicuro',
       billing_lock_feat2:             '✅ Accesso illimitato senza abbonamento',
       billing_lock_feat3:             '✅ Esportazione PDF ed Excel',
       billing_lock_feat4:             '✅ Nessuna pubblicità, nessun tracciamento',
-      billing_lock_cta:               '🔓 Sblocca MoneyNest — da 0,99 €/mese',
-      billing_lock_cta_note:          'Potrai aggiungere la sincronizzazione cloud in seguito (Piano Pro, 1,99 €/mese · 20 €/anno)',
+      billing_lock_cta:               '🔓 Sblocca MoneyNest — da 1 €/mese',
+      billing_lock_cta_note:          'Potrai aggiungere la sincronizzazione cloud in seguito (Piano Pro, 2 €/mese · 19,99 €/anno)',
       billing_lock_restore_q:         'Hai già una licenza?',
       billing_lock_restore_link:      'Ripristina l\'accesso',
 
@@ -891,7 +891,7 @@
 
       billing_plan_free_name:         'Prova gratuita',
       billing_plan_free_price:        'Gratuito',
-      billing_plan_free_period:       'Accesso 24 ore',
+      billing_plan_free_period:       'Fino a 100 movimenti',
 
       billing_plan_feat_pantallas:    '✓ 📱 Tutte le schermate',
       billing_plan_feat_datos_locales:'✓ 💾 Dati locali',
@@ -999,7 +999,7 @@
       billing_invoice_paid:           'Pagato',
 
       billing_export_tooltip:         'Disponibile con il Piano Locale o Pro',
-      billing_export_blocked_toast:   '🔒 Esportazione disponibile con Piano Locale — da 0,99 €/mese',
+      billing_export_blocked_toast:   '🔒 Esportazione disponibile con Piano Locale — da 1 €/mese',
 
       billing_success_local_title:    'Piano Locale attivato!',
       billing_success_local_sub:      'Accesso permanente. Non vedrai mai più il blocco.',
@@ -1063,13 +1063,13 @@
 
       billing_lock_badge:             'O teu teste expirou',
       billing_lock_title:             'Acesso bloqueado',
-      billing_lock_desc:              'O teu período de teste gratuito de 24h terminou.<br>Desbloqueia o MoneyNest desde <strong>0,99 €/mês</strong>.',
+      billing_lock_desc:              'Atingiste o limite de 100 movimentos do teste gratuito.<br>Desbloqueia o MoneyNest desde <strong>1 €/mês</strong>.',
       billing_lock_feat1:             '✅ Todos os teus dados estão seguros',
       billing_lock_feat2:             '✅ Acesso ilimitado sem subscrição',
       billing_lock_feat3:             '✅ Exportação PDF e Excel',
       billing_lock_feat4:             '✅ Sem publicidade, sem rastreamento',
-      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 0,99 €/mês',
-      billing_lock_cta_note:          'Poderás adicionar sincronização na nuvem mais tarde (Plano Pro, 1,99 €/mês · 20 €/ano)',
+      billing_lock_cta:               '🔓 Desbloquear MoneyNest — desde 1 €/mês',
+      billing_lock_cta_note:          'Poderás adicionar sincronização na nuvem mais tarde (Plano Pro, 2 €/mês · 19,99 €/ano)',
       billing_lock_restore_q:         'Já tens licença?',
       billing_lock_restore_link:      'Restaurar acesso',
 
@@ -1086,7 +1086,7 @@
 
       billing_plan_free_name:         'Teste gratuito',
       billing_plan_free_price:        'Grátis',
-      billing_plan_free_period:       'Acesso 24 horas',
+      billing_plan_free_period:       'Até 100 movimentos',
 
       billing_plan_feat_pantallas:    '✓ 📱 Todos os ecrãs',
       billing_plan_feat_datos_locales:'✓ 💾 Dados locais',
@@ -1194,7 +1194,7 @@
       billing_invoice_paid:           'Pago',
 
       billing_export_tooltip:         'Disponível com o Plano Local ou Pro',
-      billing_export_blocked_toast:   '🔒 Exportação disponível com Plano Local — desde 0,99 €/mês',
+      billing_export_blocked_toast:   '🔒 Exportação disponível com Plano Local — desde 1 €/mês',
 
       billing_success_local_title:    'Plano Local ativado!',
       billing_success_local_sub:      'Acesso permanente. Nunca mais verás o bloqueio.',
@@ -1253,13 +1253,13 @@
       billing_page_sub:               'Gestiona la teva subscripció i accés a MoneyNest',
       billing_lock_badge:             'La teva prova ha expirat',
       billing_lock_title:             'Accés bloquejat',
-      billing_lock_desc:              'El teu període de prova gratuïta de 24h ha conclòs.<br>Desbloqueja MoneyNest des de <strong>0,99 €/mes</strong>.',
+      billing_lock_desc:              'Has assolit el límit de 100 moviments de la prova gratuïta.<br>Desbloqueja MoneyNest des de <strong>1 €/mes</strong>.',
       billing_lock_feat1:             '✅ Totes les teves dades estan segures',
       billing_lock_feat2:             '✅ Accés il·limitat sense subscripció',
       billing_lock_feat3:             '✅ Exportació PDF i Excel',
       billing_lock_feat4:             '✅ Sense publicitat, sense seguiment',
-      billing_lock_cta:               '🔓 Desbloqueja MoneyNest — des de 0,99 €/mes',
-      billing_lock_cta_note:          'Podràs afegir sincronització al núvol més tard (Pla Pro, 1,99 €/mes · 20 €/any)',
+      billing_lock_cta:               '🔓 Desbloqueja MoneyNest — des de 1 €/mes',
+      billing_lock_cta_note:          'Podràs afegir sincronització al núvol més tard (Pla Pro, 2 €/mes · 19,99 €/any)',
       billing_lock_restore_q:         'Ja tens llicència?',
       billing_lock_restore_link:      'Restaurar accés',
       billing_trial_banner_ending:    '⚠️ La teva prova s\'acaba aviat',
@@ -1272,7 +1272,7 @@
       billing_badge_pro_active:       'Pro actiu',
       billing_plan_free_name:         'Prova gratuïta',
       billing_plan_free_price:        'Gratis',
-      billing_plan_free_period:       'Accés 24 hores',
+      billing_plan_free_period:       'Fins a 100 moviments',
       billing_plan_feat_pantallas:    '✓ 📱 Totes les pantalles',
       billing_plan_feat_datos_locales:'✓ 💾 Dades locals',
       billing_plan_feat_pdf:          '✓ 📄 Exportar PDF',
@@ -1368,7 +1368,7 @@
       billing_invoice_tag_pro:        'Pro',
       billing_invoice_paid:           'Pagat',
       billing_export_tooltip:         'Disponible amb el Pla Local o Pro',
-      billing_export_blocked_toast:   '🔒 Exportació disponible amb Pla Local — des de 0,99 €/mes',
+      billing_export_blocked_toast:   '🔒 Exportació disponible amb Pla Local — des de 1 €/mes',
       billing_success_local_title:    'Pla Local activat!',
       billing_success_local_sub:      'Accés permanent. Mai tornaràs a veure el bloqueig.',
       billing_success_pro_title:      'Benvingut a Pro!',

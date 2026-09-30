@@ -2,10 +2,10 @@
  * ════════════════════════════════════════════════════════════════
  *  MoneyNest — js/auth.js  v2.0
  *  Modelo de negocio:
- *    trial       → 24h de prueba gratuita (al registrarse)
+ *    trial       → 100 movimientos gratis (al registrarse)
  *    locked_local→ trial expirado, app bloqueada. Requiere Plan Local
- *    local       → 0,99 €/mes · 10 €/año. Datos en localStorage, sin expiración
- *    pro         → suscripción 1,99 €/mes · 20 €/año (7 días gratis desde local).
+ *    local       → 1 €/mes · 9,99 €/año. Datos en localStorage, sin expiración
+ *    pro         → suscripción 2 €/mes · 19,99 €/año (7 días gratis desde local).
  *                  Si cancela → vuelve a local (nunca se bloquea de nuevo)
  *
  *  Uso (ES modules):
@@ -18,7 +18,7 @@
  */
 
 const MN_USER_KEY        = 'mn_user';
-const TRIAL_DURATION_MS  = 24 * 60 * 60 * 1000;
+const TRIAL_DURATION_MS  = Infinity;
 const PRO_TRIAL_DAYS     = 7;
 
 // Estas constantes son usadas por auth.js internamente y exportadas a window.MNAuth.
@@ -99,7 +99,7 @@ function patchUser(patch) {
 
 /**
  * initUser() — llamar obligatoriamente al arrancar la app.
- * • Primera visita → crea identidad + trial de 24h.
+ * • Primera visita → crea identidad + trial de 100 movimientos.
  * • Visita posterior → garantiza coherencia de campos.
  * @returns {Object} usuario activo
  */
@@ -113,11 +113,11 @@ function initUser() {
       ..._AUTH_DEFAULT_USER,
       id:          _generateId(),
       plan:        _AUTH_PLANS.TRIAL,
-      trialEndsAt: now + TRIAL_DURATION_MS,
+      trialEndsAt: null,
       createdAt:   now,
     };
     saveUser(user);
-    console.info('[MNAuth] Nuevo usuario — trial 24h hasta:', new Date(user.trialEndsAt).toLocaleString());
+    console.info('[MNAuth] Nuevo usuario — trial por movimientos (100 máx)');
   } else {
     // ── Visita posterior — migración de campos ──────────────────
     let dirty = false;
@@ -135,7 +135,7 @@ function initUser() {
  * Debe llamarse después de initUser() en cada arranque.
  *
  * • pro/local → siempre ok.
- * • trial → comprueba los 24h. Si expiró → pasa a locked_local y bloquea.
+ * • trial → comprueba movimientos. Si ≥100 → pasa a locked_local y bloquea.
  * • locked_local → bloquea directamente.
  *
  * @returns {{ ok: boolean, reason: string|null }}
@@ -152,17 +152,9 @@ function checkAccess() {
     case _AUTH_PLANS.LOCAL:
       return { ok: true, reason: null };
 
-    // ── Trial activo ────────────────────────────────────────────
-    case _AUTH_PLANS.TRIAL: {
-      const now = Date.now();
-      if (user.trialEndsAt && now > user.trialEndsAt) {
-        // Trial expirado → bloquear
-        patchUser({ plan: _AUTH_PLANS.LOCKED_LOCAL, upgradedAt: now });
-        bloquearApp();
-        return { ok: false, reason: 'trial_expired' };
-      }
+    // ── Trial activo (movement-based, enforced by app.js) ──────
+    case _AUTH_PLANS.TRIAL:
       return { ok: true, reason: null };
-    }
 
     // ── Bloqueado ───────────────────────────────────────────────
     case _AUTH_PLANS.LOCKED_LOCAL:
@@ -199,26 +191,25 @@ function _checkProSubscription(user) {
 // ════════════════════════════════════════════════════════════════
 
 /**
- * upgradeTrial(email?) — [re]inicia el trial de 24h.
+ * upgradeTrial(email?) — [re]inicia el trial de 100 movimientos.
  * Útil si el usuario se registra por primera vez con email.
  * @param {string} [email]
  * @returns {Object}
  */
 function upgradeTrial(email) {
   const now = Date.now();
-  const trialEndsAt = now + TRIAL_DURATION_MS;
   const user = patchUser({
     plan:        _AUTH_PLANS.TRIAL,
-    trialEndsAt,
+    trialEndsAt: null,
     upgradedAt:  now,
     ...(email ? { email } : {}),
   });
-  console.info('[MNAuth] Trial activado. Expira:', new Date(trialEndsAt).toLocaleString());
+  console.info('[MNAuth] Trial activado — 100 movimientos máx.');
   return user;
 }
 
 /**
- * buyLocal(email?) — activa el Plan Local (0,99 €/mes · 10 €/año).
+ * buyLocal(email?) — activa el Plan Local (1 €/mes · 9,99 €/año).
  * Llama a esta función DESPUÉS de confirmar el pago con tu pasarela.
  * @param {string} [email]
  * @returns {Object}
@@ -236,7 +227,7 @@ function buyLocal(email) {
 }
 
 /**
- * activatePro(email?) — activa el Plan Pro (1,99 €/mes · 20 €/año).
+ * activatePro(email?) — activa el Plan Pro (2 €/mes · 19,99 €/año).
  * • Si !proTrialUsed: incluye 7 días de prueba gratuita.
  * • Llama DESPUÉS de confirmar suscripción con tu pasarela.
  * @param {string} [email]
@@ -288,11 +279,8 @@ function downgradeGuest()   { return cancelPro(); }
 //  HELPERS DE ESTADO
 // ════════════════════════════════════════════════════════════════
 
-/** Milisegundos restantes de trial (0 si no aplica o expiró). */
 function trialMsLeft() {
-  const user = getUser();
-  if (user.plan !== _AUTH_PLANS.TRIAL || !user.trialEndsAt) return 0;
-  return Math.max(0, user.trialEndsAt - Date.now());
+  return Infinity;
 }
 
 /** Horas restantes de trial (decimal, 0 si expiró). */
@@ -300,16 +288,8 @@ function trialHoursLeft() {
   return trialMsLeft() / (60 * 60 * 1000);
 }
 
-/**
- * Representación legible del tiempo de trial restante.
- * @returns {string} p.ej. "18h 34m" o "45m"
- */
 function trialTimeLeftLabel() {
-  const ms = trialMsLeft();
-  if (ms <= 0) return '0m';
-  const h = Math.floor(ms / (60 * 60 * 1000));
-  const m = Math.floor((ms % (60 * 60 * 1000)) / 60000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return '';
 }
 
 /** @deprecated — alias legacy (devuelve días redondeados) */
@@ -318,9 +298,7 @@ function trialDaysLeft() {
 }
 
 function isTrialExpired() {
-  const user = getUser();
-  return (user.plan === _AUTH_PLANS.TRIAL || user.plan === _AUTH_PLANS.LOCKED_LOCAL)
-    && !!user.trialEndsAt && Date.now() > user.trialEndsAt;
+  return false;
 }
 
 function isTrial()       { return getUser().plan === _AUTH_PLANS.TRIAL;        }

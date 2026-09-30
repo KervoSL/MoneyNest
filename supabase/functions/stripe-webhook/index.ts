@@ -13,10 +13,13 @@ const supabase = createClient(
 );
 
 const PRICE_TO_PLAN: Record<string, string> = {
-  [Deno.env.get('STRIPE_PRICE_LOCAL') || 'price_1U5uN8FWll222KpaX0qENvX3']: 'local',
-  [Deno.env.get('STRIPE_PRICE_PRO')   || 'price_1U5uNNFWll222Kpawefje59j']: 'pro',
-  'price_1U68YVFWll222KpaCJ6WrKWg': 'local',
-  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',
+  [Deno.env.get('STRIPE_PRICE_LOCAL_MONTHLY') || 'price_1UKn1DFWll222KpalhrKgE2c']: 'local',
+  [Deno.env.get('STRIPE_PRICE_LOCAL_YEARLY')  || 'price_1UKn1jFWll222Kpag1ifvTYl']: 'local',
+  [Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')   || 'price_1UKmzXFWll222Kpaw7SoHhjX']: 'pro',
+  [Deno.env.get('STRIPE_PRICE_PRO_YEARLY')    || 'price_1UKmzsFWll222KpaLqtD7vFM']: 'pro',
+  // test-mode IDs
+  'price_1U5uN8FWll222KpaX0qENvX3': 'local',
+  'price_1U5uNNFWll222Kpawefje59j': 'pro',
 };
 
 const CORS = {

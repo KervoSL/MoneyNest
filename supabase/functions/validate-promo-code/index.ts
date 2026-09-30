@@ -21,11 +21,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// CRITICAL: fallback price IDs must match whichever Stripe mode the
-// active secret key belongs to (same fix as the other Stripe functions).
-const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1U68YVFWll222KpaCJ6WrKWg');
-const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1U68YaFWll222Kpa4mynzdAp');
-const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
+const ALLOWED_PRICES = new Set([
+  Deno.env.get('STRIPE_PRICE_LOCAL_MONTHLY') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1DFWll222KpalhrKgE2c'),
+  Deno.env.get('STRIPE_PRICE_LOCAL_YEARLY')  || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1jFWll222Kpag1ifvTYl'),
+  Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzXFWll222Kpaw7SoHhjX'),
+  Deno.env.get('STRIPE_PRICE_PRO_YEARLY')    || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzsFWll222KpaLqtD7vFM'),
+]);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

@@ -119,27 +119,8 @@
     }
   }
 
-  // ─── Trial expiry reminder ────────────────────────────────────────
   function scheduleTrialExpiry() {
-    const prefs = getPrefs();
-    if (!prefs.trial) return;
-    try {
-      const raw = localStorage.getItem('mn_user');
-      if (!raw) return;
-      const user = JSON.parse(raw);
-      const exp = user.trialEndsAt;
-      if (!exp) return;
-      const msLeft = exp - Date.now();
-      if (msLeft <= 0 || msLeft > 26 * 3600000) return;
-      const delay = Math.max(0, msLeft - 3600000);
-      setTimeout(() => {
-        sendNotification(
-          _nt('notif_trial_title', 'Tu prueba de MoneyNest expira pronto ⏳'),
-          _nt('notif_trial_body',  'Elige tu plan para conservar todos tus datos.'),
-          null, 'trial-expiry'
-        );
-      }, delay);
-    } catch {}
+    // No-op: trial is movement-based (100 movements), not time-based.
   }
 
   // ─── Upcoming bills (recurring expenses about to charge) ──────────

@@ -7,6 +7,27 @@ window.MNPayment = (() => {
     return fallback;
   }
 
+  function _isLocalPrice(id) {
+    const p = MNStripeConfig.prices.local;
+    return id === p.monthly || id === p.yearly;
+  }
+  function _planKeyForPrice(id) {
+    const c = MNStripeConfig.prices;
+    if (id === c.local.monthly) return 'local_monthly';
+    if (id === c.local.yearly)  return 'local_yearly';
+    if (id === c.pro.monthly)   return 'pro_monthly';
+    if (id === c.pro.yearly)    return 'pro_yearly';
+    return 'local_yearly';
+  }
+  function _centsForPrice(id) {
+    const c = MNStripeConfig.prices;
+    if (id === c.local.monthly) return 100;
+    if (id === c.local.yearly)  return 999;
+    if (id === c.pro.monthly)   return 200;
+    if (id === c.pro.yearly)    return 1999;
+    return 999;
+  }
+
   let _stripe   = null;
   let _elements = null;
   let _overlay  = null;
@@ -280,7 +301,7 @@ window.MNPayment = (() => {
   }
 
   function _setPlanSummary(priceId) {
-    const isLocal = priceId === MNStripeConfig.prices.local;
+    const isLocal = _isLocalPrice(priceId);
     const titleEl = document.getElementById('mnPoTitle');
     if (titleEl) titleEl.textContent = isLocal
       ? _spt('payment_local_plan_title', 'MoneyNest Local — 10 €/año')
@@ -299,7 +320,7 @@ window.MNPayment = (() => {
         </div>
         <div class="mnpo-left-emoji">💾</div>
         <div class="mnpo-left-plan-name">MoneyNest Local</div>
-        <div class="mnpo-left-price">6<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
+        <div class="mnpo-left-price">9<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
         <div class="mnpo-left-period">al año</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
@@ -316,7 +337,7 @@ window.MNPayment = (() => {
         </div>
         <div class="mnpo-left-emoji">☁️</div>
         <div class="mnpo-left-plan-name">MoneyNest Pro</div>
-        <div class="mnpo-left-price">14<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
+        <div class="mnpo-left-price">19<span style="font-size:.55em">,99</span><span class="mnpo-left-cur">€</span></div>
         <div class="mnpo-left-period">al año</div>
         <div class="mnpo-left-divider"></div>
         <ul class="mnpo-left-feats">
@@ -353,7 +374,7 @@ window.MNPayment = (() => {
   }
 
   function _showSuccess(priceId) {
-    const isLocal = priceId === MNStripeConfig.prices.local;
+    const isLocal = _isLocalPrice(priceId);
     window.MNAnalytics?.track('payment_succeeded', { plan: isLocal ? 'local' : 'pro' })
     const split = document.querySelector('#mnPaymentSheet .mnpo-split');
     if (split) split.style.display = 'none';
@@ -413,8 +434,7 @@ window.MNPayment = (() => {
     _setLoading(true);
 
     const stripe = _getStripe();
-    const cfg = window.MNStripeConfig;
-    const isLocal = _activePriceId === cfg.prices.local;
+    const isLocal = _isLocalPrice(_activePriceId);
     const returnUrl = `${location.origin}${location.pathname}?checkout=success&plan=${isLocal ? 'local' : 'pro'}`;
 
     const confirmFn = _activeFlowType === 'setup'
@@ -436,7 +456,7 @@ window.MNPayment = (() => {
   }
 
   function _onPaymentSuccess(priceId, email) {
-    const isLocal = priceId === MNStripeConfig.prices.local;
+    const isLocal = _isLocalPrice(priceId);
     // CRITICAL RULE: never grant the plan from the client. The card
     // payment succeeding here only means Stripe accepted the charge —
     // entitlement is granted exclusively by stripe-webhook once it
@@ -484,7 +504,7 @@ window.MNPayment = (() => {
       // Clean URL immediately
       history.replaceState({}, '', location.pathname);
 
-      const priceId = plan === 'local' ? MNStripeConfig.prices.local : MNStripeConfig.prices.pro;
+      const priceId = plan === 'local' ? MNStripeConfig.prices.local.yearly : MNStripeConfig.prices.pro.yearly;
       const email   = MNAuth.getUser()?.email ?? '';
 
       // Stripe Checkout session redirect — webhook may already have updated Supabase.
@@ -505,7 +525,7 @@ window.MNPayment = (() => {
       if (pi) await stripe.retrievePaymentIntent(params.get('payment_intent_client_secret') ?? '');
       const email = MNAuth.getUser()?.email ?? '';
       _onPaymentSuccess(
-        plan === 'local' ? MNStripeConfig.prices.local : MNStripeConfig.prices.pro,
+        plan === 'local' ? MNStripeConfig.prices.local.yearly : MNStripeConfig.prices.pro.yearly,
         email,
       );
     }
@@ -670,7 +690,7 @@ window.MNPayment = (() => {
       // ── Apple Pay / Google Pay via Payment Request Button ──
       try {
         const amountCents = data.pricing?.finalAmount
-          || (priceId === MNStripeConfig.prices.local ? 1000 : 2000); // [NEEDS_STRIPE_UPDATE] annual cents
+          || _centsForPrice(priceId);
         const paymentRequest = stripe.paymentRequest({
           country: 'ES',
           currency: 'eur',
@@ -750,7 +770,7 @@ window.MNPayment = (() => {
         // from a plan key — never from a client-supplied priceId — so
         // this only needs to tell it WHICH plan, derived from the
         // known priceId this sheet was opened with.
-        const plan = (priceId === window.MNStripeConfig?.prices?.pro) ? 'pro' : 'local';
+        const plan = _planKeyForPrice(priceId);
         const checkoutRes = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${fbAuthToken}` },

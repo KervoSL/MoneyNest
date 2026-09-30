@@ -15,7 +15,7 @@
  *
  *  Every user gets a real, database-backed identity from the first
  *  load — even ones who never explicitly sign up — via Supabase
- *  Anonymous Sign-In, so the 24h trial itself is server-verified, not
+ *  Anonymous Sign-In, so the movement-based trial itself is server-verified, not
  *  just a local timer. If anonymous sign-in isn't enabled on the
  *  project, this fails closed (no server state = no entitlement
  *  granted) rather than trusting anything local.
@@ -119,7 +119,7 @@
   function isLocal() { return _plan() === 'local'; }
   function isPro()   { return _plan() === 'pro'; }
 
-  // Trial = "acceso completo durante 24 horas" per spec, so import/
+  // Trial = "100 movimientos gratis" per spec, so import/
   // export/cloud are all available while an active trial lasts, same
   // as Local/Pro. Import and export are explicitly NEVER Pro-gated.
   function hasImportAccess() { return isTrial() || isLocal() || isPro(); }

@@ -11,15 +11,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-// Both plans are annual subscriptions: Local 6,99€/año, Pro 14,99€/año.
-// CRITICAL: fallback price IDs must match whichever Stripe mode the
-// active secret key belongs to — mixing a test price with a live key
-// (or vice versa) fails with "No such price". This is exactly what
-// happens if STRIPE_PRICE_LOCAL/STRIPE_PRICE_PRO aren't set explicitly
-// and only live keys are configured (the account's current real state).
-const PRICE_LOCAL = Deno.env.get('STRIPE_PRICE_LOCAL') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1U68YVFWll222KpaCJ6WrKWg');
-const PRICE_PRO   = Deno.env.get('STRIPE_PRICE_PRO')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1U68YaFWll222Kpa4mynzdAp');
-const ALLOWED_PRICES = new Set([PRICE_LOCAL, PRICE_PRO]);
+const PRICE_LOCAL_MONTHLY = Deno.env.get('STRIPE_PRICE_LOCAL_MONTHLY') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1DFWll222KpalhrKgE2c');
+const PRICE_LOCAL_YEARLY  = Deno.env.get('STRIPE_PRICE_LOCAL_YEARLY')  || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1jFWll222Kpag1ifvTYl');
+const PRICE_PRO_MONTHLY   = Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzXFWll222Kpaw7SoHhjX');
+const PRICE_PRO_YEARLY    = Deno.env.get('STRIPE_PRICE_PRO_YEARLY')    || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzsFWll222KpaLqtD7vFM');
+const ALLOWED_PRICES = new Set([PRICE_LOCAL_MONTHLY, PRICE_LOCAL_YEARLY, PRICE_PRO_MONTHLY, PRICE_PRO_YEARLY]);
+const PRO_PRICES = new Set([PRICE_PRO_MONTHLY, PRICE_PRO_YEARLY]);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -117,11 +114,12 @@ Deno.serve(async (req) => {
     // Both Local and Pro are subscriptions now — same creation path,
     // only the trial (Pro-only, unchanged plan logic) differs.
     const customer = await findOrCreateCustomer(userId, email);
-    const isPro = priceId === PRICE_PRO;
+    const isPro = PRO_PRICES.has(priceId);
 
     if (isPro) {
-      const existing = await stripe.subscriptions.list({ customer: customer.id, price: PRICE_PRO, limit: 1 });
-      const activeSub = existing.data.find((s) => s.status === 'active' || s.status === 'trialing');
+      const existing = await stripe.subscriptions.list({ customer: customer.id, limit: 10 });
+      const proSubs = existing.data.filter(s => s.items.data.some(i => PRO_PRICES.has(i.price.id)));
+      const activeSub = proSubs.find((s) => s.status === 'active' || s.status === 'trialing');
       if (activeSub) return json({ error: 'already_subscribed' }, 409);
     }
 

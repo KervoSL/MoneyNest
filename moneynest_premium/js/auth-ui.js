@@ -4,7 +4,7 @@
  *  UI layer for the plan/subscription system (FREE_TRIAL / LOCAL / PRO)
  *
  *  Connects to the existing MNAuth (js/auth.js, low-level access
- *  control + 24h trial) and MNBilling (js/billing.js, mock
+ *  control + movement-based trial) and MNBilling (js/billing.js, mock
  *  subscription engine with plan definitions/pricing/entitlements)
  *  modules — reused as-is, nothing duplicated here.
  *
@@ -78,10 +78,10 @@ function renderTrialPill(elId) {
   if (!window.MNBilling) { el.innerHTML = ''; return; }
   const { state } = MNBilling.getSubStatus();
   const S = MNBilling.STATES;
-  if (state !== S.ACTIVE_TRIAL && state !== S.TRIAL_ENDING) { el.innerHTML = ''; return; }
+  if (state !== S.ACTIVE_TRIAL) { el.innerHTML = ''; return; }
 
   const tl = MNBilling.getTrialTimeLeft();
-  const endingToday = tl.hours < 24; // always true within the 24h trial, kept explicit for clarity
+  const endingToday = tl.hours < 24; // kept for layout consistency
   const label = tl.hours > 0
     ? _aut('trial_pill_hours','Prueba gratuita · {h}h restantes').replace('{h}', tl.hours)
     : _aut('trial_pill_minutes','Prueba gratuita · {m}min restantes').replace('{m}', tl.minutes);
@@ -131,7 +131,7 @@ function openPlanModal(context) {
               <li class="no">${_aut('plan_feat_cloud','Cloud')}</li>
               <li class="no">${_aut('plan_feat_sync','Sincronización')}</li>
             </ul>
-            <button class="btn btn-secondary btn-block" onclick="MNAuthUI._doConfirmPlan('local')">${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(local.price)}</button>
+            <button class="btn btn-secondary btn-block" onclick="MNAuthUI._doConfirmPlan('local_yearly')">${_aut('plan_btn_comprar_local','Comprar Local')} — ${eur(local.price)}</button>
           </div>
           <div class="plan-mini-card plan-mini-card--pro">
             <div class="plan-mini-card__ribbon">☁️ ${_aut('plan_pro_ribbon','Cloud')}</div>
@@ -146,7 +146,7 @@ function openPlanModal(context) {
               <li class="yes">${_aut('plan_feat_restauracion','Restauración')}</li>
               <li class="yes">${_aut('plan_feat_multidispositivo','Varios dispositivos')}</li>
             </ul>
-            <button class="btn btn-primary btn-block plan-mini-card__pro-btn" onclick="MNAuthUI._doConfirmPlan('pro')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>
+            <button class="btn btn-primary btn-block plan-mini-card__pro-btn" onclick="MNAuthUI._doConfirmPlan('pro_yearly')">${_aut('plan_btn_elegir_pro','Elegir Pro')}</button>
           </div>
         </div>
       </div>
@@ -172,9 +172,9 @@ function closePlanModal() {
 function confirmPlan(planKey) {
   const b = window.MNBilling;
   if (!b) return;
-  const isPro = planKey === 'pro';
+  const isPro = planKey.startsWith('pro');
   const planDef = isPro ? b.PLANS.PRO_ANNUAL : b.PLANS.LOCAL_LIFETIME;
-  const color = isPro ? '#EC4899' : '#00D4AA'; // agreed pink treatment for Pro
+  const color = isPro ? '#EC4899' : '#00D4AA';
 
   const modal = document.getElementById('planModalOverlay');
   if (!modal) return;
@@ -255,7 +255,16 @@ async function _doConfirmPlan(planKey) {
     return;
   }
 
-  const priceId = planKey === 'pro' ? window.MNStripeConfig?.prices?.pro : window.MNStripeConfig?.prices?.local;
+  const prices = window.MNStripeConfig?.prices;
+  let priceId;
+  switch (planKey) {
+    case 'local_monthly': priceId = prices?.local?.monthly; break;
+    case 'local_yearly':  priceId = prices?.local?.yearly;  break;
+    case 'pro_monthly':   priceId = prices?.pro?.monthly;   break;
+    case 'pro_yearly':    priceId = prices?.pro?.yearly;    break;
+    case 'pro':           priceId = prices?.pro?.yearly;    break;
+    default:              priceId = prices?.local?.yearly;   break;
+  }
   const email = window.MNSupabaseAuth.getSession()?.user?.email || window.MNAuth?.getUser?.()?.email || '';
   if (!priceId || !window.MNPayment) {
     console.error('[MNAuthUI] No se pudo abrir el pago: MNPayment o priceId no disponibles', { priceId, hasMNPayment: !!window.MNPayment });
@@ -289,10 +298,51 @@ if (window.MNSupabaseAuth) {
 // crashing or silently failing.
 function requireCloud(context) {
   const b = window.MNBilling;
-  if (!b) return true; // fail-open if billing module isn't available — never block core app usage
+  if (!b) return true;
   if (b.canUseFeature('cloud_sync')) return true;
-  openPlanModal(context || 'cloud_gate');
+  const authUser = window.MNAuth?.getUser?.() || {};
+  if (authUser.plan === 'local') {
+    _openCloudUpsellModal();
+  } else {
+    openPlanModal(context || 'cloud_gate');
+  }
   return false;
+}
+
+function _openCloudUpsellModal() {
+  document.getElementById('cloudUpsellOverlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'cloudUpsellOverlay';
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+      <div class="modal-header">
+        <span class="modal-title">☁️ Lleva MoneyNest a todos tus dispositivos</span>
+        <button class="modal-close" onclick="document.getElementById('cloudUpsellOverlay')?.remove();if(typeof window._popScrollLock==='function')window._popScrollLock()">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:20px 24px 24px">
+        <div style="font-size:2.5rem;margin-bottom:12px">☁️</div>
+        <ul style="text-align:left;list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
+          <li style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text1,#E8EFF7)"><span style="color:#00D4AA;font-weight:700">✓</span> Sincronización automática entre dispositivos</li>
+          <li style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text1,#E8EFF7)"><span style="color:#00D4AA;font-weight:700">✓</span> Copia de seguridad en la nube</li>
+          <li style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text1,#E8EFF7)"><span style="color:#00D4AA;font-weight:700">✓</span> Acceso desde cualquier dispositivo</li>
+        </ul>
+        <button class="btn btn-primary btn-block" style="font-weight:700;font-size:.9rem" onclick="document.getElementById('cloudUpsellOverlay')?.remove();if(typeof window._popScrollLock==='function')window._popScrollLock();MNAuthUI._doConfirmPlan('pro_monthly')">Pasar a Pro — 2 €/mes</button>
+        <div style="font-size:.78rem;color:var(--text3,#94A3B8);margin-top:8px">19,99 €/año · ahorra 4,01 €</div>
+        <a href="#" style="display:inline-block;margin-top:14px;font-size:.78rem;color:var(--text3,#94A3B8);text-decoration:none" onclick="event.preventDefault();document.getElementById('cloudUpsellOverlay')?.remove();if(typeof window._popScrollLock==='function')window._popScrollLock()">Ahora no</a>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); if (typeof window._popScrollLock === 'function') window._popScrollLock(); } });
+  if (typeof window._pushScrollLock === 'function') window._pushScrollLock();
+  setTimeout(() => overlay.classList.add('open'), 10);
+}
+
+function closeCloudUpsellModal() {
+  const overlay = document.getElementById('cloudUpsellOverlay');
+  if (!overlay) return;
+  overlay.remove();
+  if (typeof window._popScrollLock === 'function') window._popScrollLock();
 }
 
 // ────────────────────────────────────────────────────────────────

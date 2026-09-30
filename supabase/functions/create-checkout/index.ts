@@ -10,16 +10,18 @@ const usingTestKey = !!Deno.env.get('STRIPE_SECRET_KEY_TEST');
 const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY_TEST') || Deno.env.get('STRIPE_SECRET_KEY') || '';
 const stripe = new Stripe(STRIPE_KEY, {});
 
-// ── Server-side price whitelist — NEVER trust a priceId/amount from
-// the client. Both plans are annual subscriptions: Local 6,99€/año,
-// Pro 14,99€/año. CRITICAL: the fallback price IDs must match whichever
-// Stripe mode is actually active — a test price ID sent with a live
-// secret key (or vice versa) fails with "No such price", which is
-// exactly what happens if STRIPE_PRICE_LOCAL/STRIPE_PRICE_PRO aren't
-// set as explicit secrets and the account only has live keys configured.
+const PRICE_LOCAL_MONTHLY = Deno.env.get('STRIPE_PRICE_LOCAL_MONTHLY') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1DFWll222KpalhrKgE2c');
+const PRICE_LOCAL_YEARLY  = Deno.env.get('STRIPE_PRICE_LOCAL_YEARLY')  || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1UKn1jFWll222Kpag1ifvTYl');
+const PRICE_PRO_MONTHLY   = Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzXFWll222Kpaw7SoHhjX');
+const PRICE_PRO_YEARLY    = Deno.env.get('STRIPE_PRICE_PRO_YEARLY')    || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzsFWll222KpaLqtD7vFM');
+
 const PRICE_MAP: Record<string, string> = {
-  local: Deno.env.get('STRIPE_PRICE_LOCAL') || (usingTestKey ? 'price_1U5uN8FWll222KpaX0qENvX3' : 'price_1U68YVFWll222KpaCJ6WrKWg'),
-  pro:   Deno.env.get('STRIPE_PRICE_PRO')   || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1U68YaFWll222Kpa4mynzdAp'),
+  local_monthly: PRICE_LOCAL_MONTHLY,
+  local_yearly:  PRICE_LOCAL_YEARLY,
+  pro_monthly:   PRICE_PRO_MONTHLY,
+  pro_yearly:    PRICE_PRO_YEARLY,
+  local:         PRICE_LOCAL_YEARLY,
+  pro:           PRICE_PRO_YEARLY,
 };
 
 const supabaseAdmin = createClient(
@@ -87,6 +89,7 @@ Deno.serve(async (req) => {
     return json({ error: 'invalid_plan' }, 400, cors);
   }
   const priceId = PRICE_MAP[plan];
+  const basePlan = plan.startsWith('pro') ? 'pro' : 'local';
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -113,20 +116,20 @@ Deno.serve(async (req) => {
 
   // Trial period on Stripe's side only ever applies to Pro (Local has
   // never had a trial-then-charge flow) — unchanged plan logic.
-  const applyProTrial = plan === 'pro' && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
+  const applyProTrial = basePlan === 'pro' && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/?checkout=success&plan=${plan}`,
+      success_url: `${origin}/?checkout=success&plan=${basePlan}`,
       cancel_url: `${origin}/?checkout=cancelled`,
       allow_promotion_codes: true,
       client_reference_id: user.id,
-      metadata: { app: 'moneynest', user_id: user.id, plan },
+      metadata: { app: 'moneynest', user_id: user.id, plan: basePlan },
       subscription_data: {
-        metadata: { app: 'moneynest', user_id: user.id, plan },
+        metadata: { app: 'moneynest', user_id: user.id, plan: basePlan },
         ...(applyProTrial ? { trial_period_days: 7 } : {}),
       },
     });

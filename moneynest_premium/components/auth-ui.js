@@ -294,8 +294,8 @@ function _buildRegisterView() {
     </div>
 
     <div class="mn-auth-trial-note">
-      <span style="font-weight:700;color:${C.accent}">⏳ ${_t('auth_24h_gratis','24h gratis')}</span>
-      &nbsp;— ${_t('auth_24h_desc','Registrarte activa tu prueba gratuita. Sin tarjeta.')}
+      <span style="font-weight:700;color:${C.accent}">⏳ ${_t('auth_24h_gratis','Prueba gratuita')}</span>
+      &nbsp;— ${_t('auth_24h_desc','100 movimientos gratis para probar MoneyNest. Sin tarjeta.')}
     </div>
 
     <div class="mn-auth-form-col">
@@ -435,7 +435,7 @@ function _buildGuestPlanView(user) {
     </div>
 
     <p style="font-size:.82rem;color:var(--text2,#94A3B8);line-height:1.65;margin-bottom:16px">
-      ${_t('auth_registrate_desc','Regístrate para que tu trial de 24h quede asociado a tu email y puedas recuperar el acceso desde cualquier dispositivo.')}
+      ${_t('auth_registrate_desc','Regístrate para asociar tus datos a tu email y poder recuperar el acceso desde cualquier dispositivo.')}
     </p>
 
     <button class="mn-btn-primary mn-btn-full" id="mn-go-register-cta">
@@ -451,7 +451,7 @@ function _buildGuestPlanView(user) {
       <div class="mn-auth-cta-label">🔓 ${_t('auth_desbloquear_ahora','Desbloquear ahora')}</div>
       <div class="mn-auth-cta-desc">${_t('auth_plan_local_desc','Con el Plan Local (5€ único) nunca expira.')}</div>
       <button class="mn-btn-secondary mn-btn-full" id="mn-buy-local-btn" style="margin-top:12px">
-        💾 ${_t('auth_comprar_local','Comprar Plan Local — 6,99€ →')}
+        💾 ${_t('auth_comprar_local','Comprar Plan Local — desde 1 €/mes →')}
       </button>
     </div>
 
@@ -481,9 +481,9 @@ function _buildTrialView(user) {
 
     <div class="mn-auth-cta-box">
       <div class="mn-auth-cta-label">🔒 ${_t('auth_que_pasa','¿Qué pasa cuando expire?')}</div>
-      <div class="mn-auth-cta-desc">${_t('auth_plan_local_cta_desc','La app se bloqueará. Con MoneyNest (6,99€ pago único) se desbloquea para siempre.')}</div>
+      <div class="mn-auth-cta-desc">${_t('auth_plan_local_cta_desc','Al llegar a 100 movimientos se bloqueará. Con MoneyNest (desde 1 €/mes) se desbloquea para siempre.')}</div>
       <button class="mn-btn-primary mn-btn-full" id="mn-buy-local-btn" style="margin-top:12px">
-        🔓 ${_t('auth_comprar_local','Comprar MoneyNest — 6,99€ pago único')}
+        🔓 ${_t('auth_comprar_local','Comprar MoneyNest — desde 1 €/mes')}
       </button>
     </div>
 
@@ -503,14 +503,14 @@ function _buildLockedView(user) {
     <div class="mn-auth-alert-box">
       <div class="mn-auth-alert-icon">⏰</div>
       <div class="mn-auth-alert-text">
-        ${_t('auth_prueba_expirada','Tu prueba de 24 horas ha expirado.')}<br>
+        ${_t('auth_prueba_expirada','Tu prueba gratuita ha finalizado.')}<br>
         ${_t('auth_datos_seguros','Tus datos están a salvo — solo necesitas desbloquear la app.')}
       </div>
     </div>
 
     <div class="mn-auth-price-card">
       <div class="mn-auth-price-label">${_t('auth_plan_local','MoneyNest')}</div>
-      <div class="mn-auth-price-amount">6,99€ <span>${_t('auth_pago_unico','pago único')}</span></div>
+      <div class="mn-auth-price-amount">1€<span>/mes</span></div>
       <div class="mn-auth-price-features">
         <div class="mn-auth-pf">✅ ${_t('auth_feat_acceso_inmediato','Acceso inmediato sin fecha de expiración')}</div>
         <div class="mn-auth-pf">✅ ${_t('auth_feat_datos','Todos tus datos conservados')}</div>
@@ -520,7 +520,7 @@ function _buildLockedView(user) {
     </div>
 
     <button class="mn-btn-primary mn-btn-full mn-btn-large" id="mn-buy-local-btn">
-      🔓 ${_t('auth_comprar_local_cta','Comprar MoneyNest — 6,99€ →')}
+      🔓 ${_t('auth_comprar_local_cta','Comprar MoneyNest — desde 1 €/mes →')}
     </button>
     <div style="margin-top:10px">
       <button class="mn-btn-ghost mn-btn-full" id="mn-restore-btn">${_t('auth_restaurar','¿Ya compraste? Restaurar acceso')}</button>
@@ -630,7 +630,7 @@ function _attachListeners(user) {
     const email = window.MNSupabaseAuth?.getEmail() || user.email || '';
     closeAuthModal();
     document.dispatchEvent(new CustomEvent('mn:buyLocal', { detail: { source:'modal', user } }));
-    if (window.MNPayment) MNPayment.open(MNStripeConfig.prices.local, email);
+    if (window.MNPayment) MNPayment.open(MNStripeConfig.prices.local.yearly, email);
   });
 
   // ── Cancel Pro ───────────────────────────────────────────────
