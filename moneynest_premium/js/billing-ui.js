@@ -20,7 +20,30 @@
 
 let _lastScenario = null;   // para evitar re-renders innecesarios
 let _uiBillingPeriod = 'annual';
-function _toggleBillingPeriod(p) { _uiBillingPeriod = p; renderBillingPage(); }
+
+function _toggleBillingPeriod(p) {
+  _uiBillingPeriod = p;
+  const isAnnual = p === 'annual';
+  document.querySelectorAll('[data-price-monthly]').forEach(el => {
+    el.textContent = isAnnual ? el.dataset.priceYearly : el.dataset.priceMonthly;
+  });
+  document.querySelectorAll('[data-period-monthly]').forEach(el => {
+    el.textContent = isAnnual ? el.dataset.periodYearly : el.dataset.periodMonthly;
+  });
+  document.querySelectorAll('[data-equiv-yearly]').forEach(el => {
+    el.textContent = isAnnual ? el.dataset.equivYearly : '';
+    el.style.display = isAnnual ? '' : 'none';
+  });
+  document.querySelectorAll('.mn-billing-toggle-btn').forEach(btn => {
+    const isActive = btn.dataset.period === p;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? 'var(--accent,#00D4AA)' : 'transparent';
+    btn.style.color = isActive ? '#0A0E17' : 'rgba(255,255,255,.5)';
+  });
+  document.querySelectorAll('.mn-billing-savings-note').forEach(el => {
+    el.style.display = isAnnual ? '' : 'none';
+  });
+}
 window._toggleBillingPeriod = _toggleBillingPeriod;
 
 function _b() { return window.MNBilling; }
@@ -115,9 +138,10 @@ function renderBillingPage() {
   const isTrial  = scenario === 'TRIAL';
   const pink     = '#EC4899';
 
-  // ── Movement counter ──
-  const _demoActive = typeof isDemoMode === 'function' && isDemoMode();
-  const trialUsed = _demoActive ? 0 : ((window.S?.ingresos?.length || 0) + (window.S?.gastos?.length || 0));
+  // ── Movement counter (recalculated on every render) ──
+  const trialUsed = (typeof _countTrialMovements === 'function')
+    ? _countTrialMovements()
+    : ((window.S?.ingresos?.length || 0) + (window.S?.gastos?.length || 0));
   const LIMIT = window.TRIAL_MOVEMENT_LIMIT || 100;
   const trialRemaining = Math.max(0, LIMIT - trialUsed);
   const trialPct = Math.min(100, (trialUsed / LIMIT) * 100);
@@ -161,31 +185,28 @@ function renderBillingPage() {
     </div>`;
   }
 
-  // ── Toggle ──
+  // ── Toggle (pill — switches prices via data attributes, no full re-render) ──
   const toggleHtml = `
-    <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;max-width:420px">
-      <button onclick="_toggleBillingPeriod('monthly')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${!isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:var(--text2,#94A3B8)'}">Mensual</button>
-      <button onclick="_toggleBillingPeriod('annual')" style="flex:1;padding:10px 16px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;${isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:var(--text2,#94A3B8)'}">Anual · ahorra hasta 4 €</button>
+    <div class="mn-billing-toggle" style="display:inline-flex;background:rgba(255,255,255,.05);border-radius:99px;padding:3px;gap:2px;margin-bottom:24px">
+      <button class="mn-billing-toggle-btn${!isAnnual?' active':''}" data-period="monthly" onclick="_toggleBillingPeriod('monthly')" style="padding:8px 20px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${!isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Mensual</button>
+      <button class="mn-billing-toggle-btn${isAnnual?' active':''}" data-period="annual" onclick="_toggleBillingPeriod('annual')" style="padding:8px 20px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Anual · Ahorra hasta 4 €</button>
     </div>`;
 
-  // ── Prices ──
-  const localPrice = isAnnual ? '9,99 €' : '1 €';
-  const localPeriod = isAnnual ? '/año' : '/mes';
-  const localEquiv = isAnnual ? '<div style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px">equivale a 0,83 €/mes</div>' : '';
-  const proPrice = isAnnual ? '19,99 €' : '2 €';
-  const proPeriod = isAnnual ? '/año' : '/mes';
-  const proEquiv = isAnnual ? '<div style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px">equivale a 1,67 €/mes</div>' : '';
+  // ── Initial price text (based on current toggle state) ──
+  const localPriceInit  = isAnnual ? '9,99 €' : '1 €';
+  const localPeriodInit = isAnnual ? '/año' : '/mes';
+  const proPriceInit    = isAnnual ? '19,99 €' : '2 €';
+  const proPeriodInit   = isAnnual ? '/año' : '/mes';
 
   // ── Local card ──
-  const localPlanKey = isAnnual ? 'local_yearly' : 'local_monthly';
   const cardLocal = `
     <div class="mn-plan-card${isLocal ? ' mn-plan-card--current mn-plan-card--accent' : ''}">
       ${isLocal ? '<div class="mn-plan-card__ribbon" style="background:var(--accent-dim,rgba(0,212,170,.12));color:var(--accent,#00D4AA)">✓ PLAN ACTUAL</div>' : ''}
       <div class="mn-plan-card__icon">💾</div>
       <div class="mn-plan-card__name">MoneyNest Local</div>
       <div style="font-size:.78rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:8px">Tus finanzas. En tu dispositivo.</div>
-      <div class="mn-plan-card__price">${localPrice}<span>${localPeriod}</span></div>
-      ${localEquiv}
+      <div class="mn-plan-card__price"><span data-price-monthly="1 €" data-price-yearly="9,99 €">${localPriceInit}</span><span data-period-monthly="/mes" data-period-yearly="/año">${localPeriodInit}</span></div>
+      <div data-equiv-yearly="equivale a 0,83 €/mes" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px${isAnnual?'':';display:none'}">${isAnnual ? 'equivale a 0,83 €/mes' : ''}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">Todas las herramientas financieras</li>
         <li class="ok">Ingresos, gastos, inversiones, deudas</li>
@@ -196,19 +217,18 @@ function renderBillingPage() {
       </ul>
       ${isLocal
         ? '<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ Plan actual</button>'
-        : `<button class="mn-plan-btn-local" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:2px solid var(--accent,#00D4AA);background:transparent;color:var(--accent,#00D4AA);font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan('${localPlanKey}')">Elegir Local</button>`}
+        : `<button class="mn-plan-btn-local" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:2px solid var(--accent,#00D4AA);background:transparent;color:var(--accent,#00D4AA);font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan(_uiBillingPeriod==='annual'?'local_yearly':'local_monthly')">Elegir Local</button>`}
     </div>`;
 
   // ── Pro card ──
-  const proPlanKey = isAnnual ? 'pro_yearly' : 'pro_monthly';
   const cardPro = `
     <div class="mn-plan-card mn-plan-card--pro${isPro ? ' mn-plan-card--current' : ''}">
       <div class="mn-plan-card__ribbon${isPro ? '' : ' mn-plan-card__ribbon--pro'}" style="${isPro ? `background:${pink}22;color:${pink}` : ''}">${isPro ? '✓ PLAN ACTUAL' : '⭐ MÁS ELEGIDO'}</div>
       <div class="mn-plan-card__icon">☁️</div>
       <div class="mn-plan-card__name">MoneyNest Pro</div>
       <div style="font-size:.78rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:8px">Tus finanzas. En todas partes.</div>
-      <div class="mn-plan-card__price" style="color:${pink}">${proPrice}<span>${proPeriod}</span></div>
-      ${proEquiv}
+      <div class="mn-plan-card__price" style="color:${pink}"><span data-price-monthly="2 €" data-price-yearly="19,99 €">${proPriceInit}</span><span data-period-monthly="/mes" data-period-yearly="/año">${proPeriodInit}</span></div>
+      <div data-equiv-yearly="equivale a 1,67 €/mes" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px${isAnnual?'':';display:none'}">${isAnnual ? 'equivale a 1,67 €/mes' : ''}</div>
       <ul class="mn-plan-card__feats">
         <li class="ok">Todo lo de Local</li>
         <li class="ok">Cloud Sync automático</li>
@@ -218,7 +238,7 @@ function renderBillingPage() {
       </ul>
       ${isPro
         ? '<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ Plan actual</button>'
-        : `<button class="mn-plan-btn-pro" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;background:var(--accent,#00D4AA);color:#0A0E17;font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan('${proPlanKey}')">Elegir Pro</button>`}
+        : `<button class="mn-plan-btn-pro" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;background:var(--accent,#00D4AA);color:#0A0E17;font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan(_uiBillingPeriod==='annual'?'pro_yearly':'pro_monthly')">Elegir Pro</button>`}
     </div>`;
 
   // ── Subscription status (paid plans only) ──
@@ -268,6 +288,7 @@ function renderBillingPage() {
         ${cardLocal}
         ${cardPro}
       </div>
+      <div class="mn-billing-savings-note" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:8px;text-align:center${isAnnual?'':';display:none'}">Local anual: equivale a 0,83 €/mes · Pro anual: equivale a 1,67 €/mes</div>
     </div>
     ${subStatusHtml}
     ${actionsHtml}

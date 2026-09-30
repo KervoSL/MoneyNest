@@ -104,17 +104,26 @@ function initUser() {
 const TRIAL_MOVEMENT_LIMIT = 100
 let _lastTrialWarningShownAt = null
 
-// Cuenta ingresos + gastos directamente de localStorage (SK = 'mn7_data')
-// en vez de leer la variable global S, porque checkAccess() se ejecuta
-// en init() ANTES de load() — en ese punto S todavia no existe.
 function _countTrialMovements() {
   try {
-    if (localStorage.getItem('mn7_demo_mode') === 'true') return 0
-    const raw = localStorage.getItem(SK)
-    if (!raw) return 0
-    const data = JSON.parse(raw)
-    return (Array.isArray(data.ingresos) ? data.ingresos.length : 0) +
-           (Array.isArray(data.gastos)   ? data.gastos.length   : 0)
+    if (typeof isDemoMode === 'function' && isDemoMode()) return 0
+    if (window.MNAuth?.getUser?.()?.demoMode) return 0
+    // Prefer live global S; fall back to localStorage for early init
+    const src = (window.S && Array.isArray(window.S.ingresos)) ? window.S : null
+    let ingresos, gastos
+    if (src) {
+      ingresos = src.ingresos.length
+      gastos   = src.gastos.length
+    } else {
+      const raw = localStorage.getItem(SK)
+      if (!raw) return 0
+      const data = JSON.parse(raw)
+      ingresos = Array.isArray(data.ingresos) ? data.ingresos.length : 0
+      gastos   = Array.isArray(data.gastos)   ? data.gastos.length   : 0
+    }
+    const total = ingresos + gastos
+    console.log('[MN] _countTrialMovements:', total, '(ingresos:', ingresos, '· gastos:', gastos, '· source:', src ? 'S' : 'localStorage', ')')
+    return total
   } catch { return 0 }
 }
 
@@ -7989,8 +7998,8 @@ function renderFacturacion() {
   const isLocal   = e ? e.isLocal() : false
   const isExpired = e ? e.isTrialExpired() : false
   const pink      = '#EC4899'
-  const _lp = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME : { price:10, priceMonthly:0.99 }
-  const _pp = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL : { price:20, priceMonthly:1.99 }
+  const _lp = window.MNBilling ? MNBilling.PLANS.LOCAL_LIFETIME : { price:9.99, priceMonthly:1 }
+  const _pp = window.MNBilling ? MNBilling.PLANS.PRO_ANNUAL : { price:19.99, priceMonthly:2 }
   const isAnnual = _billingPeriod === 'annual'
   const localPrice = isAnnual ? _lp.price : _lp.priceMonthly
   const proPrice   = isAnnual ? _pp.price : _pp.priceMonthly
@@ -7999,8 +8008,7 @@ function renderFacturacion() {
   const localEquiv = isAnnual ? `equivale a ${(_lp.price/12).toFixed(2).replace('.',',')} €/mes` : ''
   const proEquiv   = isAnnual ? `equivale a ${(_pp.price/12).toFixed(2).replace('.',',')} €/mes` : ''
 
-  const _demoActive = typeof isDemoMode === 'function' && isDemoMode()
-  const trialUsed = _demoActive ? 0 : ((S.ingresos?.length || 0) + (S.gastos?.length || 0))
+  const trialUsed = _countTrialMovements()
   const trialRemaining = Math.max(0, TRIAL_MOVEMENT_LIMIT - trialUsed)
   const trialPct = Math.min(100, (trialUsed / TRIAL_MOVEMENT_LIMIT) * 100)
 
