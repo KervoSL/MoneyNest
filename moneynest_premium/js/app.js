@@ -18086,6 +18086,12 @@ if ('serviceWorker' in navigator) {
             }
           })
         })
+
+        // Check for SW updates when the tab regains focus — catches
+        // deploys that happened while the tab was in the background.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update()
+        })
       })
       .catch(err => console.warn('[MoneyNest] SW registration failed:', err))
 
