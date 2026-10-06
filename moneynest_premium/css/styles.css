@@ -541,12 +541,6 @@ tbody tr:hover{cursor:default}
   table{min-width:500px}
   th,td{padding:6px 8px;font-size:.75rem}
   .td-actions{flex-direction:column;gap:4px}
-  .td-hide-mobile{display:none!important}
-  table:has(.td-hide-mobile){min-width:0!important;width:100%}
-}
-@media(max-width:480px){
-  table{min-width:0;width:100%}
-  th,td{white-space:normal;word-break:break-word}
 }
 
 /* ─── BUTTONS ────────────────────────────────────────────────── */
