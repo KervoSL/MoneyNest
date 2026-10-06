@@ -541,6 +541,8 @@ tbody tr:hover{cursor:default}
   table{min-width:500px}
   th,td{padding:6px 8px;font-size:.75rem}
   .td-actions{flex-direction:column;gap:4px}
+  .td-hide-mobile{display:none!important}
+  table:has(.td-hide-mobile){min-width:0!important;width:100%}
 }
 @media(max-width:480px){
   table{min-width:0;width:100%}
@@ -1251,9 +1253,7 @@ textarea{resize:vertical;min-height:70px}
     flex-wrap:nowrap;
   }
   .page-title-bar{
-    font-size:1rem;
-    font-weight:700;
-    min-width:44px;
+    display:none;
   }
   .dinero-display{
     padding:4px 10px;
@@ -1315,6 +1315,7 @@ textarea{resize:vertical;min-height:70px}
   .page-h1{font-size:1.25rem}
   .inv-stats{grid-template-columns:1fr}
   .action-row{flex-wrap:wrap}
+  #nav-patrimonio{display:none}
 }
 
 /* ─── SMALL MOBILE (<480px) ─────────────────────────────────── */

@@ -322,10 +322,6 @@ function renderBillingPage() {
     </div>
     ${manageHtml}
     <div class="mnb-section">
-      <div class="mnb-section-label">Más opciones</div>
-      <button class="mnb-text-btn" onclick="MNBillingUI._restoreAccess()">Restaurar acceso</button>
-    </div>
-    <div class="mnb-section">
       <div class="mnb-section-label">Historial de pagos</div>
       <p class="mnb-empty-state">El historial de pagos aparecerá aquí.</p>
     </div>
@@ -1148,43 +1144,56 @@ function initBillingUI() {
 // ════════════════════════════════════════════════════════════════
 
 async function openStripePortal() {
-  // Requires the user to have a Supabase session and a Stripe customer ID.
-  // Calls the create-portal Edge Function, which returns a redirect URL.
   const PORTAL_ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/create-portal-session';
 
-  // Show loading state
-  if (typeof window.toast === 'function') toast('⏳ Abriendo portal de facturación…');
+  const btn = document.querySelector('[onclick*="openStripePortal"]');
+  const originalLabel = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Abriendo…'; }
 
   try {
-    const session = window.MNSupabaseAuth?.getSession?.();
-    const token   = session?.access_token;
+    if (window.MNSupabaseAuth?.ready) {
+      try {
+        await Promise.race([
+          window.MNSupabaseAuth.ready(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('auth_ready_timeout')), 4000)),
+        ]);
+      } catch (_) {}
+    }
+
+    if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
+      if (typeof toast === 'function') toast('Inicia sesión primero para gestionar tu suscripción.', 'warning');
+      return;
+    }
+
+    const token = window.MNSupabaseAuth.getSession()?.access_token;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const res = await fetch(PORTAL_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        return_url: window.location.href,
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     const data = await res.json();
-
     if (!res.ok || !data.url) {
-      throw new Error(data.error || 'No se pudo abrir el portal');
+      if (data.error === 'no_customer') {
+        if (typeof toast === 'function') toast('Aún no tienes ningún pago registrado con este email.', 'info');
+      } else {
+        throw new Error(data.error || 'No se pudo abrir el portal');
+      }
+      return;
     }
 
-    // Open in same tab (portal redirects back to return_url)
     window.location.href = data.url;
-
   } catch (err) {
     console.warn('[MNBillingUI] Portal error:', err);
-    // Graceful fallback: show message instead of crashing
-    if (typeof window.toast === 'function') {
-      toast('⚠ ' + (err.message || 'Error al abrir el portal. Contacta con soporte.'), 'error');
+    if (typeof toast === 'function') {
+      toast('No se pudo abrir el portal de facturación. Inténtalo de nuevo.', 'error');
     }
+  } finally {
+    if (btn && originalLabel) { btn.disabled = false; btn.textContent = originalLabel; }
   }
 }
 

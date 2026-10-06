@@ -2577,13 +2577,20 @@
   color: var(--accent, #00D4AA);
 }
 .mnb-price-value {
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 1.8rem;
+  font-weight: 800;
   color: var(--text, #fff);
   flex: 1;
+  line-height: 1.2;
+}
+.mnb-price--on .mnb-price-value {
+  color: var(--accent, #00D4AA);
+}
+.mnb-plan--pro .mnb-price--on .mnb-price-value {
+  color: #A78BFA;
 }
 .mnb-price-unit {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--text3, rgba(255,255,255,.4));
 }

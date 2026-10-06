@@ -153,6 +153,10 @@
       modal_pres_limite_lbl: 'Límite mensual (€) *',
       btn_presupuesto_cancelar: 'Cancelar',
       btn_presupuesto_guardar: 'Guardar',
+      modal_pres_ambito_lbl: '¿Presupuesto de qué?',
+      modal_pres_ambito_gasto: '💸 Gastos',
+      modal_pres_ambito_inversion: '📈 Inversiones',
+      modal_pres_ambito_nota: 'Solo cuenta el dinero que metas en inversiones nuevas de esta categoría cada mes. Los retiros o liquidaciones no restan del límite.',
 
       // Cuenta Modal
       modal_cuenta_titulo: 'Nueva Cuenta',

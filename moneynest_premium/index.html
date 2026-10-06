@@ -54,7 +54,7 @@
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/billing.css">
 <link rel="stylesheet" href="css/wizard-shared.css">
-<link rel="stylesheet" href="css/pin-lock.css">
+
 <link rel="stylesheet" href="css/data-manager.css">
 <link rel="stylesheet" href="css/premium-ux.css">
 <link rel="stylesheet" href="css/feature-showcase.css">
@@ -171,9 +171,9 @@
     <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
     <span data-i18n="bn_inicio">Inicio</span>
   </div>
-  <div class="bottom-nav-item" onclick="goTo('gastos');closeSidebar()" id="bn-gastos">
-    <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-    <span data-i18n="nav_gastos">Gastos</span>
+  <div class="bottom-nav-item" onclick="goTo('patrimonio');closeSidebar()" id="bn-patrimonio">
+    <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+    <span data-i18n="nav_patrimonio">Patrimonio</span>
   </div>
   <div class="bottom-nav-item bottom-nav-add" onclick="openQuickAdd();closeSidebar()" id="bn-add" aria-label="Añadir">
     <span class="bn-icon" style="font-size:1.6rem;font-weight:800;line-height:1">+</span>
@@ -432,16 +432,6 @@
 </div>
 
 <!-- REVALORIZAR MODAL -->
-<div class="modal-overlay" id="pinSetupModal">
-  <div class="modal" style="max-width:360px">
-    <div class="modal-header">
-      <div class="modal-title">🔒 <span id="pinSetupTitle">Configurar PIN</span></div>
-      <button class="modal-close" onclick="MNPinLock._cancelSetup()">✕</button>
-    </div>
-    <div class="modal-body" id="pinSetupBody" style="padding-bottom:24px"></div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="revalorizarModal">
   <div class="modal">
     <div class="modal-header">
@@ -1420,7 +1410,7 @@
 <script src="js/billing-i18n-patch.js"></script>
 <script src="js/data-manager.js"></script>
 <script src="js/sync.js"></script>
-<script src="js/pin-lock.js"></script>
+
 <script src="js/gamification-guides.js"></script>
 <script src="js/gamification.js"></script>
 <script src="js/bank-import.js"></script>

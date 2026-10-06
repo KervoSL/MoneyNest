@@ -108,21 +108,25 @@ function _countTrialMovements() {
   try {
     if (typeof isDemoMode === 'function' && isDemoMode()) return 0
     if (window.MNAuth?.getUser?.()?.demoMode) return 0
-    // Prefer live global S; fall back to localStorage for early init
     const src = (window.S && Array.isArray(window.S.ingresos)) ? window.S : null
-    let ingresos, gastos
+    let ingresos, gastos, inversiones, deudas, presupuestos
     if (src) {
-      ingresos = src.ingresos.length
-      gastos   = src.gastos.length
+      ingresos      = src.ingresos.length
+      gastos        = src.gastos.length
+      inversiones   = (src.inversiones || []).length
+      deudas        = (src.deudas || []).length
+      presupuestos  = (src.presupuestos || []).length
     } else {
       const raw = localStorage.getItem(SK)
       if (!raw) return 0
       const data = JSON.parse(raw)
-      ingresos = Array.isArray(data.ingresos) ? data.ingresos.length : 0
-      gastos   = Array.isArray(data.gastos)   ? data.gastos.length   : 0
+      ingresos      = Array.isArray(data.ingresos)     ? data.ingresos.length     : 0
+      gastos        = Array.isArray(data.gastos)        ? data.gastos.length        : 0
+      inversiones   = Array.isArray(data.inversiones)   ? data.inversiones.length   : 0
+      deudas        = Array.isArray(data.deudas)        ? data.deudas.length        : 0
+      presupuestos  = Array.isArray(data.presupuestos)  ? data.presupuestos.length  : 0
     }
-    const total = ingresos + gastos
-    console.log('[MN] _countTrialMovements:', total, '(ingresos:', ingresos, '· gastos:', gastos, '· source:', src ? 'S' : 'localStorage', ')')
+    const total = ingresos + gastos + inversiones + deudas + presupuestos
     return total
   } catch { return 0 }
 }
@@ -5193,10 +5197,10 @@ function renderIngresos() {
         ${i.notas ? `<span class="nota-badge" data-nota-id="${i.id}" onclick="event.stopPropagation();window._showNotaTooltip(this)" title="Ver nota" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:800;cursor:pointer;margin-left:5px;flex-shrink:0;vertical-align:middle">!</span>` : ''}
       </td>
       <td class="td-amount" style="color:var(--gold)">+${eur(i.importe)}</td>
-      <td><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(i.categoria)}</span><span class="tag">${i.categoria||'—'}</span></span></td>
-      <td>${fmtDate(i.fecha)}</td>
-      <td>${i.cuentaId?getCuenta(i.cuentaId)?.nombre||'—':'—'}</td>
-      <td><span class="badge badge-gold">${t('estado_pendiente')}</span></td>
+      <td class="td-hide-mobile"><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(i.categoria)}</span><span class="tag">${i.categoria||'—'}</span></span></td>
+      <td class="td-hide-mobile">${fmtDate(i.fecha)}</td>
+      <td class="td-hide-mobile">${i.cuentaId?getCuenta(i.cuentaId)?.nombre||'—':'—'}</td>
+      <td class="td-hide-mobile"><span class="badge badge-gold">${t('estado_pendiente')}</span></td>
       <td><div class="action-row">
         <button class="btn btn-primary btn-xs" onclick="marcarIngresoCobrado('${i.id}')">${t('cobrar_btn')}</button>
         <button class="btn-edit" onclick="editarIngreso('${i.id}')">${t('btn_editar')}</button>
@@ -5209,10 +5213,10 @@ function renderIngresos() {
       <td style="width:28px"><input type="checkbox" ${_ingSelected.has(i.id)?'checked':''} onchange="_ingToggleSelect('${i.id}')" style="cursor:pointer"></td>
       <td class="td-main td-desc-tx">${i.concepto||'—'}${i.notas ? `<span class="nota-badge" data-nota-id="${i.id}" onclick="event.stopPropagation();window._showNotaTooltip(this)" title="Ver nota" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:.65rem;font-weight:800;cursor:pointer;margin-left:5px;flex-shrink:0;vertical-align:middle">!</span>` : ''}</td>
       <td class="td-amount td-pos">+${eur(i.importe)}</td>
-      <td><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(i.categoria)}</span><span class="tag">${i.categoria||'—'}</span></span></td>
-      <td>${fmtDate(i.fecha)}</td>
-      <td>${i.cuentaId?getCuenta(i.cuentaId)?.nombre||'—':'—'}</td>
-      <td>${i.recurrente?"<span class=\"badge badge-accent\">" + t('estado_recurrente') + "</span>":''}</td>
+      <td class="td-hide-mobile"><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(i.categoria)}</span><span class="tag">${i.categoria||'—'}</span></span></td>
+      <td class="td-hide-mobile">${fmtDate(i.fecha)}</td>
+      <td class="td-hide-mobile">${i.cuentaId?getCuenta(i.cuentaId)?.nombre||'—':'—'}</td>
+      <td class="td-hide-mobile">${i.recurrente?"<span class=\"badge badge-accent\">" + t('estado_recurrente') + "</span>":''}</td>
       <td><div class="action-row">
         <button class="btn-edit" onclick="editarIngreso('${i.id}')">${t('btn_editar')}</button>
         <button class="btn-del" onclick="borrarIngreso('${i.id}')">${t('btn_eliminar')}</button>
@@ -5292,7 +5296,7 @@ function renderIngresos() {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>${t('concepto')}</th><th>${t('importe')}</th><th>${t('categoria')}</th><th>${t('fecha')}</th><th>${t('cuenta_destino')}</th><th>${t('estado')}</th><th>${t('acciones')}</th></tr></thead>
+        <thead><tr><th>${t('concepto')}</th><th>${t('importe')}</th><th class="td-hide-mobile">${t('categoria')}</th><th class="td-hide-mobile">${t('fecha')}</th><th class="td-hide-mobile">${t('cuenta_destino')}</th><th class="td-hide-mobile">${t('estado')}</th><th>${t('acciones')}</th></tr></thead>
         <tbody>${pendingRows}</tbody>
       </table>
     </div>
@@ -5322,9 +5326,9 @@ function renderIngresos() {
           <th style="width:28px"><input type="checkbox" onchange="if(this.checked){receivedIngs.forEach(i=>_ingSelected.add(i.id))}else{_ingSelected.clear()};renderIngresos()" style="cursor:pointer"></th>
           <th style="cursor:pointer" onclick="_ingSetSort('concepto')">${t('concepto')} ${_ingSortIcon('concepto')}</th>
           <th style="cursor:pointer" onclick="_ingSetSort('importe')">${t('importe')} ${_ingSortIcon('importe')}</th>
-          <th style="cursor:pointer" onclick="_ingSetSort('categoria')">${t('categoria')} ${_ingSortIcon('categoria')}</th>
-          <th style="cursor:pointer" onclick="_ingSetSort('fecha')">${t('fecha')} ${_ingSortIcon('fecha')}</th>
-          <th>${t('cuenta_lbl')}</th><th></th><th>${t('acciones')}</th>
+          <th class="td-hide-mobile" style="cursor:pointer" onclick="_ingSetSort('categoria')">${t('categoria')} ${_ingSortIcon('categoria')}</th>
+          <th class="td-hide-mobile" style="cursor:pointer" onclick="_ingSetSort('fecha')">${t('fecha')} ${_ingSortIcon('fecha')}</th>
+          <th class="td-hide-mobile">${t('cuenta_lbl')}</th><th class="td-hide-mobile"></th><th>${t('acciones')}</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -5429,10 +5433,10 @@ function renderGastos() {
       <td style="width:28px"><input type="checkbox" ${_gasSelected.has(g.id)?'checked':''} onchange="_gasToggleSelect('${g.id}')" style="cursor:pointer"></td>
       <td class="td-main td-desc-tx">${g.concepto||'—'}</td>
       <td class="td-amount td-neg">−${eur(g.importe)}</td>
-      <td><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(g.categoria)}</span><span class="tag">${g.categoria||'—'}</span></span></td>
-      <td>${fmtDate(g.fecha)}</td>
-      <td>${g.cuentaId?getCuenta(g.cuentaId)?.nombre||'—':'—'}</td>
-      <td>${g.recurrente?"<span class=\"badge badge-gold\">" + t('estado_recurrente') + "</span>":''}</td>
+      <td class="td-hide-mobile"><span class="cat-with-emoji"><span class="cat-emoji">${catEmoji(g.categoria)}</span><span class="tag">${g.categoria||'—'}</span></span></td>
+      <td class="td-hide-mobile">${fmtDate(g.fecha)}</td>
+      <td class="td-hide-mobile">${g.cuentaId?getCuenta(g.cuentaId)?.nombre||'—':'—'}</td>
+      <td class="td-hide-mobile">${g.recurrente?"<span class=\"badge badge-gold\">" + t('estado_recurrente') + "</span>":''}</td>
       <td><div class="action-row">
         <button class="btn-edit" onclick="editarGasto('${g.id}')">${t('btn_editar')}</button>
         <button class="btn-del" onclick="borrarGasto('${g.id}')">${t('btn_eliminar')}</button>
@@ -5514,9 +5518,9 @@ function renderGastos() {
           <th style="width:28px"><input type="checkbox" onchange="if(this.checked){todos.forEach(g=>_gasSelected.add(g.id))}else{_gasSelected.clear()};renderGastos()" style="cursor:pointer"></th>
           <th style="cursor:pointer" onclick="_gasSetSort('concepto')">${t('concepto')} ${_gasSortIcon('concepto')}</th>
           <th style="cursor:pointer" onclick="_gasSetSort('importe')">${t('importe')} ${_gasSortIcon('importe')}</th>
-          <th style="cursor:pointer" onclick="_gasSetSort('categoria')">${t('categoria')} ${_gasSortIcon('categoria')}</th>
-          <th style="cursor:pointer" onclick="_gasSetSort('fecha')">${t('fecha')} ${_gasSortIcon('fecha')}</th>
-          <th>${t('cuenta_lbl')}</th><th></th><th>${t('acciones')}</th>
+          <th class="td-hide-mobile" style="cursor:pointer" onclick="_gasSetSort('categoria')">${t('categoria')} ${_gasSortIcon('categoria')}</th>
+          <th class="td-hide-mobile" style="cursor:pointer" onclick="_gasSetSort('fecha')">${t('fecha')} ${_gasSortIcon('fecha')}</th>
+          <th class="td-hide-mobile">${t('cuenta_lbl')}</th><th class="td-hide-mobile"></th><th>${t('acciones')}</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -7766,23 +7770,7 @@ function renderCategorias() {
   `
 }
 
-function _onPinToggle(checkbox) {
-  if (checkbox.checked) {
-    // Revert the checkbox visually until setup actually succeeds —
-    // startSetup's callback re-renders the whole card correctly once
-    // a PIN is really saved, so there's no need to trust the checked
-    // state in the meantime.
-    checkbox.checked = false
-    window.MNPinLock.startSetup((success) => { if (success) render() })
-  } else {
-    checkbox.checked = true // revert until confirmed
-    confirmar(
-      t('cfg_pin_desactivar_confirm','¿Desactivar el bloqueo por PIN?'),
-      () => { window.MNPinLock.disable(); render() },
-      { titulo: t('cfg_pin_desactivar_titulo','Desactivar PIN'), icono: '🔓' }
-    )
-  }
-}
+// PIN feature removed
 
 function renderConfiguracion() {
   const isDark = S.theme !== 'light'
@@ -7851,41 +7839,6 @@ function renderConfiguracion() {
     <!-- ── RIGHT COLUMN ── -->
     <div style="display:flex;flex-direction:column;gap:0">
 
-    <!-- ── SEGURIDAD ── -->
-    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">SEGURIDAD</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
-      <div style="font-size:.85rem;font-weight:700;color:var(--text1);margin-bottom:6px">🔒 ${t('cfg_pin_titulo','Bloqueo con PIN')}</div>
-      <div style="font-size:.72rem;color:var(--text3);margin-bottom:12px">${t('cfg_pin_sub','Pide un PIN cada vez que abras la app')}</div>
-      ${(() => {
-        const eligible = window.MNPinLock && window.MNPinLock.hasEligiblePlan()
-        if (!eligible) {
-          return `<div style="font-size:.82rem;color:var(--text2);line-height:1.6">
-            ${t('cfg_pin_bloqueado','Disponible con el plan Local o Pro.')}
-            <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%" onclick="goTo('facturacion')">${t('cfg_pin_ver_planes','Ver planes')}</button>
-          </div>`
-        }
-        const enabled = window.MNPinLock.isEnabled()
-        const timing = window.MNPinLock.getTiming()
-        return `
-          <div class="form-check" style="margin-bottom:${enabled?'14px':'0'}">
-            <input type="checkbox" id="pinToggle" ${enabled?'checked':''} onchange="_onPinToggle(this)">
-            <label for="pinToggle">${t('cfg_pin_activar','Activar bloqueo por PIN')}</label>
-          </div>
-          ${enabled ? `
-            <div class="form-group" style="margin-bottom:10px">
-              <label>${t('cfg_pin_cuando','Bloquear')}</label>
-              <select id="pinTimingSelect" onchange="MNPinLock.setTiming(this.value)">
-                <option value="immediate" ${timing==='immediate'?'selected':''}>${t('cfg_pin_inmediato','Inmediatamente')}</option>
-                <option value="1min" ${timing==='1min'?'selected':''}>${t('cfg_pin_1min','Tras 1 minuto en segundo plano')}</option>
-                <option value="5min" ${timing==='5min'?'selected':''}>${t('cfg_pin_5min','Tras 5 minutos en segundo plano')}</option>
-              </select>
-            </div>
-            <button class="btn btn-secondary btn-sm" style="width:100%" onclick="MNPinLock.startSetup(()=>render())">${t('cfg_pin_cambiar','Cambiar PIN')}</button>
-          ` : ''}
-        `
-      })()}
-    </div>
-
     <!-- ── NOTIFICACIONES ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">NOTIFICACIONES</div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
@@ -7915,8 +7868,8 @@ function renderConfiguracion() {
 
     </div><!-- /right column -->
 
-    <!-- ── APLICACIÓN (full width) ── -->
-    <div style="grid-column:1/-1">
+    <!-- ── APLICACIÓN ── -->
+    <div>
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APLICACIÓN</div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
       <div style="padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:14px">
@@ -7955,7 +7908,7 @@ function renderConfiguracion() {
         </div>
       </div>
     </div>
-    </div><!-- /aplicación full-width -->
+    </div><!-- /aplicación -->
 
     <!-- ── FAQ (full width) ── -->
     <div style="grid-column:1/-1">
@@ -12622,13 +12575,13 @@ function renderAnalisis() {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('categoria','Categoría')}</th><th>${t('importe','Importe')}</th><th>${t('confianza','Confianza')}</th></tr></thead>
+        <thead><tr><th>${t('concepto','Concepto')}</th><th class="td-hide-mobile">${t('categoria','Categoría')}</th><th>${t('importe','Importe')}</th><th class="td-hide-mobile">${t('confianza','Confianza')}</th></tr></thead>
         <tbody>${prev.length
           ? prev.map(p=>`<tr>
               <td class="td-main">${p.concepto}</td>
-              <td><span class="tag">${p.categoria||'—'}</span></td>
+              <td class="td-hide-mobile"><span class="tag">${p.categoria||'—'}</span></td>
               <td class="td-amount td-neg">~${eur(p.importe)}</td>
-              <td><span class="badge badge-${p.confidence==='alta'?'green':'gold'}">${p.confidence==='alta'?`🟢 ${t('alta','Alta')}`:`🟡 ${t('media','Media')}`}</span></td>
+              <td class="td-hide-mobile"><span class="badge badge-${p.confidence==='alta'?'green':'gold'}">${p.confidence==='alta'?`🟢 ${t('alta','Alta')}`:`🟡 ${t('media','Media')}`}</span></td>
             </tr>`).join('')
           : `<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:24px">${t('sin_datos_predecir','Sin datos suficientes para predecir')}</td></tr>`}
         </tbody>
@@ -12646,12 +12599,12 @@ function renderAnalisis() {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('importe','Importe')}</th><th>${t('cliente','Cliente')}</th><th>${t('fecha','Fecha')}</th><th></th></tr></thead>
+        <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('importe','Importe')}</th><th class="td-hide-mobile">${t('cliente','Cliente')}</th><th class="td-hide-mobile">${t('fecha','Fecha')}</th><th></th></tr></thead>
         <tbody>${pending.map(p=>`<tr>
           <td class="td-main">${p.concepto}</td>
           <td class="td-amount td-pos">+${eur(p.importe)}</td>
-          <td>${p.cliente||'—'}</td>
-          <td>${fmtDate(p.fecha)}</td>
+          <td class="td-hide-mobile">${p.cliente||'—'}</td>
+          <td class="td-hide-mobile">${fmtDate(p.fecha)}</td>
           <td><button class="btn btn-primary btn-xs" onclick="marcarIngresoCobrado('${p.id}')">${t('cobrar_btn','Cobrar')}</button></td>
         </tr>`).join('')}</tbody>
       </table>
@@ -17191,9 +17144,8 @@ function animateCounter(el, target) {
 function syncBottomNav(page) {
   const map = {
     dashboard:    'bn-dashboard',
-    gastos:       'bn-gastos',
+    patrimonio:   'bn-patrimonio',
     analisis:     'bn-analisis',
-    // billing: removed
     configuracion:'bn-config'
   }
   document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'))
@@ -17412,7 +17364,7 @@ function init() {
   updateStreak()
   if (window.MNRecurring) try { MNRecurring.processDueRecurrings() } catch {}
   render()                    // ← app renders first (visible behind overlay)
-  if (window.MNPinLock) try { MNPinLock.checkOnLoad() } catch {}
+  // PIN feature removed
   _updateSidebarLang()
   translateDOM()              // PASO 3: traduce modales estáticos index.html
   _autoResetFlagsIfEmpty()

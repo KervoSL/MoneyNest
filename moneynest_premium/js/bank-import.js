@@ -1004,15 +1004,23 @@
   // mistaken for a duplicate.
   function _computeDuplicates(rows, cuentaId) {
     const existingFingerprints = new Set();
+    const S = _S();
+    const gastos = S.gastos || [];
+    const ingresos = S.ingresos || [];
     if (cuentaId) {
-      const S = _S();
-      (S.gastos || []).filter(e => e.cuentaId === cuentaId).forEach(e => {
+      gastos.filter(e => e.cuentaId === cuentaId).forEach(e => {
         existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, true));
       });
-      (S.ingresos || []).filter(e => e.cuentaId === cuentaId).forEach(e => {
+      ingresos.filter(e => e.cuentaId === cuentaId).forEach(e => {
         existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, false));
       });
     }
+    gastos.filter(e => e.origen === 'bank-import' && e.cuentaId !== cuentaId).forEach(e => {
+      existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, true));
+    });
+    ingresos.filter(e => e.origen === 'bank-import' && e.cuentaId !== cuentaId).forEach(e => {
+      existingFingerprints.add(e._importFingerprint || _fingerprintForRecord(e, false));
+    });
     const duplicates = [];
     const clean = rows.filter(r => {
       if (!existingFingerprints.size) return true;
