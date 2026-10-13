@@ -67,11 +67,14 @@ function hasConfirmedPaymentMethod(sub: Stripe.Subscription): boolean {
   return false;
 }
 
+// upsert (no insert): si un evento falló antes (processed=false) y Stripe lo
+// reintenta, el segundo intento actualiza la misma fila en vez de chocar con
+// la restricción UNIQUE de stripe_event_id.
 async function logEvent(stripeEventId: string, eventType: string, payload: unknown, userId: string | null, error?: string) {
-  await supabase.from('billing_events').insert({
+  await supabase.from('billing_events').upsert({
     stripe_event_id: stripeEventId, event_type: eventType, payload,
     user_id: userId, processed: !error, error: error ?? null,
-  });
+  }, { onConflict: 'stripe_event_id' });
 }
 
 // ── Subscription activation (both Local and Pro) / cancellation ──────
@@ -238,8 +241,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  const { data: existingEvent } = await supabase.from('billing_events').select('id').eq('stripe_event_id', event.id).maybeSingle();
-  if (existingEvent) return json({ received: true, skipped: 'duplicate' });
+  // Solo es "duplicado" un evento YA procesado con éxito. Los que fallaron
+  // (processed=false) deben reprocesarse cuando Stripe los reintente.
+  const { data: existingEvent } = await supabase.from('billing_events').select('id, processed').eq('stripe_event_id', event.id).maybeSingle();
+  if (existingEvent?.processed === true) return json({ received: true, skipped: 'duplicate' });
 
   let handlerError: string | undefined;
   try {

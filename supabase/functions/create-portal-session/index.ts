@@ -13,6 +13,8 @@ const supabase = createClient(
 
 const ALLOWED_ORIGINS = new Set([
   'https://money-nest-nk2u.vercel.app',
+  'https://moneynest.es',
+  'https://www.moneynest.es',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
@@ -73,13 +75,16 @@ Deno.serve(async (req) => {
   // BOTH modes are kept (not swallowed) so a genuine failure (e.g. this
   // customer's mode has no Customer Portal configured yet) is visible
   // in the response instead of collapsing into an opaque generic error.
+  // return_url solo a un origen permitido (nunca el Origin sin validar).
+  const reqOrigin = req.headers.get('origin') ?? '';
+  const returnOrigin = ALLOWED_ORIGINS.has(reqOrigin) ? reqOrigin : 'https://moneynest.es';
   let portalUrl: string | null = null;
   const modeErrors: string[] = [];
   for (const [label, stripe] of [['test', stripeTest], ['live', stripeLive]] as const) {
     try {
       const session = await stripe.billingPortal.sessions.create({
         customer: profile.stripe_customer_id,
-        return_url: `${req.headers.get('origin') || 'https://money-nest-nk2u.vercel.app'}/?portal=return`,
+        return_url: `${returnOrigin}/?portal=return`,
       });
       portalUrl = session.url;
       break;

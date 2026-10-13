@@ -15766,7 +15766,7 @@ function enviarSugerenciaEmail() {
 
   fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/send-email', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZGRjaXFxaG1ma2JxaGRyZnJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NjkyMjcsImV4cCI6MjA5NDM0NTIyN30.Gqz39AWpW1BkWXhfhnR_vOUYUy93bgdSNvBfXYQ3VGk' },
+    headers: Object.assign({ 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3ZGRjaXFxaG1ma2JxaGRyZnJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NjkyMjcsImV4cCI6MjA5NDM0NTIyN30.Gqz39AWpW1BkWXhfhnR_vOUYUy93bgdSNvBfXYQ3VGk' }, (function(){ try { const t = window.MNSupabaseAuth?.getSession?.()?.access_token; return t ? { 'Authorization': `Bearer ${t}` } : {} } catch(_) { return {} } })()),
     body: JSON.stringify({ type: 'sugerencia', tipo, categoria, mensaje: text, userEmail }),
   })
   .then(r => r.json())

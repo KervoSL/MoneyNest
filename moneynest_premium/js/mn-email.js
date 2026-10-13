@@ -11,12 +11,14 @@
 
   async function _send(payload) {
     try {
+      const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY };
+      try {
+        const token = window.MNSupabaseAuth?.getSession?.()?.access_token;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      } catch (_) {}
       const res = await fetch(ENDPOINT, {
         method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey':        ANON_KEY,
-        },
+        headers,
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -33,7 +35,8 @@
    */
   async function sendWelcome(to, nombre) {
     if (!to) return;
-    return _send({ type: 'confirmacion', to, nombre: nombre || '' });
+    // El servidor envía siempre al email de la sesión; `to` ya no se usa como destinatario.
+    return _send({ type: 'confirmacion', nombre: nombre || '' });
   }
 
   /**

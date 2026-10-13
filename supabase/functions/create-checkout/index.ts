@@ -31,6 +31,8 @@ const supabaseAdmin = createClient(
 
 const ALLOWED_ORIGINS = new Set([
   'https://money-nest-nk2u.vercel.app',
+  'https://moneynest.es',
+  'https://www.moneynest.es',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',

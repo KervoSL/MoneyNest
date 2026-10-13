@@ -3,13 +3,20 @@
  *
  * Tipos:
  *   confirmacion  — email de bienvenida
- *   otp           — codigo de verificacion 6 digitos
+ *   (otp eliminado: no lo usa ningún cliente y permitía abuso)
  *   sugerencia    — feedback de usuarios a soporte
  *
  * Variables de entorno:
  *   RESEND_API_KEY   — API key de resend.com
  *   FROM_EMAIL       — email verificado en Resend
  */
+
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -28,17 +35,17 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     ?? 'noreply@moneynest.app';
 const SUPPORT_EMAIL  = 'invest.grid.main@gmail.com';
 
-// Rate limiting por IP
-const _sent: Record<string, { count: number; firstAt: number }> = {};
-function rateCheck(ip: string, max = 5, windowMs = 10 * 60 * 1000): boolean {
-  const now   = Date.now();
-  const entry = _sent[ip] || { count: 0, firstAt: now };
-  if (now - entry.firstAt > windowMs) { _sent[ip] = { count: 1, firstAt: now }; return true; }
-  if (entry.count >= max) return false;
-  entry.count++;
-  _sent[ip] = entry;
-  return true;
+// Rate limiting compartido (tabla rate_limits vía RPC), no en memoria.
+async function rateAllowed(key: string, max: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc('check_rate_limit', {
+    p_key: key, p_max_attempts: max, p_window_seconds: windowSeconds,
+  });
+  return error ? true : data !== false;
 }
+
+const escHtml = (s: string) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
 const LOGO_URL = 'https://jwddciqqhmfkbqhdrfre.supabase.co/storage/v1/object/public/assets/Icon-192%20sin%20letras.png';
 
@@ -78,7 +85,7 @@ function wrap(cardHtml: string): string {
 // ════════════════════════════════════════════════
 
 function templateConfirmacion(nombre: string): { subject: string; html: string } {
-  const firstName = nombre ? nombre.split(' ')[0] : '';
+  const firstName = nombre ? escHtml(nombre.split(' ')[0].slice(0, 40)) : '';
   const greeting  = firstName ? `Hola, ${firstName}!` : `Bienvenido!`;
 
   return {
@@ -345,31 +352,47 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
   if (!RESEND_API_KEY)          return json({ error: 'RESEND_API_KEY not configured' }, 500);
 
-  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? 'unknown';
-  if (!rateCheck(ip)) return json({ error: 'rate_limited' }, 429);
+  // Primera IP de x-forwarded-for (el resto de la cadena puede ser falsificada).
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip') || 'unknown';
 
   let body: Record<string, string>;
   try { body = await req.json(); }
   catch { return json({ error: 'invalid_json' }, 400); }
 
-  const { type, to, nombre, tipo, categoria, mensaje, userEmail, codigo } = body;
+  const type = String(body.type ?? '');
+  const nombre = String(body.nombre ?? '').slice(0, 80);
+  const tipo = String(body.tipo ?? '').slice(0, 60);
+  const categoria = String(body.categoria ?? '').slice(0, 60);
+  const mensaje = String(body.mensaje ?? '').slice(0, 4000);
+
+  // Usuario autenticado (opcional según el tipo).
+  let user: { id: string; email?: string } | null = null;
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (jwt) {
+    const { data } = await supabase.auth.getUser(jwt);
+    user = data?.user ?? null;
+  }
 
   let template: { subject: string; html: string };
   let recipient: string;
+  let replyTo: string | undefined;
 
   if (type === 'confirmacion') {
-    if (!to) return json({ error: 'to_required' }, 400);
-    template  = templateConfirmacion(nombre || '');
-    recipient = to;
-
-  } else if (type === 'otp') {
-    if (!to || !codigo) return json({ error: 'to_and_codigo_required' }, 400);
-    template  = templateOtp(nombre || '', codigo);
-    recipient = to;
+    // El destinatario es SIEMPRE el email de la sesión; el cliente no elige `to`.
+    if (!user?.email) return json({ error: 'auth_required' }, 401);
+    if (!(await rateAllowed(`send-email:confirmacion:${user.id}`, 3, 3600))) return json({ error: 'rate_limited' }, 429);
+    template  = templateConfirmacion(nombre);
+    recipient = user.email;
 
   } else if (type === 'sugerencia') {
-    if (!mensaje?.trim()) return json({ error: 'mensaje_required' }, 400);
-    template  = templateSugerencia(tipo || 'Sugerencia', categoria || 'General', mensaje, userEmail || '');
+    // Destinatario fijo (soporte): no es un relé. Se permite sin sesión pero con límite.
+    if (!mensaje.trim()) return json({ error: 'mensaje_required' }, 400);
+    if (!(await rateAllowed(`send-email:sugerencia:ip:${ip}`, 5, 600))) return json({ error: 'rate_limited' }, 429);
+    if (user && !(await rateAllowed(`send-email:sugerencia:user:${user.id}`, 10, 3600))) return json({ error: 'rate_limited' }, 429);
+    const claimed = String(body.userEmail ?? '').trim().slice(0, 200);
+    replyTo = user?.email ?? (EMAIL_RE.test(claimed) ? claimed : undefined);
+    template  = templateSugerencia(tipo || 'Sugerencia', categoria || 'General', mensaje, replyTo ?? '');
     recipient = SUPPORT_EMAIL;
 
   } else {
@@ -387,7 +410,7 @@ Deno.serve(async (req) => {
       to:      [recipient],
       subject: template.subject,
       html:    template.html,
-      ...(type === 'sugerencia' && userEmail ? { reply_to: userEmail } : {}),
+      ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   });
 
