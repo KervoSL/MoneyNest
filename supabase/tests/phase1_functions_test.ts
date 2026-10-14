@@ -7,14 +7,14 @@ const json = (b: unknown, status = 200) => status === 204 ? new Response(null, {
 type State = {
   user: { id: string; email: string; email_confirmed_at: string | null } | null;
   rateAllowed: boolean;
-  calls: string[];
+  calls: string[]; scrubFails: boolean; delCustomerFails: boolean;
   resend: unknown[];
   billing: Record<string, { processed: boolean }>;
   profile: { stripe_customer_id: string | null } | null;
   stripe: { testCustomer: 'missing' | 'ok'; liveCustomer: 'missing' | 'ok'; liveCancelFails: boolean; liveSubs: { id: string; status: string }[] };
 };
 let st: State;
-const fresh = (): State => ({ user: { id: '11111111-1111-4111-8111-111111111111', email: 'owner@test.invalid', email_confirmed_at: '2026-01-01' }, rateAllowed: true, calls: [], resend: [], billing: {}, profile: { stripe_customer_id: 'cus_1' },
+const fresh = (): State => ({ user: { id: '11111111-1111-4111-8111-111111111111', email: 'owner@test.invalid', email_confirmed_at: '2026-01-01' }, rateAllowed: true, calls: [], scrubFails: false, delCustomerFails: false, resend: [], billing: {}, profile: { stripe_customer_id: 'cus_1' },
   stripe: { testCustomer: 'missing', liveCustomer: 'ok', liveCancelFails: false, liveSubs: [{ id: 'sub_a', status: 'active' }, { id: 'sub_b', status: 'canceled' }, { id: 'sub_c', status: 'past_due' }] } });
 
 globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) => {
@@ -25,6 +25,7 @@ globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) =>
   if (url.pathname.endsWith('/auth/v1/user')) return st.user && key.includes('USERJWT') ? json({ id: st.user.id, email: st.user.email, email_confirmed_at: st.user.email_confirmed_at, aud: 'authenticated' }) : json({ msg: 'bad' }, 401);
   if (url.pathname.includes('/auth/v1/admin/users/')) { st.calls.push('auth.deleteUser'); return json({}); }
   if (url.pathname.endsWith('/rpc/check_rate_limit')) return json(st.rateAllowed);
+  if (url.pathname.endsWith('/rpc/scrub_user_data')) { if (st.scrubFails) return json({ message: 'scrub boom' }, 500); st.calls.push('rpc.scrub'); return json(null, 204); }
   if (url.pathname.endsWith('/rpc/activate_subscription_plan')) { st.calls.push('rpc.activate'); return json(null, 204); }
   if (url.pathname.endsWith('/rest/v1/billing_events')) {
     if (req.method === 'GET') { const id = url.searchParams.get('stripe_event_id')?.replace('eq.', '') ?? ''; const r = st.billing[id]; return json(r ? { id: 1, processed: r.processed } : null); }
@@ -35,6 +36,7 @@ globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) =>
   if (url.host === 'api.stripe.com') {
     const mode = key.includes('sk_test') ? 'test' : 'live';
     const p = url.pathname;
+    if (p.startsWith('/v1/customers/') && req.method === 'DELETE') { if (mode === 'live' && st.delCustomerFails) return json({ error: { type: 'api_error', message: 'del boom' } }, 500); if (mode === 'test') return json({ error: { type: 'invalid_request_error', code: 'resource_missing', message: 'No such customer' } }, 404); st.calls.push(`stripe.customer.del.${mode}`); return json({ id: 'cus_1', object: 'customer', deleted: true }); }
     if (p.startsWith('/v1/customers/')) { const s = mode === 'test' ? st.stripe.testCustomer : st.stripe.liveCustomer; return s === 'ok' ? json({ id: 'cus_1', object: 'customer' }) : json({ error: { type: 'invalid_request_error', code: 'resource_missing', message: 'No such customer' } }, 404); }
     if (p === '/v1/subscriptions' && req.method === 'GET') return json({ object: 'list', data: mode === 'live' ? st.stripe.liveSubs : [], has_more: false, url: '/v1/subscriptions' });
     if (p.startsWith('/v1/subscriptions/') && req.method === 'DELETE') { if (mode === 'live' && st.stripe.liveCancelFails) return json({ error: { type: 'api_error', message: 'boom' } }, 500); st.calls.push(`stripe.cancel.${mode}.${p.split('/').pop()}`); return json({ id: p.split('/').pop(), status: 'canceled', object: 'subscription' }); }

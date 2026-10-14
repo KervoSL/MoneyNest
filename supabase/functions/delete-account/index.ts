@@ -94,6 +94,34 @@ Deno.serve(async (req) => {
     }
   }
 
+  // H-11: borrar el cliente de Stripe (ya sin suscripciones vivas) y depurar los
+  // datos personales que de otro modo sobrevivirían a la eliminación.
+  // El historial de cobros/facturas permanece en Stripe (obligación contable).
+  const deleteErrors: string[] = [];
+  if (profile?.stripe_customer_id) {
+    for (const [label, stripe] of [
+      ['test', Deno.env.get('STRIPE_SECRET_KEY_TEST') ? stripeTest : null],
+      ['live', Deno.env.get('STRIPE_SECRET_KEY') ? stripeLive : null],
+    ] as [string, Stripe | null][]) {
+      if (!stripe) continue;
+      try {
+        await stripe.customers.del(profile.stripe_customer_id);
+      } catch (err) {
+        if ((err as { code?: string })?.code === 'resource_missing') continue;
+        deleteErrors.push(`${label}: ${err instanceof Error ? err.message : 'unknown_stripe_error'}`);
+      }
+    }
+  }
+  const { error: scrubErr } = await supabase.rpc('scrub_user_data', {
+    p_user_id: userId,
+    p_stripe_customer_id: profile?.stripe_customer_id ?? null,
+  });
+  if (scrubErr) deleteErrors.push(`scrub: ${scrubErr.message}`);
+  if (deleteErrors.length) {
+    // Aún no se ha borrado el perfil: el usuario puede reintentar sin perder la cuenta.
+    return json({ error: 'cleanup_failed', cleanupErrors: deleteErrors }, 502, cors);
+  }
+
   await supabase.from('subscriptions').delete().eq('user_id', userId);
   await supabase.from('profiles').delete().eq('id', userId);
 
