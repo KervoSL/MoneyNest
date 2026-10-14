@@ -17,6 +17,7 @@ const PRICE_PRO_MONTHLY   = Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')   || (using
 const PRICE_PRO_YEARLY    = Deno.env.get('STRIPE_PRICE_PRO_YEARLY')    || (usingTestKey ? 'price_1U5uNNFWll222Kpawefje59j' : 'price_1UKmzsFWll222KpaLqtD7vFM');
 const ALLOWED_PRICES = new Set([PRICE_LOCAL_MONTHLY, PRICE_LOCAL_YEARLY, PRICE_PRO_MONTHLY, PRICE_PRO_YEARLY]);
 const PRO_PRICES = new Set([PRICE_PRO_MONTHLY, PRICE_PRO_YEARLY]);
+const LOCAL_PRICES = new Set([PRICE_LOCAL_MONTHLY, PRICE_LOCAL_YEARLY]);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -116,11 +117,13 @@ Deno.serve(async (req) => {
     const customer = await findOrCreateCustomer(userId, email);
     const isPro = PRO_PRICES.has(priceId);
 
-    if (isPro) {
-      const existing = await stripe.subscriptions.list({ customer: customer.id, limit: 10 });
-      const proSubs = existing.data.filter(s => s.items.data.some(i => PRO_PRICES.has(i.price.id)));
-      const activeSub = proSubs.find((s) => s.status === 'active' || s.status === 'trialing');
-      if (activeSub) return json({ error: 'already_subscribed' }, 409);
+    // H-20: no permitir una segunda suscripción viva del MISMO plan (antes solo Pro).
+    {
+      const family = isPro ? PRO_PRICES : LOCAL_PRICES;
+      const existing = await stripe.subscriptions.list({ customer: customer.id, status: 'all', limit: 100 });
+      const dup = existing.data.find((s) =>
+        ['active', 'trialing', 'past_due'].includes(s.status) && s.items.data.some((i) => family.has(i.price.id)));
+      if (dup) return json({ error: 'already_subscribed' }, 409);
     }
 
     const { data: profile } = await supabase.from('profiles').select('plan, pro_trial_used').eq('id', userId).maybeSingle();

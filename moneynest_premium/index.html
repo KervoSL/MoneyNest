@@ -49,7 +49,7 @@
   // Déjalo vacío ('') para desactivar Turnstile en desarrollo local.
   window._MN_TURNSTILE_SITE_KEY = '';
 </script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+<!-- H-18: el script de Turnstile solo se descarga si _MN_TURNSTILE_SITE_KEY está definida (ver components/auth-ui.js) -->
 <script src="https://js.stripe.com/v3/"></script>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/billing.css">
@@ -1390,6 +1390,7 @@
 </div>
 
 <!-- Multi-profile system disabled per user request -->
+<script src="js/config.js"></script>
 <script src="js/consent.js"></script>
 <script src="js/error-logging.js"></script>
 <script src="js/analytics.js"></script>

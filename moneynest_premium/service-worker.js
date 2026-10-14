@@ -1,5 +1,5 @@
 /* ─── MoneyNest Service Worker v46 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v47'
+const CACHE_NAME = 'moneynest-v48'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,7 @@ const LOCAL_ASSETS = [
   './js/data.js',
   './privacy.html',
   './terms.html',
+  './js/config.js',
   './js/consent.js',
   './js/error-logging.js',
   './js/investment-wizard.js',

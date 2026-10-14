@@ -15655,7 +15655,7 @@ function renderFAQ() {
 
     <div style="margin-top:32px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center">
       <div style="font-size:.82rem;color:var(--text2)">${t('faq_contacto_intro','¿No encuentras lo que buscas?')}</div>
-      <a href="mailto:invest.grid.main@gmail.com" style="font-size:.88rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">invest.grid.main@gmail.com</a>
+      <a href="mailto:${MN_CONFIG.SUPPORT_EMAIL}" style="font-size:.88rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">${MN_CONFIG.SUPPORT_EMAIL}</a>
     </div>
   </div>`
 }
@@ -15691,7 +15691,7 @@ function borrarSugerencia(id) {
 }
 
 function copiarEmailSugerencias() {
-  const email = 'invest.grid.main@gmail.com'
+  const email = MN_CONFIG.SUPPORT_EMAIL
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(email).then(()=>toast(t('toast_email_copiado','Email copiado al portapapeles 📋'))).catch(()=>{
       _copiarEmailFallback(email)
@@ -15795,7 +15795,7 @@ function renderSugerencias() {
       </div>
       <div style="margin-top:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:.72rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Contacto:</span>
-        <span style="font-size:.82rem;font-weight:700;color:var(--accent);user-select:text;-webkit-user-select:text">invest.grid.main@gmail.com</span>
+        <span style="font-size:.82rem;font-weight:700;color:var(--accent);user-select:text;-webkit-user-select:text">${MN_CONFIG.SUPPORT_EMAIL}</span>
       </div>
     </div>
     <div class="card">

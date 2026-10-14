@@ -33,7 +33,8 @@ function json(body: unknown, status = 200) {
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     ?? 'noreply@moneynest.app';
-const SUPPORT_EMAIL  = 'invest.grid.main@gmail.com';
+// H-12: configurable (variable SUPPORT_EMAIL). Mantener sincronizado con js/config.js.
+const SUPPORT_EMAIL  = Deno.env.get('SUPPORT_EMAIL') ?? 'invest.grid.main@gmail.com';
 
 // Rate limiting compartido (tabla rate_limits vía RPC), no en memoria.
 async function rateAllowed(key: string, max: number, windowSeconds: number): Promise<boolean> {

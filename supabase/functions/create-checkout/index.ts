@@ -116,6 +116,17 @@ Deno.serve(async (req) => {
     customerId = customer.id;
   }
 
+  // H-20: no permitir una segunda suscripción viva del MISMO plan.
+  try {
+    const family = new Set(basePlan === 'pro' ? [PRICE_PRO_MONTHLY, PRICE_PRO_YEARLY] : [PRICE_LOCAL_MONTHLY, PRICE_LOCAL_YEARLY]);
+    const existing = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 });
+    const dup = existing.data.find((s) =>
+      ['active', 'trialing', 'past_due'].includes(s.status) && s.items.data.some((i) => family.has(i.price.id)));
+    if (dup) return json({ error: 'already_subscribed' }, 409, cors);
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : 'stripe_error' }, 500, cors);
+  }
+
   // Trial period on Stripe's side only ever applies to Pro (Local has
   // never had a trial-then-charge flow) — unchanged plan logic.
   const applyProTrial = basePlan === 'pro' && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;
