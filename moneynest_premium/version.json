@@ -3,7 +3,7 @@
   "changelog": {
     "title": "Novedades de la versión 1.22.1",
     "items": [
-      "Ingresos y gastos en el móvil se ven ahora como tarjetas, con Editar y Eliminar en cada fila",
+      "En el móvil, las listas de ingresos, gastos, suscripciones, previsión, facturas y movimientos se ven ahora como tarjetas",
       "Importador bancario: detección de movimientos duplicados mejorada, también al importar en otra cuenta",
       "El contador de movimientos ahora incluye inversiones, deudas, presupuestos, objetivos y cuentas",
       "Acceso al portal de suscripción más fiable",

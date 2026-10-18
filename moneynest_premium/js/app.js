@@ -12298,12 +12298,12 @@ function renderAnalisis() {
     const renderGroup = g => `
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);padding:10px 0 6px">${g.label} (${g.items.length})</div>
       <div class="table-wrap">
-        <table>
+        <table class="mob-list ml-subs">
           <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('importe','Importe')}/${t('mes_lbl','mes')}</th><th>${t('proximo_pago','Próximo pago')}</th></tr></thead>
           <tbody>${g.items.map(s=>`<tr>
             <td class="td-main"><span style="margin-right:6px;font-size:1.1em">${s.emoji}</span>${s.nombre}</td>
             <td class="td-amount td-neg">−${eur(toMonthly(s))}</td>
-            <td style="font-size:.78rem;color:var(--text2)">${fmtDate(s.proximaEjecucion)}</td>
+            <td data-label="${t('proximo_pago','Próximo pago')}" style="font-size:.78rem;color:var(--text2)">${fmtDate(s.proximaEjecucion)}</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>`
@@ -12578,7 +12578,7 @@ function renderAnalisis() {
       <div><div class="card-title">🔮 ${t('prevision_titulo','Previsión próximo mes')}</div><div class="card-subtitle">${t('prevision_sub','Basada en patrones de los últimos 3 meses')}</div></div>
     </div>
     <div class="table-wrap">
-      <table>
+      <table class="mob-list ml-pred">
         <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('categoria','Categoría')}</th><th>${t('importe','Importe')}</th><th>${t('confianza','Confianza')}</th></tr></thead>
         <tbody>${prev.length
           ? prev.map(p=>`<tr>
@@ -12602,7 +12602,7 @@ function renderAnalisis() {
       <span class="badge badge-gold">${eur(getPendingTotal())}</span>
     </div>
     <div class="table-wrap">
-      <table>
+      <table class="mob-list ml-fact">
         <thead><tr><th>${t('concepto','Concepto')}</th><th>${t('importe','Importe')}</th><th>${t('cliente','Cliente')}</th><th>${t('fecha','Fecha')}</th><th></th></tr></thead>
         <tbody>${pending.map(p=>`<tr>
           <td class="td-main">${p.concepto}</td>
@@ -16005,7 +16005,7 @@ function verDetalleCuenta(cuentaId) {
       : m._tipo==='gasto'
         ? '<span class="badge badge-red">💳 Gasto</span>'
         : '<span class="badge badge-gold">📈 Inversión</span>'
-    return `<tr>
+    return `<tr class="mv-${m._tipo}">
       <td>${fmtDate(m.fecha)}</td>
       <td class="td-main">${m.concepto||'—'}</td>
       <td>${tipoBadge}</td>
@@ -16067,7 +16067,7 @@ function verDetalleCuenta(cuentaId) {
       <span style="font-size:.78rem;color:var(--text2)">${allMov.length > 50 ? 'Mostrando últimos 50' : allMov.length + ' movimientos'}</span>
     </div>
     <div class="table-wrap">
-      <table>
+      <table class="mob-list ml-mov">
         <thead><tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Importe</th><th>Categoría</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>

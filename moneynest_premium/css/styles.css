@@ -630,6 +630,73 @@ tbody tr:hover{cursor:default}
     padding:9px 10px;font-size:.78rem;min-width:0;min-height:0;height:auto;line-height:1;box-shadow:none}
 }
 
+/* ─── MOBILE LIST ROWS (read-only tables) ────────────────────────
+   Same look as the movement cards above, for the tables that have no
+   edit/delete buttons. Cells are targeted by position:
+     .ml-subs  Suscripciones activas : 1 concept · 2 amount · 3 next payment
+     .ml-pred  Previsión próximo mes : 1 concept · 2 category · 3 amount · 4 confidence
+     .ml-fact  Facturas pendientes   : 1 concept · 2 amount · 3 client · 4 date · 5 Cobrar
+     .ml-mov   Movimientos (cuenta)  : 1 date · 2 concept · 3 type · 4 amount · 5 category
+   A td with data-label shows that text before its value.            */
+@media(max-width:600px){
+  table.mob-list,
+  table.mob-list thead,
+  table.mob-list tbody{display:block;min-width:0;width:100%}
+  table.mob-list thead{display:none}
+  table.mob-list tbody tr{display:grid;align-items:center;column-gap:10px;row-gap:2px;
+    padding:11px 4px;border-bottom:1px solid var(--border);grid-template-columns:minmax(0,1fr) auto}
+  table.mob-list tbody tr:last-child{border-bottom:none}
+  table.mob-list tbody td{display:block;padding:0;border:0;white-space:normal;min-width:0;
+    font-size:.72rem;color:var(--text2)}
+  table.mob-list tbody td[data-label]::before{content:attr(data-label) " · "}
+  table.mob-list tbody td:empty{display:none}
+  table.mob-list tbody td.td-main{font-size:.88rem;font-weight:600;color:var(--text)!important;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  table.mob-list tbody td.td-amount{font-size:.9rem;white-space:nowrap;text-align:right}
+  table.mob-list .tag{background:none;border:0;padding:0;font-size:inherit;color:inherit;
+    font-weight:inherit;text-transform:none;letter-spacing:0}
+  table.mob-list tbody tr:has(> td[colspan]){display:block}
+  table.mob-list tbody tr:has(> td[colspan])::before{display:none}
+  table.mob-list tbody td[colspan]{padding:0}
+
+  /* Suscripciones */
+  table.ml-subs tbody td:nth-child(1){grid-column:1;grid-row:1}
+  table.ml-subs tbody td:nth-child(2){grid-column:2;grid-row:1 / span 2}
+  table.ml-subs tbody td:nth-child(3){grid-column:1;grid-row:2}
+
+  /* Previsión */
+  table.ml-pred tbody td:nth-child(1){grid-column:1;grid-row:1}
+  table.ml-pred tbody td:nth-child(2){grid-column:1;grid-row:2}
+  table.ml-pred tbody td:nth-child(3){grid-column:2;grid-row:1 / span 2}
+  table.ml-pred tbody td:nth-child(4){grid-column:1;grid-row:3;justify-self:start;margin-top:4px}
+
+  /* Facturas pendientes */
+  table.ml-fact tbody tr{grid-template-columns:auto minmax(0,1fr) auto}
+  table.ml-fact tbody td:nth-child(1){grid-column:1 / span 2;grid-row:1}
+  table.ml-fact tbody td:nth-child(2){grid-column:3;grid-row:1 / span 2}
+  table.ml-fact tbody td:nth-child(3){grid-column:1;grid-row:2}
+  table.ml-fact tbody td:nth-child(4){grid-column:2;grid-row:2}
+  table.ml-fact tbody td:nth-child(4)::before{content:"·";margin-right:6px}
+  table.ml-fact tbody td:nth-child(5){grid-column:1 / -1;grid-row:3;margin-top:8px}
+  table.ml-fact tbody td:nth-child(5) .btn{width:100%;justify-content:center;
+    padding:9px 10px;font-size:.78rem;min-height:0;height:auto;line-height:1}
+
+  /* Movimientos de una cuenta — icon box by type, like Actividad reciente */
+  table.ml-mov tbody tr{grid-template-columns:32px auto minmax(0,1fr) auto}
+  table.ml-mov tbody tr::before{grid-column:1;grid-row:1 / span 2;width:32px;height:32px;
+    border-radius:8px;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+  table.ml-mov tbody tr.mv-ingreso::before{content:"💰";background:var(--green-dim)}
+  table.ml-mov tbody tr.mv-gasto::before{content:"💳";background:var(--red-dim)}
+  table.ml-mov tbody tr.mv-inversion::before{content:"📈";background:var(--gold-dim)}
+  table.ml-mov tbody td:nth-child(2){grid-column:2 / span 2;grid-row:1}
+  table.ml-mov tbody td:nth-child(1){grid-column:2;grid-row:2}
+  table.ml-mov tbody td:nth-child(5){grid-column:3;grid-row:2}
+  table.ml-mov tbody td:nth-child(5)::before{content:"·";margin-right:6px}
+  table.ml-mov tbody td:nth-child(3){display:none}
+  table.ml-mov tbody td:nth-child(4){grid-column:4;grid-row:1 / span 2;text-align:right;
+    font-size:.9rem;white-space:nowrap}
+}
+
 /* ─── BUTTONS ────────────────────────────────────────────────── */
 .btn{
   display:inline-flex;align-items:center;gap:6px;
