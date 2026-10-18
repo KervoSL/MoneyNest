@@ -141,10 +141,7 @@ function renderBillingPage() {
   // ── Movement counter (recalculated on every render) ──
   const isDemoActive = window.MNAuth?.getUser?.()?.demoMode
     || (typeof isDemoMode === 'function' && isDemoMode());
-  const trialUsed = isDemoActive ? 0 : (
-    (window.S?.ingresos?.length || 0) +
-    (window.S?.gastos?.length  || 0)
-  );
+  const trialUsed = (typeof _countTrialMovements === 'function') ? _countTrialMovements() : 0;
   const LIMIT = 100;
   const trialRemaining = Math.max(0, LIMIT - trialUsed);
   const trialPct = Math.min(100, (trialUsed / LIMIT) * 100);

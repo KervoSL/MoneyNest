@@ -14758,14 +14758,21 @@ async function _openStripeCustomerPortal(btn) {
       ])
     } catch (_) { /* handled by the check below either way */ }
   }
+  if (window.MNSupabaseAuth?.ensureSession && !window.MNSupabaseAuth.isLoggedIn()) {
+    try { await window.MNSupabaseAuth.ensureSession() } catch (_) {}
+  }
   if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
-    if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión o usa "Restaurar acceso" primero.'), 'warning')
+    // Not signed in on this device: open the sign-in form (never an
+    // error toast that leads nowhere) and resume the portal afterwards.
+    window._mnPendingPortal = true
+    if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal('login')
+    if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión para gestionar tu suscripción.'), 'info')
     return
   }
   const originalLabel = btn ? btn.textContent : null
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…') }
   try {
-    const token = window.MNSupabaseAuth.getSession()?.access_token
+    const token = (await window.MNSupabaseAuth.ensureSession?.())?.access_token || window.MNSupabaseAuth.getSession()?.access_token
     // CONFIRMED EMPIRICALLY: this fetch previously had no timeout at
     // all — if the network request ever hung (bad connection, a slow
     // response, anything), this button stayed stuck on "Abriendo…"
@@ -14785,7 +14792,12 @@ async function _openStripeCustomerPortal(btn) {
         _showManagePlanPlaceholder()
       } else {
         console.error('[_openStripeCustomerPortal] backend error:', data)
-        if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación. Inténtalo de nuevo.'), 'error')
+        const why = data.error === 'invalid_session' ? ' (tu sesión ha caducado: vuelve a iniciar sesión)' : (data.detail || data.error ? ` (${data.error || data.detail})` : '')
+        if (data.error === 'invalid_session' || data.error === 'missing_authorization') {
+          window._mnPendingPortal = true
+          window.MNAuthUI?.showAuthModal?.('login')
+        }
+        if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación.') + why, 'error')
       }
       return
     }
@@ -19129,3 +19141,15 @@ window._confirmMultiPago = function() {
 
 
 
+
+
+// Resume "Gestionar suscripción" after the person signs in from it.
+if (window.MNSupabaseAuth?.onAuthChange) {
+  window.MNSupabaseAuth.onAuthChange((event, session) => {
+    if (event === 'SIGNED_IN' && session && window._mnPendingPortal) {
+      window._mnPendingPortal = false
+      window.MNAuthUI?.closeAuthModal?.()
+      setTimeout(() => _openStripeCustomerPortal(null), 300)
+    }
+  })
+}
