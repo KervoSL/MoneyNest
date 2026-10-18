@@ -1,13 +1,13 @@
 {
-  "version": "1.22.0",
+  "version": "1.22.1",
   "changelog": {
-    "title": "Novedades de la versión 1.22.0",
+    "title": "Novedades de la versión 1.22.1",
     "items": [
-      "Precios corregidos en toda la app (Local 9,99 €/año, Pro 19,99 €/año)",
-      "Modal de pago muestra el precio correcto según el período elegido",
-      "Nuevo diseño del selector mensual/anual en Plan y Facturación",
-      "Mejoras visuales en la pantalla de bienvenida",
-      "Detección de actualizaciones mejorada al volver a la pestaña"
+      "Importador bancario: detección de movimientos duplicados mejorada, también al importar en otra cuenta",
+      "El contador de movimientos ahora incluye inversiones, deudas, presupuestos, objetivos y cuentas",
+      "Acceso al portal de suscripción más fiable",
+      "Barra de navegación inferior con acceso directo a Patrimonio",
+      "Se ha retirado el bloqueo con PIN"
     ]
   }
 }
