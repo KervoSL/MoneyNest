@@ -14855,11 +14855,12 @@ function _showManagePlanPlaceholder() {
         <button class="modal-close" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">✕</button>
       </div>
       <div class="modal-body" style="text-align:center;padding:10px 4px 20px">
-        <div style="font-size:2rem;margin-bottom:10px">🔧</div>
-        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','Aún no tienes ninguna suscripción de pago activa. En cuanto actives MoneyNest Local o Pro, podrás cambiar tu método de pago, ver tus recibos y cancelar desde aquí mismo.')}</div>
+        <div style="font-size:2rem;margin-bottom:10px">💳</div>
+        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','Todavía no tienes ninguna suscripción de pago en Stripe. Cuando actives MoneyNest Local o Pro podrás cambiar tu método de pago, ver tus recibos y cancelar desde aquí.')}</div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_entendido','Entendido')}</button>
+      <div class="modal-footer" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_cerrar','Cerrar')}</button>
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock(); goTo('billing')">Ver planes</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
