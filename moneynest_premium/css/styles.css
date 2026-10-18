@@ -544,9 +544,10 @@ tbody tr:hover{cursor:default}
 }
 
 /* ─── MOBILE MOVEMENT CARDS (Ingresos / Gastos) ──────────────────
-   On phones the movement tables render each row like the dashboard's
-   "Actividad reciente" (icon · concept · date · category · amount)
-   plus the Editar / Eliminar buttons. Desktop is untouched.
+   On phones the movement tables render each row as a compact card:
+   concept (left, ellipsis if long) · date · category · amount, plus the
+   Editar / Eliminar buttons. No type icon: every row of a table is the
+   same type. Desktop is untouched.
    Cells are targeted by position, so if the column order in
    renderIngresos()/renderGastos() changes, update these selectors.
      .tx-cards            → received ingresos / gastos:
@@ -555,7 +556,9 @@ tbody tr:hover{cursor:default}
      .tx-cards.tx-pending → pending ingresos (no check column):
                             1 concept · 2 amount · 3 category · 4 date
                             5 account · 6 badge · 7 actions
-   .tx-in / .tx-out only choose the icon.                          */
+   NOTE: premium-empty-states.js injects a global `tr td{text-align:center;
+   width:100%}` (meant for empty-state cells), hence the explicit
+   text-align/width overrides below.                                  */
 @media(max-width:600px){
   table.tx-cards,
   table.tx-cards thead,
@@ -572,54 +575,51 @@ tbody tr:hover{cursor:default}
   table.tx-cards.tx-pending thead{display:none}
 
   /* each row → card */
-  table.tx-cards tbody tr{display:grid;align-items:center;column-gap:10px;row-gap:2px;
+  table.tx-cards tbody tr{display:grid;align-items:center;column-gap:0;row-gap:2px;
     padding:12px 4px;border-bottom:1px solid var(--border);
-    grid-template-columns:22px 32px auto minmax(0,1fr) auto}
+    grid-template-columns:22px auto minmax(0,1fr) auto}
   table.tx-cards tbody tr:last-child{border-bottom:none}
   table.tx-cards tbody td{display:block;padding:0;border:0;white-space:normal;
-    min-width:0;font-size:.72rem;color:var(--text2)}
-
-  /* icon box, same look as Actividad reciente */
-  table.tx-cards tbody tr::before{grid-column:2;grid-row:1 / span 2;
-    width:32px;height:32px;border-radius:8px;font-size:.9rem;
-    display:flex;align-items:center;justify-content:center}
-  table.tx-in tbody tr::before{content:"💰";background:var(--green-dim)}
-  table.tx-out tbody tr::before{content:"💳";background:var(--red-dim)}
-  table.tx-pending tbody tr::before{background:var(--gold-dim)}
+    min-width:0;width:auto;text-align:left;font-size:.72rem;color:var(--text2)}
 
   /* received / gastos (8 cells) */
   table.tx-cards:not(.tx-pending) tbody td:nth-child(1){grid-column:1;grid-row:1 / span 2}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(2){grid-column:3 / span 2;grid-row:1}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(3){grid-column:5;grid-row:1 / span 2;text-align:right}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(5){grid-column:3;grid-row:2}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(4){grid-column:4;grid-row:2}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(2){grid-column:2 / span 2;grid-row:1;
+    justify-self:start;max-width:100%;margin-left:10px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(3){grid-column:4;grid-row:1 / span 2;
+    text-align:right;margin-left:10px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(5){grid-column:2;grid-row:2;margin-left:10px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(4){grid-column:3;grid-row:2}
   table.tx-cards:not(.tx-pending) tbody td:nth-child(6){display:none}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(7){grid-column:3 / span 2;grid-row:3;justify-self:start;margin-top:4px}
-  table.tx-cards:not(.tx-pending) tbody td:nth-child(8){grid-column:2 / -1;grid-row:4;margin-top:8px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(7){grid-column:2 / span 2;grid-row:3;
+    justify-self:start;margin:4px 0 0 10px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(8){grid-column:1 / -1;grid-row:4;margin-top:8px}
 
   /* pending ingresos (7 cells, no check column) */
-  table.tx-pending tbody tr{grid-template-columns:32px auto minmax(0,1fr) auto}
-  table.tx-pending tbody tr::before{grid-column:1}
-  table.tx-pending tbody td:nth-child(1){grid-column:2 / span 2;grid-row:1}
-  table.tx-pending tbody td:nth-child(2){grid-column:4;grid-row:1 / span 2;text-align:right}
-  table.tx-pending tbody td:nth-child(4){grid-column:2;grid-row:2}
-  table.tx-pending tbody td:nth-child(3){grid-column:3;grid-row:2}
+  table.tx-pending tbody tr{grid-template-columns:auto minmax(0,1fr) auto}
+  table.tx-pending tbody td:nth-child(1){grid-column:1 / span 2;grid-row:1;
+    justify-self:start;max-width:100%}
+  table.tx-pending tbody td:nth-child(2){grid-column:3;grid-row:1 / span 2;
+    text-align:right;margin-left:10px}
+  table.tx-pending tbody td:nth-child(4){grid-column:1;grid-row:2}
+  table.tx-pending tbody td:nth-child(3){grid-column:2;grid-row:2}
   table.tx-pending tbody td:nth-child(5){display:none}
-  table.tx-pending tbody td:nth-child(6){grid-column:2 / span 2;grid-row:3;justify-self:start;margin-top:4px}
+  table.tx-pending tbody td:nth-child(6){grid-column:1 / span 2;grid-row:3;justify-self:start;margin-top:4px}
   table.tx-pending tbody td:nth-child(7){grid-column:1 / -1;grid-row:4;margin-top:8px}
 
   /* empty-state row (single cell with colspan) */
   table.tx-cards tbody tr:has(> td[colspan]){display:block}
-  table.tx-cards tbody tr:has(> td[colspan])::before{display:none}
-  table.tx-cards tbody td[colspan]{padding:0}
+  table.tx-cards tbody td[colspan]{padding:0;text-align:center;width:100%}
 
-  /* text styling, matching Actividad reciente */
+  /* text styling */
   table.tx-cards tbody td.td-main{font-size:.88rem;font-weight:600;color:var(--text)!important}
-  table.tx-cards tbody td.td-desc-tx{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  table.tx-cards tbody td.td-desc-tx{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   table.tx-cards tbody td.td-amount{font-size:.9rem;white-space:nowrap}
   table.tx-cards tbody td:empty{display:none}
+  /* "date · category": the dot lives in front of the category */
   table.tx-cards:not(.tx-pending) tbody td:nth-child(4)::before,
-  table.tx-pending tbody td:nth-child(3)::before{content:"·";margin-right:6px}
+  table.tx-pending tbody td:nth-child(3)::before{content:"·";margin:0 6px}
+  table.tx-pending tbody td:nth-child(4){padding-right:0}
   table.tx-cards .cat-with-emoji{display:inline-flex;gap:4px}
   table.tx-cards .cat-with-emoji .tag{background:none;border:0;padding:0;
     font-size:inherit;color:inherit;font-weight:inherit;text-transform:none;letter-spacing:0}
@@ -647,7 +647,7 @@ tbody tr:hover{cursor:default}
     padding:11px 4px;border-bottom:1px solid var(--border);grid-template-columns:minmax(0,1fr) auto}
   table.mob-list tbody tr:last-child{border-bottom:none}
   table.mob-list tbody td{display:block;padding:0;border:0;white-space:normal;min-width:0;
-    font-size:.72rem;color:var(--text2)}
+    width:auto;text-align:left;font-size:.72rem;color:var(--text2)}
   table.mob-list tbody td[data-label]::before{content:attr(data-label) " · "}
   table.mob-list tbody td:empty{display:none}
   table.mob-list tbody td.td-main{font-size:.88rem;font-weight:600;color:var(--text)!important;
@@ -657,7 +657,7 @@ tbody tr:hover{cursor:default}
     font-weight:inherit;text-transform:none;letter-spacing:0}
   table.mob-list tbody tr:has(> td[colspan]){display:block}
   table.mob-list tbody tr:has(> td[colspan])::before{display:none}
-  table.mob-list tbody td[colspan]{padding:0}
+  table.mob-list tbody td[colspan]{padding:0;text-align:center;width:100%}
 
   /* Suscripciones */
   table.ml-subs tbody td:nth-child(1){grid-column:1;grid-row:1}

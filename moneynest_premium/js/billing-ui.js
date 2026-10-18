@@ -141,10 +141,7 @@ function renderBillingPage() {
   // ── Movement counter (recalculated on every render) ──
   const isDemoActive = window.MNAuth?.getUser?.()?.demoMode
     || (typeof isDemoMode === 'function' && isDemoMode());
-  const trialUsed = isDemoActive ? 0 : (
-    (window.S?.ingresos?.length || 0) +
-    (window.S?.gastos?.length  || 0)
-  );
+  const trialUsed = (typeof _countTrialMovements === 'function') ? _countTrialMovements() : 0;
   const LIMIT = 100;
   const trialRemaining = Math.max(0, LIMIT - trialUsed);
   const trialPct = Math.min(100, (trialUsed / LIMIT) * 100);
@@ -175,7 +172,7 @@ function renderBillingPage() {
     <div class="mn-plan-trialbanner" style="background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.04))">
       <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="font-size:.95rem;font-weight:800;color:#fff">🟢 Plan Local activo</div>
-        <button class="btn btn-ghost btn-sm" onclick="document.querySelector('.mn-plan-card--pro .mn-plan-btn-pro')?.click()" style="white-space:nowrap">Cambiar a Pro →</button>
+        <button class="btn btn-ghost btn-sm" onclick="MNAuthUI._doConfirmPlan('pro_yearly')" style="white-space:nowrap">Cambiar a Pro →</button>
       </div>
     </div>`;
   } else if (isPro) {
@@ -188,61 +185,52 @@ function renderBillingPage() {
     </div>`;
   }
 
-  // ── Toggle (pill — switches prices via data attributes, no full re-render) ──
-  const toggleHtml = `
-    <div class="mn-billing-toggle" style="display:inline-flex;background:rgba(255,255,255,.05);border-radius:99px;padding:3px;gap:2px;margin-bottom:24px">
-      <button class="mn-billing-toggle-btn${!isAnnual?' active':''}" data-period="monthly" onclick="_toggleBillingPeriod('monthly')" style="padding:8px 20px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${!isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Mensual</button>
-      <button class="mn-billing-toggle-btn${isAnnual?' active':''}" data-period="annual" onclick="_toggleBillingPeriod('annual')" style="padding:8px 20px;border-radius:99px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;${isAnnual?'background:var(--accent,#00D4AA);color:#0A0E17':'background:transparent;color:rgba(255,255,255,.5)'}">Anual · Ahorra hasta 4 €</button>
+  // ── Plan cards: monthly + annual shown together, with the saving ──
+  const GREEN = '#00C896';
+  const planBlock = (key, o) => {
+    const color = o.color;
+    const current = o.current;
+    const saving = (o.monthly * 12 - o.yearly);
+    const savingTxt = saving.toFixed(2).replace('.', ',').replace(',00', '');
+    const equiv = (o.yearly / 12).toFixed(2).replace('.', ',');
+    const fmt = (n) => n.toFixed(2).replace('.', ',').replace(',00', '');
+    return `
+    <div class="pf-card pf-card--${key}${current ? ' pf-card--current' : ''}" style="--pf:${color}">
+      <div class="pf-card__top">
+        <div>
+          <div class="pf-card__name">${o.icon} MoneyNest ${o.label}</div>
+          <div class="pf-card__tag">${o.tag}</div>
+        </div>
+        ${current ? '<span class="pf-card__current">✓ Plan actual</span>' : (o.badge ? `<span class="pf-card__badge">${o.badge}</span>` : '')}
+      </div>
+      <div class="pf-prices">
+        <button type="button" class="pf-price" ${current ? 'disabled' : ''} onclick="MNAuthUI._doConfirmPlan('${key}_monthly')">
+          <span class="pf-price__lbl">Mensual</span>
+          <span class="pf-price__num">${fmt(o.monthly)}<small> €</small></span>
+          <span class="pf-price__per">al mes</span>
+        </button>
+        <button type="button" class="pf-price pf-price--best" ${current ? 'disabled' : ''} onclick="MNAuthUI._doConfirmPlan('${key}_yearly')">
+          <span class="pf-price__save">Ahorras ${savingTxt} €</span>
+          <span class="pf-price__lbl">Anual</span>
+          <span class="pf-price__num">${fmt(o.yearly)}<small> €</small></span>
+          <span class="pf-price__per">al año · ${equiv} €/mes</span>
+        </button>
+      </div>
+      <ul class="pf-feats">${o.feats.map(f => `<li class="${f[0] ? 'ok' : 'no'}">${f[1]}</li>`).join('')}</ul>
     </div>`;
+  };
 
-  // ── Initial price text (based on current toggle state) ──
-  const localPriceInit  = isAnnual ? '9,99 €' : '1 €';
-  const localPeriodInit = isAnnual ? '/año' : '/mes';
-  const proPriceInit    = isAnnual ? '19,99 €' : '2 €';
-  const proPeriodInit   = isAnnual ? '/año' : '/mes';
-
-  // ── Local card ──
-  const cardLocal = `
-    <div class="mn-plan-card${isLocal ? ' mn-plan-card--current mn-plan-card--accent' : ''}">
-      ${isLocal ? '<div class="mn-plan-card__ribbon" style="background:var(--accent-dim,rgba(0,212,170,.12));color:var(--accent,#00D4AA)">✓ PLAN ACTUAL</div>' : ''}
-      <div class="mn-plan-card__icon">💾</div>
-      <div class="mn-plan-card__name">MoneyNest Local</div>
-      <div style="font-size:.78rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:8px">Tus finanzas. En tu dispositivo.</div>
-      <div class="mn-plan-card__price" style="color:#00C896"><span data-price-monthly="1 €" data-price-yearly="9,99 €">${localPriceInit}</span><span data-period-monthly="/mes" data-period-yearly="/año">${localPeriodInit}</span></div>
-      <div data-equiv-yearly="equivale a 0,83 €/mes" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px${isAnnual?'':';display:none'}">${isAnnual ? 'equivale a 0,83 €/mes' : ''}</div>
-      <ul class="mn-plan-card__feats">
-        <li class="ok">Todas las herramientas financieras</li>
-        <li class="ok">Ingresos, gastos, inversiones, deudas</li>
-        <li class="ok">Importación bancaria</li>
-        <li class="ok">Datos 100% locales y privados</li>
-        <li class="no">Cloud Sync</li>
-        <li class="no">Sincronización entre dispositivos</li>
-      </ul>
-      ${isLocal
-        ? '<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ Plan actual</button>'
-        : `<button class="mn-plan-btn-local" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:2px solid var(--accent,#00D4AA);background:transparent;color:var(--accent,#00D4AA);font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan(_uiBillingPeriod==='annual'?'local_yearly':'local_monthly')">Elegir Local</button>`}
-    </div>`;
-
-  // ── Pro card ──
-  const cardPro = `
-    <div class="mn-plan-card mn-plan-card--pro${isPro ? ' mn-plan-card--current' : ''}">
-      <div class="mn-plan-card__ribbon${isPro ? '' : ' mn-plan-card__ribbon--pro'}" style="${isPro ? `background:${pink}22;color:${pink}` : ''}">${isPro ? '✓ PLAN ACTUAL' : '⭐ MÁS ELEGIDO'}</div>
-      <div class="mn-plan-card__icon">☁️</div>
-      <div class="mn-plan-card__name">MoneyNest Pro</div>
-      <div style="font-size:.78rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:8px">Tus finanzas. En todas partes.</div>
-      <div class="mn-plan-card__price" style="color:#a855f7"><span data-price-monthly="2 €" data-price-yearly="19,99 €">${proPriceInit}</span><span data-period-monthly="/mes" data-period-yearly="/año">${proPeriodInit}</span></div>
-      <div data-equiv-yearly="equivale a 1,67 €/mes" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:-2px${isAnnual?'':';display:none'}">${isAnnual ? 'equivale a 1,67 €/mes' : ''}</div>
-      <ul class="mn-plan-card__feats">
-        <li class="ok">Todo lo de Local</li>
-        <li class="ok">Cloud Sync automático</li>
-        <li class="ok">Sincronización entre dispositivos</li>
-        <li class="ok">Backup en la nube</li>
-        <li class="ok">Futuras funciones Pro</li>
-      </ul>
-      ${isPro
-        ? '<button class="btn btn-secondary btn-sm" style="width:100%" disabled>✓ Plan actual</button>'
-        : `<button class="mn-plan-btn-pro" style="width:100%;padding:12px 0;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;background:var(--accent,#00D4AA);color:#0A0E17;font-family:inherit;transition:all .15s" onclick="MNAuthUI._doConfirmPlan(_uiBillingPeriod==='annual'?'pro_yearly':'pro_monthly')">Elegir Pro</button>`}
-    </div>`;
+  const cardLocal = planBlock('local', {
+    color: GREEN, icon: '💾', label: 'Local', tag: 'Tus finanzas. En tu dispositivo.',
+    monthly: 1, yearly: 9.99, current: isLocal, badge: '',
+    feats: [[1,'Todas las herramientas financieras'],[1,'Ingresos, gastos, inversiones, deudas'],[1,'Importación bancaria'],[1,'Datos 100% locales y privados'],[0,'Cloud Sync'],[0,'Sincronización entre dispositivos']],
+  });
+  const cardPro = planBlock('pro', {
+    color: pink, icon: '☁️', label: 'Pro', tag: 'Tus finanzas. En todas partes.',
+    monthly: 2, yearly: 19.99, current: isPro, badge: '⭐ Más elegido',
+    feats: [[1,'Todo lo de Local'],[1,'Cloud Sync automático'],[1,'Sincronización entre dispositivos'],[1,'Backup en la nube'],[1,'Futuras funciones Pro']],
+  });
+  const toggleHtml = '';
 
   // ── Subscription status (paid plans only) ──
   const subStatusHtml = (isPro || isLocal) ? `
@@ -285,13 +273,12 @@ function renderBillingPage() {
     ${bannerHtml}
     <div>
       <div style="font-size:.72rem;font-weight:700;color:var(--text2,#94A3B8);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Elige tu plan</div>
-      <div style="font-size:.82rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:14px">Sin permanencia. Cambia cuando quieras.</div>
+      <div style="font-size:.82rem;color:var(--text3,rgba(255,255,255,.45));margin-bottom:14px">Sin permanencia. Elige pago mensual o anual y ahorra con el anual.</div>
       ${toggleHtml}
-      <div class="mn-plan-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="pf-grid">
         ${cardLocal}
         ${cardPro}
       </div>
-      <div class="mn-billing-savings-note" style="font-size:.72rem;color:var(--text3,rgba(255,255,255,.45));margin-top:8px;text-align:center${isAnnual?'':';display:none'}">Local anual: equivale a 0,83 €/mes · Pro anual: equivale a 1,67 €/mes</div>
     </div>
     ${subStatusHtml}
     ${actionsHtml}

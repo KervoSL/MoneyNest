@@ -20,6 +20,9 @@ const PRICE_TO_PLAN: Record<string, string> = {
   // test-mode IDs
   'price_1U5uN8FWll222KpaX0qENvX3': 'local',
   'price_1U5uNNFWll222Kpawefje59j': 'pro',
+  // legacy live IDs (existing subscribers)
+  'price_1U68YVFWll222KpaCJ6WrKWg': 'local',
+  'price_1U68YaFWll222Kpa4mynzdAp': 'pro',
 };
 
 const CORS = {

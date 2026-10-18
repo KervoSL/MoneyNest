@@ -514,6 +514,25 @@
   //  GETTERS
   // ════════════════════════════════════════════════════════════════
 
+  // Returns a live session (or null). Re-reads the Supabase client's own
+  // session (auto-refreshing an expired access token) instead of trusting
+  // the cached _session, which can be missing/stale after a tab sleeps,
+  // a slow start or a token refresh. Never hangs: 4s cap per attempt.
+  async function ensureSession() {
+    const cap = (p) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))]);
+    try {
+      const { data } = await cap(sb.auth.getSession());
+      if (data?.session) { _session = data.session; return _session; }
+    } catch (_) {}
+    try {
+      if (localStorage.getItem('mn_supabase_session')) {
+        const { data } = await cap(sb.auth.refreshSession());
+        if (data?.session) { _session = data.session; return _session; }
+      }
+    } catch (_) {}
+    return _session || null;
+  }
+
   function getSession()  { return _session; }
   function isLoggedIn()  { return !!_session; }
   function getEmail()    { return _session?.user?.email || null; }
@@ -560,6 +579,7 @@
     updateProfile,
     // Getters
     getSession,
+    ensureSession,
     isLoggedIn,
     getEmail,
     getUserId,

@@ -14758,14 +14758,21 @@ async function _openStripeCustomerPortal(btn) {
       ])
     } catch (_) { /* handled by the check below either way */ }
   }
+  if (window.MNSupabaseAuth?.ensureSession && !window.MNSupabaseAuth.isLoggedIn()) {
+    try { await window.MNSupabaseAuth.ensureSession() } catch (_) {}
+  }
   if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
-    if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión o usa "Restaurar acceso" primero.'), 'warning')
+    // Not signed in on this device: open the sign-in form (never an
+    // error toast that leads nowhere) and resume the portal afterwards.
+    window._mnPendingPortal = true
+    if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal('login')
+    if (typeof toast === 'function') toast(_aut('cfg_portal_necesita_sesion', 'Inicia sesión para gestionar tu suscripción.'), 'info')
     return
   }
   const originalLabel = btn ? btn.textContent : null
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + _aut('cfg_abriendo', 'Abriendo…') }
   try {
-    const token = window.MNSupabaseAuth.getSession()?.access_token
+    const token = (await window.MNSupabaseAuth.ensureSession?.())?.access_token || window.MNSupabaseAuth.getSession()?.access_token
     // CONFIRMED EMPIRICALLY: this fetch previously had no timeout at
     // all — if the network request ever hung (bad connection, a slow
     // response, anything), this button stayed stuck on "Abriendo…"
@@ -14785,7 +14792,12 @@ async function _openStripeCustomerPortal(btn) {
         _showManagePlanPlaceholder()
       } else {
         console.error('[_openStripeCustomerPortal] backend error:', data)
-        if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación. Inténtalo de nuevo.'), 'error')
+        const why = data.error === 'invalid_session' ? ' (tu sesión ha caducado: vuelve a iniciar sesión)' : (data.detail || data.error ? ` (${data.error || data.detail})` : '')
+        if (data.error === 'invalid_session' || data.error === 'missing_authorization') {
+          window._mnPendingPortal = true
+          window.MNAuthUI?.showAuthModal?.('login')
+        }
+        if (typeof toast === 'function') toast(_aut('cfg_portal_error', 'No se pudo abrir la gestión de facturación.') + why, 'error')
       }
       return
     }
@@ -14855,11 +14867,12 @@ function _showManagePlanPlaceholder() {
         <button class="modal-close" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">✕</button>
       </div>
       <div class="modal-body" style="text-align:center;padding:10px 4px 20px">
-        <div style="font-size:2rem;margin-bottom:10px">🔧</div>
-        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','Aún no tienes ninguna suscripción de pago activa. En cuanto actives MoneyNest Local o Pro, podrás cambiar tu método de pago, ver tus recibos y cancelar desde aquí mismo.')}</div>
+        <div style="font-size:2rem;margin-bottom:10px">💳</div>
+        <div style="font-size:.88rem;color:var(--text2);line-height:1.6">${_aut('cfg_gestionar_plan_placeholder','Todavía no tienes ninguna suscripción de pago en Stripe. Cuando actives MoneyNest Local o Pro podrás cambiar tu método de pago, ver tus recibos y cancelar desde aquí.')}</div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary btn-sm" style="width:100%" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_entendido','Entendido')}</button>
+      <div class="modal-footer" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock()">${_aut('btn_cerrar','Cerrar')}</button>
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="document.getElementById('mn-manage-plan-placeholder').remove(); window._popScrollLock&&window._popScrollLock(); goTo('billing')">Ver planes</button>
       </div>
     </div>`
   document.body.appendChild(overlay)
@@ -19128,3 +19141,15 @@ window._confirmMultiPago = function() {
 
 
 
+
+
+// Resume "Gestionar suscripción" after the person signs in from it.
+if (window.MNSupabaseAuth?.onAuthChange) {
+  window.MNSupabaseAuth.onAuthChange((event, session) => {
+    if (event === 'SIGNED_IN' && session && window._mnPendingPortal) {
+      window._mnPendingPortal = false
+      window.MNAuthUI?.closeAuthModal?.()
+      setTimeout(() => _openStripeCustomerPortal(null), 300)
+    }
+  })
+}

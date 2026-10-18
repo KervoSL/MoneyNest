@@ -234,6 +234,9 @@ async function _doConfirmPlan(planKey) {
   // Customer must be tied to a verified user) — an anonymous/local-only
   // trial session isn't enough. Ask them to sign in/create an account
   // first, then resume this exact checkout right after.
+  if (window.MNSupabaseAuth?.ensureSession && !window.MNSupabaseAuth.isLoggedIn()) {
+    try { await window.MNSupabaseAuth.ensureSession() } catch (_) {}
+  }
   if (!window.MNSupabaseAuth || !window.MNSupabaseAuth.isLoggedIn()) {
     window._mnPendingCheckoutPlan = planKey;
     closePlanModal();
@@ -245,6 +248,10 @@ async function _doConfirmPlan(planKey) {
     // the whole purchase flow is stuck.
     let hadPriorSession = false
     try { hadPriorSession = window.MNSupabaseAuth.hadStoredSession ? window.MNSupabaseAuth.hadStoredSession() : !!localStorage.getItem('mn_supabase_session') } catch (_) {}
+    // Someone who already went through registration/onboarding on this
+    // device has an email saved locally — never send them to "create
+    // account" again, only to sign in.
+    try { if (window.MNAuth?.getUser?.()?.email) hadPriorSession = true } catch (_) {}
     const authMode = hadPriorSession ? 'login' : 'register'
     if (window.MNAuthUI?.showAuthModal) window.MNAuthUI.showAuthModal(authMode);
     if (typeof window.toast === 'function') {
