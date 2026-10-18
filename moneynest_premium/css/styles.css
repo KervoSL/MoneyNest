@@ -789,8 +789,13 @@ tbody tr:hover{cursor:default}
   .content{padding-bottom:80px!important}
 }
 @media(max-width:480px){
-  .bottom-nav-item span:not(.bn-icon):not(.bottom-nav-badge){display:none}
-  .bottom-nav-item{padding:8px 2px}
+  /* Labels stay visible on phones (they used to be hidden here): two icons of
+     similar meaning (Inicio / Patrimonio) need the text to tell them apart.
+     One line, ellipsis if a translation is too long for its slot. */
+  .bottom-nav-item{padding:8px 2px;min-width:0;gap:2px}
+  .bottom-nav-item span:not(.bn-icon):not(.bottom-nav-badge){
+    display:block;max-width:100%;font-size:.62rem;line-height:1.1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 }
 
 /* ─── FINANCIAL HEALTH SCORE ─────────────────────────────────── */
