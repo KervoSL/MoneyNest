@@ -1,5 +1,9 @@
-/* ─── MoneyNest Service Worker v46 ─────────────────────────────── */
-const CACHE_NAME = 'moneynest-v46'
+/* ─── MoneyNest Service Worker v47 ─────────────────────────────── */
+// IMPORTANT: bump CACHE_NAME (and version.json) on EVERY deploy. The
+// browser only detects a new app version when this file's bytes change,
+// and files are served cache-first, so a deploy that forgets this bump
+// never reaches users who already have the app installed.
+const CACHE_NAME = 'moneynest-v47'
 const LOCAL_ASSETS = [
   './',
   './index.html',
