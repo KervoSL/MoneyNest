@@ -5299,7 +5299,7 @@ function renderIngresos() {
       </div>
     </div>
     <div class="table-wrap">
-      <table>
+      <table class="tx-cards tx-in tx-pending">
         <thead><tr><th>${t('concepto')}</th><th>${t('importe')}</th><th>${t('categoria')}</th><th>${t('fecha')}</th><th>${t('cuenta_destino')}</th><th>${t('estado')}</th><th>${t('acciones')}</th></tr></thead>
         <tbody>${pendingRows}</tbody>
       </table>
@@ -5325,7 +5325,7 @@ function renderIngresos() {
   <div class="card">
     <div class="card-header"><div class="card-title">✅ ${t('ingresos_cobrados')}</div></div>
     <div class="table-wrap">
-      <table>
+      <table class="tx-cards tx-in">
         <thead><tr>
           <th style="width:28px"><input type="checkbox" onchange="if(this.checked){receivedIngs.forEach(i=>_ingSelected.add(i.id))}else{_ingSelected.clear()};renderIngresos()" style="cursor:pointer"></th>
           <th style="cursor:pointer" onclick="_ingSetSort('concepto')">${t('concepto')} ${_ingSortIcon('concepto')}</th>
@@ -5517,7 +5517,7 @@ function renderGastos() {
   <div class="card">
     <div class="card-header"><div class="card-title">${t('todos_gastos')}</div></div>
     <div class="table-wrap">
-      <table>
+      <table class="tx-cards tx-out">
         <thead><tr>
           <th style="width:28px"><input type="checkbox" onchange="if(this.checked){todos.forEach(g=>_gasSelected.add(g.id))}else{_gasSelected.clear()};renderGastos()" style="cursor:pointer"></th>
           <th style="cursor:pointer" onclick="_gasSetSort('concepto')">${t('concepto')} ${_gasSortIcon('concepto')}</th>

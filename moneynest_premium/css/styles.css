@@ -543,6 +543,93 @@ tbody tr:hover{cursor:default}
   .td-actions{flex-direction:column;gap:4px}
 }
 
+/* ─── MOBILE MOVEMENT CARDS (Ingresos / Gastos) ──────────────────
+   On phones the movement tables render each row like the dashboard's
+   "Actividad reciente" (icon · concept · date · category · amount)
+   plus the Editar / Eliminar buttons. Desktop is untouched.
+   Cells are targeted by position, so if the column order in
+   renderIngresos()/renderGastos() changes, update these selectors.
+     .tx-cards            → received ingresos / gastos:
+                            1 check · 2 concept · 3 amount · 4 category
+                            5 date · 6 account · 7 badge · 8 actions
+     .tx-cards.tx-pending → pending ingresos (no check column):
+                            1 concept · 2 amount · 3 category · 4 date
+                            5 account · 6 badge · 7 actions
+   .tx-in / .tx-out only choose the icon.                          */
+@media(max-width:600px){
+  table.tx-cards,
+  table.tx-cards thead,
+  table.tx-cards tbody{display:block;min-width:0;width:100%}
+
+  /* header → slim bar: select-all + sort chips (account / actions hidden) */
+  table.tx-cards thead tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+    padding:0 0 10px;border-bottom:1px solid var(--border)}
+  table.tx-cards th{display:none;padding:0}
+  table.tx-cards th:first-child{display:flex;align-items:center;width:auto}
+  table.tx-cards th[onclick]{display:inline-flex;align-items:center;gap:4px;
+    padding:5px 10px;border:1px solid var(--border);border-radius:99px;
+    font-size:.68rem;letter-spacing:.04em}
+  table.tx-cards.tx-pending thead{display:none}
+
+  /* each row → card */
+  table.tx-cards tbody tr{display:grid;align-items:center;column-gap:10px;row-gap:2px;
+    padding:12px 4px;border-bottom:1px solid var(--border);
+    grid-template-columns:22px 32px auto minmax(0,1fr) auto}
+  table.tx-cards tbody tr:last-child{border-bottom:none}
+  table.tx-cards tbody td{display:block;padding:0;border:0;white-space:normal;
+    min-width:0;font-size:.72rem;color:var(--text2)}
+
+  /* icon box, same look as Actividad reciente */
+  table.tx-cards tbody tr::before{grid-column:2;grid-row:1 / span 2;
+    width:32px;height:32px;border-radius:8px;font-size:.9rem;
+    display:flex;align-items:center;justify-content:center}
+  table.tx-in tbody tr::before{content:"💰";background:var(--green-dim)}
+  table.tx-out tbody tr::before{content:"💳";background:var(--red-dim)}
+  table.tx-pending tbody tr::before{background:var(--gold-dim)}
+
+  /* received / gastos (8 cells) */
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(1){grid-column:1;grid-row:1 / span 2}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(2){grid-column:3 / span 2;grid-row:1}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(3){grid-column:5;grid-row:1 / span 2;text-align:right}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(5){grid-column:3;grid-row:2}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(4){grid-column:4;grid-row:2}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(6){display:none}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(7){grid-column:3 / span 2;grid-row:3;justify-self:start;margin-top:4px}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(8){grid-column:2 / -1;grid-row:4;margin-top:8px}
+
+  /* pending ingresos (7 cells, no check column) */
+  table.tx-pending tbody tr{grid-template-columns:32px auto minmax(0,1fr) auto}
+  table.tx-pending tbody tr::before{grid-column:1}
+  table.tx-pending tbody td:nth-child(1){grid-column:2 / span 2;grid-row:1}
+  table.tx-pending tbody td:nth-child(2){grid-column:4;grid-row:1 / span 2;text-align:right}
+  table.tx-pending tbody td:nth-child(4){grid-column:2;grid-row:2}
+  table.tx-pending tbody td:nth-child(3){grid-column:3;grid-row:2}
+  table.tx-pending tbody td:nth-child(5){display:none}
+  table.tx-pending tbody td:nth-child(6){grid-column:2 / span 2;grid-row:3;justify-self:start;margin-top:4px}
+  table.tx-pending tbody td:nth-child(7){grid-column:1 / -1;grid-row:4;margin-top:8px}
+
+  /* empty-state row (single cell with colspan) */
+  table.tx-cards tbody tr:has(> td[colspan]){display:block}
+  table.tx-cards tbody tr:has(> td[colspan])::before{display:none}
+  table.tx-cards tbody td[colspan]{padding:0}
+
+  /* text styling, matching Actividad reciente */
+  table.tx-cards tbody td.td-main{font-size:.88rem;font-weight:600;color:var(--text)!important}
+  table.tx-cards tbody td.td-desc-tx{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  table.tx-cards tbody td.td-amount{font-size:.9rem;white-space:nowrap}
+  table.tx-cards tbody td:empty{display:none}
+  table.tx-cards:not(.tx-pending) tbody td:nth-child(4)::before,
+  table.tx-pending tbody td:nth-child(3)::before{content:"·";margin-right:6px}
+  table.tx-cards .cat-with-emoji{display:inline-flex;gap:4px}
+  table.tx-cards .cat-with-emoji .tag{background:none;border:0;padding:0;
+    font-size:inherit;color:inherit;font-weight:inherit;text-transform:none;letter-spacing:0}
+
+  /* Editar / Eliminar (and Cobrar) side by side, never wrapping per letter */
+  table.tx-cards .action-row{flex-wrap:nowrap;gap:8px;width:100%}
+  table.tx-cards .action-row button{flex:1;justify-content:center;white-space:nowrap;
+    padding:9px 10px;font-size:.78rem;min-width:0;min-height:0;height:auto;line-height:1;box-shadow:none}
+}
+
 /* ─── BUTTONS ────────────────────────────────────────────────── */
 .btn{
   display:inline-flex;align-items:center;gap:6px;
