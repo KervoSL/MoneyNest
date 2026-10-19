@@ -2013,3 +2013,88 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
     width: var(--w, 0%) !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE v2 — layout robusto (v1.23.3)
+   · El contenido se dimensiona por su contenido (sin cajas estiradas vacías)
+   · En pantallas pequeñas se OCULTAN piezas (JS: fitShowcaseScreen) antes de cortarlas
+   · En pantallas grandes todo escala (zoom) para no dejar huecos vacíos
+   ════════════════════════════════════════════════════════════════ */
+.showcase-screen { align-items: stretch; justify-items: center; }
+
+.showcase-screen:not(.welcome-screen) .showcase-screen-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+  gap: clamp(10px, 2vh, 22px);
+}
+.showcase-screen:not(.welcome-screen) .showcase-header { flex: 0 0 auto; }
+.showcase-screen:not(.welcome-screen) .showcase-visual {
+  flex: 0 1 auto;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.showcase-screen:not(.welcome-screen) .showcase-visual > * { flex-shrink: 0; min-height: auto; }
+.showcase-screen:not(.welcome-screen) .obs-scene { flex: 0 0 auto; overflow: visible; height: auto; }
+.showcase-screen:not(.welcome-screen) .obs-scene > *,
+.showcase-screen:not(.welcome-screen) .obs-scene [class*="-layout"],
+.showcase-screen:not(.welcome-screen) .obs-expenses-grid { min-height: 0; height: auto; }
+.showcase-screen:not(.welcome-screen) .obs-gcard { height: auto; flex: 0 0 auto; }
+.showcase-screen:not(.welcome-screen) .obs-bank-list { max-height: none !important; }
+.showcase-screen:not(.welcome-screen) .showcase-nav { flex: 0 0 auto; margin-top: clamp(4px, 1.5vh, 16px); align-self: stretch; }
+
+/* piezas ocultadas por el ajuste automático */
+.sc-hide { display: none !important; }
+
+/* Panel izquierdo centrado respecto al contenido */
+.showcase-split-left { justify-content: center; align-items: center; }
+.showcase-left-content { max-width: 380px; }
+
+/* ── Pantallas grandes: escalar en vez de dejar huecos ── */
+@media (min-width: 1500px) {
+  .showcase-split { --z: 1.2; }
+  .showcase-screen:not(.welcome-screen) .showcase-screen-content {
+    zoom: var(--z);
+    width: min(640px, calc(36vw / var(--z)));
+    max-width: none;
+  }
+  .showcase-left-content, .welcome-center, .wc-card { zoom: var(--z); }
+}
+@media (min-width: 1900px) { .showcase-split { --z: 1.45; } .welcome-premium { max-width: 1900px; margin: 0 auto; } }
+@media (min-width: 2400px) { .showcase-split { --z: 1.8; } .welcome-premium { max-width: 2200px; } }
+/* Pantallas anchas pero bajitas (portátiles): no escalar de más */
+@media (min-width: 1500px) and (max-height: 820px) { .showcase-split { --z: 1; } }
+
+/* ── Tablet / móvil ── */
+@media (max-width: 768px) {
+  .showcase-screen:not(.welcome-screen) .showcase-screen-content { max-width: 560px; }
+  .showcase-screen { padding-top: 52px; }
+  .showcase-dots { display: none; }
+}
+@media (max-width: 600px) {
+  .showcase-screen { padding: 48px 16px max(12px, env(safe-area-inset-bottom)); }
+  .showcase-nav { padding-bottom: 4px; }
+}
+/* Welcome: tarjetas flotantes solo si caben sin tocar el texto central */
+@media (max-width: 1100px) { .wc-card { display: none; } }
+@media (max-height: 560px) { .welcome-brand { display: none; } }
+@media (min-width: 1500px) {
+  .showcase-split-left { width: auto; flex: 1 1 0; min-width: 0; align-items: center; }
+  .showcase-split-right { flex: 1 1 0; }
+  .showcase-left-content { width: auto; max-width: none; }
+}
+.obs-feature-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; box-sizing: border-box; }
+.obs-feat-item { min-width: 0; height: auto; box-sizing: border-box; }
+.obs-feat-item > div { min-width: 0; overflow-wrap: break-word; }
+@media (max-width: 768px) { .obs-feature-strip { grid-template-columns: 1fr; } }
+
+@media (min-width: 1500px) {
+  .obs-feat-item { padding: 8px 10px; gap: 8px; }
+  .obs-feat-item strong { font-size: .7rem; }
+  .obs-feat-item span:not(.obs-feat-icon) { font-size: .62rem; }
+}

@@ -80,6 +80,10 @@ async function logEvent(stripeEventId: string, eventType: string, payload: unkno
 // ── Subscription activation (both Local and Pro) / cancellation ──────
 
 async function activateFromSubscription(sub: Stripe.Subscription, stripe: Stripe) {
+  // An abandoned/cancelled checkout that never had a confirmed payment
+  // (status incomplete_expired) never granted anything, so it must not
+  // be able to revoke or downgrade a plan either.
+  if (sub.status === 'incomplete_expired') return;
   const userId = sub.metadata?.user_id || null;
   const plan = resolvePlan(sub);
   if (!userId || !plan) {

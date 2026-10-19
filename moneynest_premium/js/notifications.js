@@ -11,8 +11,8 @@
   const PERM_KEY  = 'mn_notif_permission';
 
   function getPrefs() {
-    try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{"budget":true,"streak":true,"recurring":true,"trial":true}'); }
-    catch { return { budget: true, streak: true, recurring: true, trial: true }; }
+    try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{"budget":true,"streak":true,"recurring":true,"trial":true,"reminders":true,"tips":true}'); }
+    catch { return { budget: true, streak: true, recurring: true, trial: true, reminders: true, tips: true }; }
   }
 
   function savePrefs(p) {
@@ -59,6 +59,7 @@
         el.remove();
         const perm = await Notification.requestPermission();
         localStorage.setItem(PERM_KEY, perm);
+        if (perm === 'granted') subscribePush();
         resolve(perm === 'granted');
         // Re-render settings UI so permission state is reflected immediately
         if (typeof renderConfiguracion === 'function') renderConfiguracion();
@@ -75,6 +76,7 @@
 
   // ─── Send notification ────────────────────────────────────────────
   function sendNotification(title, body, icon, tag) {
+    addToInbox({ title, body, tag: tag || 'moneynest' });
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
     try {
@@ -244,6 +246,8 @@
         ${_toggle(_nt('notif_pref_streak','Recordatorios de racha'), 'streak', prefs.streak)}
         ${_toggle(_nt('notif_pref_recurring','Facturas y suscripciones próximas'), 'recurring', prefs.recurring)}
         ${_toggle(_nt('notif_pref_trial','Aviso expiración trial'), 'trial', prefs.trial)}
+        ${_toggle(_nt('notif_pref_reminders','Recordatorios si dejas de entrar'), 'reminders', prefs.reminders !== false)}
+        ${_toggle(_nt('notif_pref_tips','Consejos y resumen semanal'), 'tips', prefs.tips !== false)}
         <button onclick="MNNotifications._sendTest()" style="margin-top:12px;padding:8px 16px;border-radius:9px;border:1px solid var(--border2,rgba(255,255,255,.1));background:transparent;color:var(--text2,rgba(255,255,255,.5));font-size:.78rem;cursor:pointer;font-family:inherit">
           ${_nt('notif_test_btn','Enviar notificación de prueba')}
         </button>
@@ -297,11 +301,277 @@
     }
   }
 
+
+  // ─── Inbox (notification center) ──────────────────────────────────
+  const INBOX_KEY = 'mn_notif_inbox';
+  const FIRED_KEY = 'mn_notif_fired';
+  const LAST_OPEN_KEY = 'mn_last_open';
+  const VAPID_PUBLIC = 'BNRtUPwIF2L3DncNvx0yZOuQQxXPPCeMd0ZkdZRUKSwTo2PbsFyIaJ1I9ZyE5VMRB8bq3SwYjvoswOmIbEOE1xo';
+
+  function _jget(k, fb) { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? fb; } catch { return fb; } }
+  function _jset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  function _esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function getInbox() { return _jget(INBOX_KEY, []); }
+
+  function addToInbox(n) {
+    if (!n || !n.title) return;
+    const list = getInbox();
+    const key = n.tag || n.title;
+    // Same tag already in inbox → don't duplicate
+    if (list.some(x => x.tag === key)) return;
+    list.unshift({ id: Date.now() + Math.random().toString(36).slice(2, 6), tag: key, title: n.title, body: n.body || '', ts: Date.now(), read: false, go: n.go || null });
+    _jset(INBOX_KEY, list.slice(0, 40));
+    _updateBadge();
+    if (document.getElementById('mnNotifPanel')) _renderPanel();
+  }
+
+  function unreadCount() { return getInbox().filter(x => !x.read).length; }
+
+  function markAllRead() {
+    _jset(INBOX_KEY, getInbox().map(x => ({ ...x, read: true })));
+    _updateBadge();
+  }
+  function clearInbox() { _jset(INBOX_KEY, []); _updateBadge(); _renderPanel(); }
+
+  function _ago(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return 'ahora';
+    if (m < 60) return `hace ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `hace ${h} h`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? 'ayer' : `hace ${d} días`;
+  }
+
+  // ─── Smart (generated) notifications ──────────────────────────────
+  function _userData() {
+    try { return JSON.parse(localStorage.getItem('mn7_data') || localStorage.getItem('mn_data') || '{}') || {}; } catch { return {}; }
+  }
+  function _firstName() {
+    try {
+      const u = window.MNAuth?.getUser?.() || {};
+      const n = (u.name || u.nombre || (u.email || '').split('@')[0] || '').trim();
+      return n ? n.split(/\s+/)[0].replace(/^./, c => c.toUpperCase()) : '';
+    } catch { return ''; }
+  }
+  function _dayKey(d) { return (d || new Date()).toISOString().slice(0, 10); }
+  function _weekKey() {
+    const d = new Date(); const j = new Date(d.getFullYear(), 0, 1);
+    return d.getFullYear() + '-W' + Math.ceil(((d - j) / 86400000 + j.getDay() + 1) / 7);
+  }
+
+  const TIPS = [
+    ['💡 Truco rápido', 'Revisa tus suscripciones: cancelar una que no usas son euros que vuelven a ti cada mes.'],
+    ['🎯 Pequeñas metas', 'Una meta de ahorro con fecha tiene el doble de probabilidades de cumplirse. ¿Creamos una?'],
+    ['📊 Mira tu mes', 'Dedicar 2 minutos a la semana a revisar tus gastos te ahorra sorpresas a final de mes.'],
+    ['🧾 Importa tu banco', 'Puedes importar el CSV de tu banco y MoneyNest categoriza tus movimientos solo.'],
+    ['🏦 Orden de deudas', 'Con el asistente de deudas puedes ver si te conviene bola de nieve o avalancha.'],
+    ['🔔 Facturas', 'Marca tus gastos fijos como recurrentes y te avisamos antes de que se cobren.'],
+  ];
+
+  function generateSmartNotifications() {
+    const prefs = getPrefs();
+    const fired = _jget(FIRED_KEY, {});
+    const now = Date.now();
+    const push = (key, title, body, go, silent) => {
+      if (fired[key]) return;
+      fired[key] = now;
+      addToInbox({ title, body, tag: key, go });
+      if (!silent) sendNotification(title, body, null, key);
+    };
+    const prevOpen = Number(localStorage.getItem(LAST_OPEN_KEY)) || 0;
+    const name = _firstName();
+    const hi = name ? `${name}, ` : '';
+    try {
+      const data = _userData();
+      const ing = Array.isArray(data.ingresos) ? data.ingresos : [];
+      const gas = Array.isArray(data.gastos) ? data.gastos : [];
+      const all = ing.concat(gas);
+      const today = _dayKey();
+
+      // Welcome back after being away
+      if (prefs.reminders !== false && prevOpen) {
+        const away = Math.floor((now - prevOpen) / 86400000);
+        if (away >= 3) {
+          const msg = away >= 14
+            ? [`¡Cuánto tiempo! 👋`, `${hi}hace ${away} días que no entras. Tus números te esperan: dedica 2 minutos a ponerlos al día.`]
+            : away >= 7
+              ? [`Te echábamos de menos`, `${hi}hace ${away} días que no pasas por MoneyNest. ¿Registramos lo de esta semana?`]
+              : [`Hace ${away} días que no entras`, `${hi}un repaso rápido a tus gastos y listo. Mantén tu racha viva 🔥`];
+          push('away-' + today, msg[0], msg[1], 'dashboard');
+        }
+      }
+
+      // Days without registering movements
+      if (prefs.reminders !== false && all.length) {
+        const last = all.map(x => x.fecha || '').filter(Boolean).sort().pop();
+        if (last) {
+          const days = Math.floor((now - new Date(last + 'T12:00:00').getTime()) / 86400000);
+          if (days >= 4 && days < 60) push('nomove-' + _weekKey(), `Llevas ${days} días sin apuntar nada`, `${hi}¿has gastado algo que no hayas registrado? Añadirlo lleva 10 segundos.`, 'gastos');
+        }
+      } else if (prefs.reminders !== false && !all.length) {
+        push('first-move', 'Registra tu primer movimiento 🚀', `${hi}empieza por un gasto de hoy: el café, el menú, lo que sea. Verás cómo cobra vida tu panel.`, 'gastos');
+      }
+
+      // Trial usage
+      if (prefs.trial && typeof window._countTrialMovements === 'function') {
+        const used = window._countTrialMovements();
+        const left = 100 - used;
+        if (used >= 80 && left > 0) push('trial-' + (left <= 5 ? 'last' : 'low'), `Te quedan ${left} movimientos gratis`, 'Pásate a un plan cuando quieras para seguir sin límites y con sincronización.', 'billing');
+      }
+
+      // Streak
+      if (prefs.streak) {
+        const st = _jget('mn_streak', {});
+        const n = Number(st.streak) || 0;
+        if (n >= 3 && [3, 7, 14, 30, 60, 100].includes(n)) push('streak-' + n, `¡${n} días de racha! 🔥`, 'La constancia es lo que cambia tus finanzas. Sigue así.', 'dashboard');
+      }
+
+      // Weekly summary (Mondays) — expenses of the last 7 days
+      if (prefs.tips !== false && new Date().getDay() === 1 && gas.length) {
+        const since = _dayKey(new Date(now - 7 * 86400000));
+        const tot = gas.filter(g => (g.fecha || '') >= since).reduce((a, g) => a + (Number(g.importe) || 0), 0);
+        if (tot > 0) push('weekly-' + _weekKey(), 'Tu resumen semanal 📊', `${hi}la semana pasada gastaste ${_eur(tot)}. Entra a ver en qué categorías se fue.`, 'gastos');
+      }
+
+      // Rotating tip (max one per 3 days)
+      if (prefs.tips !== false) {
+        const slot = Math.floor(now / (3 * 86400000));
+        const tip = TIPS[slot % TIPS.length];
+        push('tip-' + slot, tip[0], tip[1], null, true); // inbox only, not a system popup
+      }
+    } catch (e) { console.warn('[MNNotifications] smart error:', e); }
+    // prune old keys
+    Object.keys(fired).forEach(k => { if (now - fired[k] > 60 * 86400000) delete fired[k]; });
+    _jset(FIRED_KEY, fired);
+    try { localStorage.setItem(LAST_OPEN_KEY, String(now)); } catch {}
+  }
+
+  // ─── Bell + panel ─────────────────────────────────────────────────
+  function _updateBadge() {
+    const b = document.getElementById('mnBellBadge');
+    if (!b) return;
+    const n = unreadCount();
+    b.textContent = n > 9 ? '9+' : String(n);
+    b.style.display = n ? 'flex' : 'none';
+  }
+
+  function _ensureBell() {
+    if (document.getElementById('mnBell')) return;
+    const right = document.querySelector('.topbar-right');
+    if (!right) return false;
+    const btn = document.createElement('button');
+    btn.id = 'mnBell';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Notificaciones');
+    btn.style.cssText = 'position:relative;flex-shrink:0;width:36px;height:36px;border-radius:10px;border:1px solid var(--border2,rgba(255,255,255,.1));background:var(--card,transparent);color:var(--text2,#aaa);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0';
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="mnBellBadge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:#F43F5E;color:#fff;font-size:.6rem;font-weight:700;align-items:center;justify-content:center;box-sizing:border-box"></span>';
+    btn.onclick = togglePanel;
+    right.insertBefore(btn, right.firstChild);
+    _updateBadge();
+    return true;
+  }
+
+  function togglePanel() {
+    const ex = document.getElementById('mnNotifPanelWrap');
+    if (ex) { ex.remove(); return; }
+    const wrap = document.createElement('div');
+    wrap.id = 'mnNotifPanelWrap';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:9800';
+    wrap.onclick = e => { if (e.target === wrap) wrap.remove(); };
+    wrap.innerHTML = '<div id="mnNotifPanel" style="position:absolute;top:60px;right:12px;width:min(380px,calc(100vw - 24px));max-height:min(540px,calc(100dvh - 80px));display:flex;flex-direction:column;background:var(--card,#0F172A);border:1px solid var(--border2,rgba(255,255,255,.1));border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden"></div>';
+    document.body.appendChild(wrap);
+    _renderPanel();
+    markAllRead();
+  }
+
+  function _renderPanel() {
+    const el = document.getElementById('mnNotifPanel');
+    if (!el) return;
+    const list = getInbox();
+    const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+    const enable = (perm === 'default')
+      ? `<button onclick="MNNotifications.enablePush()" style="margin:10px 14px 0;padding:9px 12px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366F1,#00D4AA);color:#fff;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit">🔔 Activar avisos en este dispositivo</button>` : '';
+    const rows = list.length ? list.map(n => `
+      <div ${n.go ? `onclick="document.getElementById('mnNotifPanelWrap')?.remove();goTo('${_esc(n.go)}')"` : ''} style="padding:12px 16px;border-bottom:1px solid var(--border,rgba(255,255,255,.06));${n.go ? 'cursor:pointer' : ''}">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="font-size:.84rem;font-weight:700;color:var(--text,#fff)">${_esc(n.title)}</span><span style="font-size:.68rem;color:var(--text3,rgba(255,255,255,.35));white-space:nowrap">${_ago(n.ts)}</span></div>
+        <div style="font-size:.78rem;color:var(--text2,rgba(255,255,255,.55));line-height:1.45;margin-top:3px">${_esc(n.body)}</div>
+      </div>`).join('') : `<div style="padding:34px 20px;text-align:center;color:var(--text3,rgba(255,255,255,.4));font-size:.82rem">Todo al día ✨<br>Aquí aparecerán tus avisos.</div>`;
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border,rgba(255,255,255,.06))">
+        <span style="font-size:.92rem;font-weight:700;color:var(--text,#fff)">Notificaciones</span>
+        <span style="display:flex;gap:12px">
+          ${list.length ? `<button onclick="MNNotifications.clearInbox()" style="background:none;border:none;color:var(--text3,#888);font-size:.74rem;cursor:pointer;font-family:inherit">Vaciar</button>` : ''}
+          <button onclick="document.getElementById('mnNotifPanelWrap')?.remove();goTo('configuracion')" style="background:none;border:none;color:var(--accent,#6366F1);font-size:.74rem;cursor:pointer;font-family:inherit">Ajustes</button>
+        </span>
+      </div>
+      ${enable}
+      <div style="overflow-y:auto;overscroll-behavior:contain;margin-top:${enable ? '10px' : '0'}">${rows}</div>`;
+  }
+
+  // ─── Web Push (closed-app notifications) ──────────────────────────
+  function _b64ToU8(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribePush() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+      if (Notification.permission !== 'granted') return false;
+      const sb = window.MNSupabaseAuth?._sb;
+      const user = window.MNAuth?.getUser?.();
+      if (!sb || !user || user.demoMode || !user.email) return false; // needs a cloud account
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _b64ToU8(VAPID_PUBLIC) });
+      const j = sub.toJSON();
+      const { data: ses } = await sb.auth.getSession();
+      const uid = ses?.session?.user?.id;
+      if (!uid) return false;
+      await sb.from('push_subscriptions').upsert({
+        user_id: uid, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
+        user_agent: (navigator.userAgent || '').slice(0, 200),
+      }, { onConflict: 'endpoint' });
+      return true;
+    } catch (e) { console.warn('[MNNotifications] subscribePush', e); return false; }
+  }
+
+  async function touchLastSeen() {
+    try {
+      const sb = window.MNSupabaseAuth?._sb;
+      if (!sb) return;
+      const { data: ses } = await sb.auth.getSession();
+      const uid = ses?.session?.user?.id;
+      if (uid) await sb.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', uid);
+    } catch {}
+  }
+
+  async function enablePush() {
+    const ok = await requestPermission();
+    if (ok) { await subscribePush(); if (typeof toast === 'function') toast('🔔 Notificaciones activadas', 'success'); }
+    _renderPanel();
+  }
+
   // ─── Auto listeners ───────────────────────────────────────────────
   window.addEventListener('mn:data:saved', () => { checkBudgetAlerts(); checkUpcomingBills(); });
 
   scheduleTrialExpiry();
   checkUpcomingBills(); // also check once on load, not just after a save
+
+  function _boot() {
+    if (!_ensureBell()) { setTimeout(_boot, 800); return; }
+    generateSmartNotifications();
+    _updateBadge();
+    subscribePush();
+    touchLastSeen();
+  }
+  try { window.MNSupabaseAuth?.onAuthChange?.(() => { subscribePush(); touchLastSeen(); }); } catch {}
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { generateSmartNotifications(); touchLastSeen(); } });
+  if (document.readyState === 'complete') setTimeout(_boot, 1500);
+  else window.addEventListener('load', () => setTimeout(_boot, 1500));
 
   window.MNNotifications = {
     requestPermission,
@@ -312,5 +582,6 @@
     renderSettingsUI,
     _setPref,
     _sendTest,
+    togglePanel, getInbox, clearInbox, enablePush, subscribePush, generateSmartNotifications,
   };
 })();

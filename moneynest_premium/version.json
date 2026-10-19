@@ -1,20 +1,18 @@
 {
-  "version": "1.23.2",
+  "version": "1.23.3",
   "changelog": {
-    "title": "Novedades de la versión 1.23.2",
+    "title": "Novedades de la versión 1.23.3",
     "items": [
+      "Centro de notificaciones (campana) con avisos personalizados, recordatorios si dejas de entrar, resumen semanal y consejos; avisos push también con la app cerrada",
+      "Gestionar suscripción lleva solo a tu suscripción activa, sin planes repetidos",
+      "Configuración en ordenador más equilibrada",
+      "Pantalla de bienvenida realmente responsive: se ocultan piezas antes de cortarse en móvil/tablet y se aprovechan las pantallas grandes",
       "Pago con Apple Pay y Google Pay desde el móvil, y el botón de gestionar suscripción funciona desde cualquier dirección de la app",
       "Icono de casa para Patrimonio en la barra inferior",
       "Plan y facturación: el contador de movimientos y el inicio de sesión al comprar o gestionar la suscripción ahora funcionan con tu cuenta ya creada",
       "Nueva página Plan y facturación: precios mensual y anual juntos, con el ahorro a la vista",
       "Pago con tarjeta conectado a Stripe con los precios actuales y botón Gestionar suscripción que abre el portal de Stripe",
-      "Ingresos y gastos en móvil más limpios: sin icono y con el concepto alineado a la izquierda",
-      "En el móvil, las listas de ingresos, gastos, suscripciones, previsión, facturas y movimientos se ven ahora como tarjetas",
-      "Importador bancario: detección de movimientos duplicados mejorada, también al importar en otra cuenta",
-      "El contador de movimientos ahora incluye inversiones, deudas, presupuestos, objetivos y cuentas",
-      "Acceso al portal de suscripción más fiable",
-      "Barra de navegación inferior con acceso directo a Patrimonio y nombres bajo cada icono",
-      "Se ha retirado el bloqueo con PIN"
+      "Ingresos y gastos en móvil más limpios: sin icono y con el concepto alineado a la izquierda"
     ]
   }
 }
