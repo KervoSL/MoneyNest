@@ -11,20 +11,14 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
-const ALLOWED_ORIGINS = new Set([
-  'https://money-nest-nk2u.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:8080',
-]);
-
-function corsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin') ?? '';
+// Auth is a bearer JWT (no cookies), so any origin may call this — an
+// origin allowlist only ever broke legitimate sessions served from a
+// different Vercel alias/custom domain (CORS rejection = "nothing opens").
+function corsHeaders(_req: Request): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : '',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Vary': 'Origin',
   };
 }
 function json(body: unknown, status: number, headers: Record<string, string>) {
@@ -51,7 +45,17 @@ Deno.serve(async (req) => {
     .eq('id', userData.user.id)
     .maybeSingle();
 
-  if (!profile?.stripe_customer_id) {
+  let customerId: string | null = profile?.stripe_customer_id ?? null;
+  if (!customerId) {
+    // Profile not linked yet — look the customer up by our own metadata.
+    for (const stripe of [stripeLive, stripeTest]) {
+      try {
+        const found = await stripe.customers.search({ query: `metadata['user_id']:'${userData.user.id}'`, limit: 1 });
+        if (found.data[0]) { customerId = found.data[0].id; break; }
+      } catch { /* try next mode */ }
+    }
+  }
+  if (!customerId) {
     return json({ error: 'no_customer', message: 'No tienes ninguna suscripción asociada todavía.' }, 404, cors);
   }
 
@@ -78,8 +82,8 @@ Deno.serve(async (req) => {
   for (const [label, stripe] of [['test', stripeTest], ['live', stripeLive]] as const) {
     try {
       const session = await stripe.billingPortal.sessions.create({
-        customer: profile.stripe_customer_id,
-        return_url: `${req.headers.get('origin') || 'https://money-nest-nk2u.vercel.app'}/?portal=return`,
+        customer: customerId,
+        return_url: `${/^https:\/\/[a-z0-9.-]+$/i.test(req.headers.get('origin') ?? '') ? req.headers.get('origin') : 'https://money-nest-nk2u.vercel.app'}/?portal=return`,
       });
       portalUrl = session.url;
       break;
