@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
   const { data: cfg } = await sb.from('app_private').select('value').eq('key', 'cron_secret').maybeSingle()
   if (!cfg?.value || req.headers.get('x-cron-secret') !== cfg.value) return new Response('forbidden', { status: 403 })
 
-  const priv = Deno.env.get('VAPID_PRIVATE_KEY')
+  const { data: vk } = await sb.from('app_private').select('value').eq('key', 'vapid_private_key').maybeSingle()
+  const priv = Deno.env.get('VAPID_PRIVATE_KEY') || vk?.value
   if (!priv) return new Response(JSON.stringify({ error: 'VAPID_PRIVATE_KEY missing' }), { status: 500 })
   webpush.setVapidDetails('mailto:joanmanenribas@gmail.com', VAPID_PUBLIC, priv)
 
