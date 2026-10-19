@@ -206,6 +206,41 @@
     updateActiveSlide();
   }
 
+  // ── Ajuste automático: si el contenido no cabe, se OCULTAN piezas
+  //    (de menos a más importantes) en vez de cortarlas o solaparlas.
+  const FIT_ORDER = [
+    '.obs-final-trust', '.obs-feature-strip', '.showcase-description',
+    '.obs-final-app', '.obs-debts-plans', '.obs-invest-alloc', '.obs-expenses-feed',
+    '.obs-final-right', '.obs-final-goals'
+  ];
+  function fitShowcaseScreen() {
+    const screen = document.querySelector('.showcase-screen.active:not(.welcome-screen)');
+    if (!screen) return;
+    const content = screen.querySelector('.showcase-screen-content');
+    const visual = screen.querySelector('.showcase-visual');
+    if (!content || !visual) return;
+    screen.querySelectorAll('.sc-hide').forEach(el => el.classList.remove('sc-hide'));
+    // offsetHeight ignora transform (las animaciones de entrada desplazan 16px y falseaban scrollHeight)
+    const overflows = () => {
+      const need = Array.from(visual.children).reduce((a, c) => a + (c.classList.contains('sc-hide') ? 0 : c.offsetHeight), 0);
+      return need > visual.clientHeight + 1 || content.scrollHeight > content.clientHeight + 1;
+    };
+    for (const sel of FIT_ORDER) {
+      if (!overflows()) return;
+      screen.querySelectorAll(sel).forEach(el => el.classList.add('sc-hide'));
+    }
+    // Último recurso: quitar filas sueltas desde el final
+    const rows = Array.from(screen.querySelectorAll('.obs-bank-row, .obs-tx-row, .obs-debt-row, .obs-goal-card, .obs-final-feat, .obs-feat-item')).reverse();
+    for (const r of rows) {
+      if (!overflows()) return;
+      r.classList.add('sc-hide');
+    }
+  }
+  let _fitRaf = 0;
+  function scheduleFit() { cancelAnimationFrame(_fitRaf); _fitRaf = requestAnimationFrame(() => requestAnimationFrame(fitShowcaseScreen)); }
+  window.addEventListener('resize', scheduleFit);
+  window.addEventListener('orientationchange', () => setTimeout(scheduleFit, 250));
+
   // Update which slide is active (CSS classes only, no DOM rebuild)
   function updateActiveSlide() {
     const overlay = document.getElementById('showcaseOverlay');
@@ -221,6 +256,8 @@
       screen.classList.toggle('prev', isPrev);
       screen.classList.toggle('next', isNext);
     });
+
+    scheduleFit();
 
     // Show/hide skip button (only visible from slide 2 onwards)
     const skipBtn = document.getElementById('showcaseSkipBtn');

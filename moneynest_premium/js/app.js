@@ -7838,38 +7838,6 @@ function renderConfiguracion() {
       <div style="font-size:.72rem;color:var(--text3)">${t('cfg_apariencia_tip')}</div>
     </div>
 
-    </div><!-- /left column -->
-
-    <!-- ── RIGHT COLUMN ── -->
-    <div style="display:flex;flex-direction:column;gap:0">
-
-    <!-- ── NOTIFICACIONES ── -->
-    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">NOTIFICACIONES</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
-      <div id="mn-notif-settings-container"></div>
-    </div>
-
-    <!-- ── DATOS ── -->
-    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">DATOS</div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-export-panel')">${t('cfg_exportar_pdf')}</button>
-        <button class="btn btn-secondary btn-sm" onclick="dmExportMoneynest()">${t('cfg_backup_json')}</button>
-        <button class="btn btn-secondary btn-sm" id="driveBackupBtn" onclick="exportarADrive()" style="background:var(--indigo-dim);border-color:var(--indigo-dim);color:var(--indigo)">
-          ${t('cfg_drive')}
-          <span id="driveBackupStatus" style="font-size:.7rem;margin-left:6px;opacity:.8"></span>
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-import-panel')" style="cursor:pointer;justify-content:flex-start">
-          ${t('cfg_importar')}
-        </button>
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0">
-        <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
-        <div style="font-size:.72rem;color:var(--text3);margin:2px 0 8px">${t('cfg_borrar_todo_hint','Borra tus datos financieros, pero mantiene tu cuenta y tu plan activos.')}</div>
-        <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
-        <div style="font-size:.72rem;color:var(--text3);margin-top:2px">${t('cfg_eliminar_cuenta_hint','Elimina tu cuenta por completo, tu plan y todos tus datos. No se puede deshacer.')}</div>
-      </div>
-    </div>
-
     <!-- ── APLICACIÓN ── -->
     <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">APLICACIÓN</div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
@@ -7909,6 +7877,38 @@ function renderConfiguracion() {
           <button class="btn btn-secondary btn-sm" onclick="lanzarTutorial()">${t('cfg_ver_tutorial')}</button>
           <button class="btn btn-ghost btn-sm" onclick="if(confirm('¿Repetir el onboarding inicial? Se recargará la página.')){localStorage.removeItem('${OB_FLAG_KEY}');localStorage.removeItem('${TUT_FLAG_KEY}');location.reload()}" title="Volver a ver el onboarding completo">🔄 Repetir onboarding</button>
         </div>
+      </div>
+    </div>
+
+    </div><!-- /left column -->
+
+    <!-- ── RIGHT COLUMN ── -->
+    <div style="display:flex;flex-direction:column;gap:0">
+
+    <!-- ── NOTIFICACIONES ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">NOTIFICACIONES</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
+      <div id="mn-notif-settings-container"></div>
+    </div>
+
+    <!-- ── DATOS ── -->
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">DATOS</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-export-panel')">${t('cfg_exportar_pdf')}</button>
+        <button class="btn btn-secondary btn-sm" onclick="dmExportMoneynest()">${t('cfg_backup_json')}</button>
+        <button class="btn btn-secondary btn-sm" id="driveBackupBtn" onclick="exportarADrive()" style="background:var(--indigo-dim);border-color:var(--indigo-dim);color:var(--indigo)">
+          ${t('cfg_drive')}
+          <span id="driveBackupStatus" style="font-size:.7rem;margin-left:6px;opacity:.8"></span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-import-panel')" style="cursor:pointer;justify-content:flex-start">
+          ${t('cfg_importar')}
+        </button>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0">
+        <button class="btn btn-danger btn-sm" onclick="borrarTodo()">${t('cfg_borrar_todo')}</button>
+        <div style="font-size:.72rem;color:var(--text3);margin:2px 0 8px">${t('cfg_borrar_todo_hint','Borra tus datos financieros, pero mantiene tu cuenta y tu plan activos.')}</div>
+        <button class="btn btn-danger btn-sm" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:2px">${t('cfg_eliminar_cuenta_hint','Elimina tu cuenta por completo, tu plan y todos tus datos. No se puede deshacer.')}</div>
       </div>
     </div>
 

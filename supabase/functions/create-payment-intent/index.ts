@@ -119,9 +119,21 @@ Deno.serve(async (req) => {
     if (isPro) {
       const existing = await stripe.subscriptions.list({ customer: customer.id, limit: 10 });
       const proSubs = existing.data.filter(s => s.items.data.some(i => PRO_PRICES.has(i.price.id)));
-      const activeSub = proSubs.find((s) => s.status === 'active' || s.status === 'trialing');
+      const activeSub = proSubs.find((s) => s.status === 'active' || (s.status === 'trialing' && !!s.default_payment_method));
       if (activeSub) return json({ error: 'already_subscribed' }, 409);
     }
+
+    // Abandoned checkouts (modal opened, never paid) leave 'incomplete'
+    // subscriptions — or 'trialing' ones with no card — behind. They'd
+    // pile up and show as repeated unpaid plans in the billing portal,
+    // so clear them before starting a new attempt.
+    try {
+      const stale = await stripe.subscriptions.list({ customer: customer.id, limit: 20 });
+      for (const s of stale.data) {
+        const abandoned = s.status === 'incomplete' || (s.status === 'trialing' && !s.default_payment_method);
+        if (abandoned) { try { await stripe.subscriptions.cancel(s.id); } catch { /* best effort */ } }
+      }
+    } catch { /* best effort */ }
 
     const { data: profile } = await supabase.from('profiles').select('plan, pro_trial_used').eq('id', userId).maybeSingle();
     const applyProTrial = isPro && profile?.plan !== 'pro' && profile?.pro_trial_used !== true;

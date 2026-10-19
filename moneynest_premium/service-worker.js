@@ -3,7 +3,7 @@
 // browser only detects a new app version when this file's bytes change,
 // and files are served cache-first, so a deploy that forgets this bump
 // never reaches users who already have the app installed.
-const CACHE_NAME = 'moneynest-v50'
+const CACHE_NAME = 'moneynest-v51'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -109,13 +109,25 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
 
+self.addEventListener('push', event => {
+  let d = {}
+  try { d = event.data ? event.data.json() : {} } catch { d = { body: event.data && event.data.text() } }
+  event.waitUntil(self.registration.showNotification(d.title || 'MoneyNest', {
+    body: d.body || '',
+    icon: './assets/icon-192.png',
+    badge: './assets/icon-192.png',
+    tag: d.tag || 'moneynest-push',
+    data: { url: d.url || './' },
+  }))
+})
+
 self.addEventListener('notificationclick', event => {
   event.notification.close()
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       const existing = list.find(c => c.url.includes('moneynest') || c.url.includes('localhost'))
       if (existing) return existing.focus()
-      return clients.openWindow('./')
+      return clients.openWindow((event.notification.data && event.notification.data.url) || './')
     })
   )
 })
