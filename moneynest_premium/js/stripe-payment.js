@@ -697,46 +697,17 @@ window.MNPayment = (() => {
         appearance,
       });
 
-      const paymentElement = _elements.create('payment');
+      // Apple Pay / Google Pay / Link appear automatically at the top of
+      // the Payment Element when the device supports them (domain is
+      // registered with Stripe). Using the Payment Element's own wallets
+      // (instead of a separate Payment Request button) also makes them
+      // work for the Pro free-trial case, which is confirmed as a
+      // SetupIntent, and avoids showing two wallet buttons.
+      const paymentElement = _elements.create('payment', {
+        layout: { type: 'tabs', defaultCollapsed: false },
+        wallets: { applePay: 'auto', googlePay: 'auto' },
+      });
       paymentElement.mount('#mnPoElement');
-
-      // ── Apple Pay / Google Pay via Payment Request Button ──
-      try {
-        const amountCents = data.pricing?.finalAmount
-          || _centsForPrice(priceId);
-        const paymentRequest = stripe.paymentRequest({
-          country: 'ES',
-          currency: 'eur',
-          total: { label: 'MoneyNest', amount: amountCents },
-          requestPayerEmail: true,
-        });
-        const canPay = await paymentRequest.canMakePayment();
-        if (canPay) {
-          const walletWrap = document.getElementById('mnPoWalletWrap');
-          if (walletWrap) walletWrap.style.display = '';
-          const prBtn = _elements.create('paymentRequestButton', {
-            paymentRequest,
-            style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '48px' } },
-          });
-          prBtn.mount('#mnPoPaymentRequestBtn');
-          paymentRequest.on('paymentmethod', async (ev) => {
-            const { error: confirmError } = await stripe.confirmCardPayment(
-              data.clientSecret,
-              { payment_method: ev.paymentMethod.id },
-              { handleActions: false }
-            );
-            if (confirmError) {
-              ev.complete('fail');
-              _showError(confirmError.message || _spt('payment_error_generic', 'Error al procesar el pago.'));
-            } else {
-              ev.complete('success');
-              _onPaymentSuccess(_activePriceId, _activeEmail);
-            }
-          });
-        }
-      } catch (walletErr) {
-        console.warn('[MNPayment] Wallet button unavailable:', walletErr);
-      }
 
       // Safety timeout: if the embedded Stripe iframe never fires
       // 'ready' (blocked by an ad/privacy blocker or browser extension,
