@@ -284,9 +284,17 @@
     }
   }
 
-  function _sendTest() {
+  async function _sendTest() {
     if (Notification.permission !== 'granted') {
       requestPermission();
+      return;
+    }
+    // Prefer a REAL push through the server (proves closed-app delivery works)
+    await subscribePush();
+    const r = await sendPushTest();
+    if (r && r.sent > 0) {
+      if (typeof toast === 'function') toast('✅ Push enviado: debería llegarte en unos segundos', 'success');
+      addToInbox({ title: 'Prueba enviada ✅', body: 'Notificación push enviada a tus dispositivos.', tag: 'test-' + Date.now() });
       return;
     }
     try {
@@ -542,11 +550,25 @@
   async function touchLastSeen() {
     try {
       const sb = window.MNSupabaseAuth?._sb;
-      if (!sb) return;
-      const { data: ses } = await sb.auth.getSession();
-      const uid = ses?.session?.user?.id;
-      if (uid) await sb.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', uid);
+      if (!sb || !window.MNAuth?.getUser?.()?.email) return;
+      await sb.rpc('touch_last_seen');
     } catch {}
+  }
+
+  // Real server-side push to this user's registered devices (works with the app closed)
+  async function sendPushTest() {
+    try {
+      const sb = window.MNSupabaseAuth?._sb;
+      const { data: ses } = await sb.auth.getSession();
+      const tok = ses?.session?.access_token;
+      if (!tok) return null;
+      const r = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ test: true }),
+      });
+      return await r.json().catch(() => ({}));
+    } catch { return null; }
   }
 
   async function enablePush() {
@@ -581,7 +603,7 @@
     scheduleTrialExpiry,
     renderSettingsUI,
     _setPref,
-    _sendTest,
+    _sendTest, sendPushTest,
     togglePanel, getInbox, clearInbox, enablePush, subscribePush, generateSmartNotifications,
   };
 })();

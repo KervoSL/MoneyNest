@@ -1418,7 +1418,7 @@ textarea{resize:vertical;min-height:70px}
   }
   .dinero-value{
     font-size:0.85rem;
-    max-width:96px;
+    max-width:none;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
@@ -1487,7 +1487,7 @@ textarea{resize:vertical;min-height:70px}
   /* Topbar: el presupuesto de espacio es muy ajustado por debajo de
      480px — asegurar que el saldo (que puede tener 6+ cifras) nunca
      aplaste el titulo de pagina hasta hacerlo ilegible. */
-  .dinero-value{max-width:64px}
+  .dinero-value{max-width:none}
   .dinero-display{padding:4px 8px}
   /* Tablas responsivas */
   table{font-size:0.85rem}
@@ -4341,4 +4341,16 @@ tr.row-selected { border-left: 2px solid var(--indigo); }
 .mn-preob-demo-tip button {
   border: none; background: transparent; color: var(--text3);
   cursor: pointer; font-size: .8rem; flex-shrink: 0; padding: 2px;
+}
+
+/* Móvil: las filas de filtros se reorganizan en varias líneas en vez de cortarse */
+@media (max-width: 600px) {
+  .analisis-tabs, .time-filter-bar {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    row-gap: 6px;
+  }
+  .analisis-tabs > *, .time-filter-bar > * { flex: 0 1 auto; }
 }

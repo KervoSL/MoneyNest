@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.21.1'
+const VERSION = '1.23.4'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -4560,7 +4560,13 @@ function goTo(page) {
 function updateTopBar() {
   const el = document.getElementById('topDinero')
   if (!el) return
-  const newVal = eur(calcDineroDisponible())
+  const _raw = calcDineroDisponible()
+  // En pantallas estrechas el saldo completo no cabe: formato compacto (32,4 k €)
+  // en vez de cortarlo con puntos suspensivos.
+  const _compact = window.innerWidth < 520 && Math.abs(_raw) >= 10000
+  const newVal = _compact
+    ? (Math.abs(_raw) >= 1e6 ? (_raw/1e6).toFixed(2).replace('.', ',') + ' M€' : (_raw/1e3).toFixed(1).replace('.', ',') + ' k€')
+    : eur(_raw)
   if (el.textContent !== newVal) {
     el.style.transition = 'color .3s'
     el.style.color = 'var(--accent)'
@@ -4570,6 +4576,7 @@ function updateTopBar() {
   const lbl = document.getElementById('topDineroLabel')
   if (lbl) lbl.textContent = t('disponible')
 }
+window.addEventListener('resize', () => { try { updateTopBar() } catch (_) {} })
 function updateBadges() {
   const vencidas = S.deudas.filter(d=>{
     if (!d.vencimiento) return false
