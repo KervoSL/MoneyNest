@@ -486,7 +486,7 @@ window.MNPayment = (() => {
   // Polls MNEntitlements (which itself calls get_my_plan() against
   // Supabase) until the webhook has processed the event and the real
   // plan is confirmed — never assumes success locally in the meantime.
-  async function _pollEntitlementAfterPayment(expectedPlan, retries = 8, delayMs = 2000) {
+  async function _pollEntitlementAfterPayment(expectedPlan, retries = 45, delayMs = 3000) {
     if (!window.MNEntitlements) return;
     for (let i = 0; i < retries; i++) {
       await new Promise(r => setTimeout(r, i === 0 ? 1500 : delayMs));
