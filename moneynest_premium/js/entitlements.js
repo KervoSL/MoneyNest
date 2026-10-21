@@ -85,6 +85,11 @@
             cloudEnabled: !!_serverState.cloud_enabled,
           });
         }
+        // Billing keeps its own cached state that was only reconciled with the
+        // auth plan once, at startup — so after a payment (or any server-side
+        // plan change) the UI kept saying "trial". Re-sync it now; it only
+        // saves (and notifies the UI) when the plan actually changed.
+        try { window.MNBilling?.syncFromAuth?.(); } catch (e) { console.warn('[MNEntitlements] billing sync failed:', e); }
         document.dispatchEvent(new CustomEvent('mn:entitlements:refreshed', { detail: _serverState }));
         return _serverState;
       } catch (err) {

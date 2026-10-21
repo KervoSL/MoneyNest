@@ -466,6 +466,7 @@ const MNBilling = {
   saveSub,
   patchSub,
   getSubStatus,
+  syncFromAuth: _syncWithMNAuth,
   getTrialTimeLeft,
   canUseFeature,
   getCurrentPlanDef,
