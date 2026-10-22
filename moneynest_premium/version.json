@@ -1,17 +1,14 @@
 {
-  "version": "1.23.5",
+  "version": "1.23.6",
   "changelog": {
-    "title": "Novedades de la versión 1.23.5",
+    "title": "Novedades de la versión 1.23.6",
     "items": [
+      "Aviso de racha: si llevas días seguidos entrando y hoy aún no has abierto la app, te recordamos por la tarde que no pierdas tu racha",
+      "La pantalla de bienvenida se actualiza sola a la última versión en el móvil",
       "Notificaciones push arregladas: ahora se registra tu última visita y el botón de prueba envía un push real a tus dispositivos",
       "Saldo de la barra superior en formato compacto en pantallas pequeñas (ya no se corta)",
       "Pestañas y filtros de Análisis, Ingresos, Gastos e Inversiones se reorganizan en varias líneas en el móvil en vez de cortarse",
-      "La versión mostrada en Configuración ya es la real",
-      "Tras pagar, tu plan se actualiza al instante en la app (antes podía seguir mostrando la prueba gratuita hasta recargar)",
-      "Centro de notificaciones (campana) con avisos personalizados, recordatorios si dejas de entrar, resumen semanal y consejos; avisos push también con la app cerrada",
-      "Gestionar suscripción lleva solo a tu suscripción activa, sin planes repetidos",
-      "Configuración en ordenador más equilibrada",
-      "Pantalla de bienvenida realmente responsive: se ocultan piezas antes de cortarse en móvil/tablet y se aprovechan las pantallas grandes"
+      "La versión mostrada en Configuración ya es la real"
     ]
   }
 }
