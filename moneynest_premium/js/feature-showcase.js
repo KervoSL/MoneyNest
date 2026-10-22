@@ -243,7 +243,10 @@
     // offsetHeight ignora transform (las animaciones de entrada desplazan 16px y falseaban scrollHeight)
     const overflows = () => {
       const need = Array.from(visual.children).reduce((a, c) => a + (c.classList.contains('sc-hide') ? 0 : c.offsetHeight), 0);
-      return need > visual.clientHeight + 1 || content.scrollHeight > content.clientHeight + 1;
+      const sh = screen.clientHeight;
+      // La pila (cabecera + visual + botones) no puede superar la altura de la pantalla
+      const stack = Array.from(content.children).reduce((a, c) => a + (c === visual ? need : c.offsetHeight), 0);
+      return need > visual.clientHeight + 1;
     };
     for (const sel of FIT_ORDER) {
       if (!overflows()) return;
@@ -259,6 +262,13 @@
   let _fitRaf = 0;
   function scheduleFit() { cancelAnimationFrame(_fitRaf); _fitRaf = requestAnimationFrame(() => requestAnimationFrame(fitShowcaseScreen)); }
   window.addEventListener('resize', scheduleFit);
+  // Safari iOS: las fuentes y la barra de direcciones cambian las alturas después del primer pintado
+  try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { scheduleFit(); setTimeout(scheduleFit, 400); }); } catch (_) {}
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', scheduleFit);
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => scheduleFit());
+    document.addEventListener('DOMContentLoaded', () => ro.observe(document.documentElement));
+  }
   window.addEventListener('orientationchange', () => setTimeout(scheduleFit, 250));
 
   // Update which slide is active (CSS classes only, no DOM rebuild)
@@ -278,6 +288,9 @@
     });
 
     scheduleFit();
+    setTimeout(scheduleFit, 350);
+    setTimeout(scheduleFit, 1200);
+    setTimeout(scheduleFit, 2400);
 
     // Show/hide skip button (only visible from slide 2 onwards)
     const skipBtn = document.getElementById('showcaseSkipBtn');

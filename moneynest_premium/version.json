@@ -1,14 +1,13 @@
 {
-  "version": "1.23.6",
+  "version": "1.23.7",
   "changelog": {
-    "title": "Novedades de la versión 1.23.6",
+    "title": "Novedades de la versión 1.23.7",
     "items": [
+      "Pantalla de bienvenida en el móvil: título arriba y botón siempre en el mismo sitio abajo; el contenido del medio se adapta y lo que no cabe se quita en vez de solaparse",
       "Aviso de racha: si llevas días seguidos entrando y hoy aún no has abierto la app, te recordamos por la tarde que no pierdas tu racha",
       "La pantalla de bienvenida se actualiza sola a la última versión en el móvil",
       "Notificaciones push arregladas: ahora se registra tu última visita y el botón de prueba envía un push real a tus dispositivos",
-      "Saldo de la barra superior en formato compacto en pantallas pequeñas (ya no se corta)",
-      "Pestañas y filtros de Análisis, Ingresos, Gastos e Inversiones se reorganizan en varias líneas en el móvil en vez de cortarse",
-      "La versión mostrada en Configuración ya es la real"
+      "Saldo de la barra superior en formato compacto en pantallas pequeñas (ya no se corta)"
     ]
   }
 }

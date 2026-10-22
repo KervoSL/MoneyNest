@@ -2098,3 +2098,106 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   .obs-feat-item strong { font-size: .7rem; }
   .obs-feat-item span:not(.obs-feat-icon) { font-size: .62rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE v3 — layout sin dependencias de grid/porcentajes (Safari iOS)
+   Pila vertical simple: cabecera · visual (se encoge, overflow oculto) · botones.
+   Lo que no cabe lo oculta fitShowcaseScreen() antes de que se corte o se pise.
+   ════════════════════════════════════════════════════════════════ */
+.showcase-split { height: 100vh; height: -webkit-fill-available; height: 100dvh; }
+
+.showcase-screen:not(.welcome-screen) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.showcase-screen:not(.welcome-screen) .showcase-screen-content {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  height: auto !important;
+  max-height: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+.showcase-screen:not(.welcome-screen) .showcase-header { flex: 0 0 auto; }
+.showcase-screen:not(.welcome-screen) .showcase-nav { flex: 0 0 auto; }
+.showcase-screen:not(.welcome-screen) .showcase-visual {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+
+/* Todo lo de dentro de los mockups toma su altura natural: nada se estira ni se comprime */
+.showcase-screen:not(.welcome-screen) .showcase-visual,
+.showcase-screen:not(.welcome-screen) .showcase-visual * { box-sizing: border-box; }
+.showcase-screen:not(.welcome-screen) .obs-scene,
+.showcase-screen:not(.welcome-screen) .obs-expenses-grid,
+.showcase-screen:not(.welcome-screen) .obs-invest-layout,
+.showcase-screen:not(.welcome-screen) .obs-debts-layout,
+.showcase-screen:not(.welcome-screen) .obs-goals-layout,
+.showcase-screen:not(.welcome-screen) .obs-final-layout,
+.showcase-screen:not(.welcome-screen) .obs-debts-plans,
+.showcase-screen:not(.welcome-screen) .obs-final-left,
+.showcase-screen:not(.welcome-screen) .obs-final-right,
+.showcase-screen:not(.welcome-screen) .obs-tx-list,
+.showcase-screen:not(.welcome-screen) .obs-bank-list,
+.showcase-screen:not(.welcome-screen) .obs-debts-items {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: 0 0 auto !important;
+  align-content: flex-start;
+  grid-auto-rows: auto !important;
+  grid-template-rows: none !important;
+}
+.showcase-screen:not(.welcome-screen) .obs-gcard,
+.showcase-screen:not(.welcome-screen) .obs-tx-row,
+.showcase-screen:not(.welcome-screen) .obs-bank-row,
+.showcase-screen:not(.welcome-screen) .obs-debt-row,
+.showcase-screen:not(.welcome-screen) .obs-goal-card,
+.showcase-screen:not(.welcome-screen) .obs-feat-item,
+.showcase-screen:not(.welcome-screen) .obs-final-feat,
+.showcase-screen:not(.welcome-screen) .obs-mini-goal {
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+}
+.showcase-screen:not(.welcome-screen) .obs-tx-list,
+.showcase-screen:not(.welcome-screen) .obs-bank-list,
+.showcase-screen:not(.welcome-screen) .obs-debts-items {
+  display: flex; flex-direction: column; justify-content: flex-start !important;
+}
+
+@media (max-width: 768px) {
+  .showcase-screen:not(.welcome-screen) { padding-top: calc(48px + env(safe-area-inset-top, 0px)); padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Móvil/tablet: cabecera arriba y botones abajo SIEMPRE en el mismo sitio; el hueco del medio se rellena y,
+      si algo no cabe, se oculta (fitShowcaseScreen) — nunca se solapa ── */
+@media (max-width: 768px) {
+  .showcase-screen:not(.welcome-screen) { justify-content: flex-start; align-items: stretch; }
+  .showcase-screen:not(.welcome-screen) .showcase-screen-content {
+    flex: 1 1 auto !important;
+    width: 100%;
+    max-width: 560px;
+    align-self: center;
+    justify-content: flex-start;
+    max-height: 100%;
+    min-height: 0;
+  }
+  .showcase-screen:not(.welcome-screen) .showcase-header { min-height: 9.4rem; justify-content: flex-start; }
+  .showcase-screen:not(.welcome-screen) .showcase-visual {
+    flex: 1 1 0;
+    min-height: 0;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .showcase-screen:not(.welcome-screen) .showcase-nav { margin-top: 0; }
+  /* El botón "Anterior" conserva su hueco en la primera pantalla para que "Siguiente" no salte de sitio */
+  .showcase-screen[data-screen="1"] .showcase-btn-back { display: flex !important; visibility: hidden; }
+}
