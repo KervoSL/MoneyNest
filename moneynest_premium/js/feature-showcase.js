@@ -68,11 +68,31 @@
     return localStorage.getItem(SHOWCASE_FLAG) === 'true';
   };
 
+  // La bienvenida no tiene datos del usuario: si hay una versión nueva de la app
+  // esperando (el aviso de actualización queda tapado por esta pantalla), se
+  // aplica sola para no enseñar una bienvenida antigua.
+  function applyPendingUpdate() {
+    try {
+      if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (!reg) return;
+        const activate = w => { if (w) w.postMessage({ type: 'SKIP_WAITING' }); };
+        if (reg.waiting) activate(reg.waiting);
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          if (w) w.addEventListener('statechange', () => { if (w.state === 'installed') activate(w); });
+        });
+        reg.update().catch(() => {});
+      });
+    } catch (_) {}
+  }
+
   // Show showcase
   window.showFeatureShowcase = function() {
     if (hasSeenShowcase()) {
       return false;
     }
+    applyPendingUpdate();
 
     currentSlide = 0;
     renderShowcase();

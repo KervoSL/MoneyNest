@@ -11,6 +11,13 @@ type Msg = { kind: string; title: string; body: string }
 
 function pick<T>(a: T[], seed: number): T { return a[seed % a.length] }
 
+function streakMessage(n: number, name: string, seed: number): Msg {
+  const hi = name ? `${name}, ` : ''
+  if (n >= 30) return { kind: `streak-${n}`, title: `🔥 ¡${n} días de racha!`, body: `${hi}una racha de campeón. No la dejes escapar: entra hoy y suma un día más.` }
+  if (n >= 7) return { kind: `streak-${n}`, title: pick([`🔥 ${n} días seguidos`, `No pierdas tu racha de ${n} días`], seed), body: `${hi}te falta entrar hoy para mantenerla. Te lleva 10 segundos.` }
+  return { kind: `streak-${n}`, title: pick([`🔥 Llevas ${n} días de racha`, `Tu racha de ${n} días te espera`], seed), body: `${hi}entra hoy y no pierdas lo que has conseguido.` }
+}
+
 function messageFor(days: number, name: string, seed: number): Msg | null {
   const hi = name ? `${name}, ` : ''
   if (days >= 30) return { kind: 'away30', title: '¿Seguimos? 💙', body: `${hi}hace un mes que no pasas por MoneyNest. Tus números siguen aquí, a un toque.` }
@@ -88,11 +95,17 @@ Deno.serve(async (req) => {
   for (const s of subs ?? []) {
     // max one push per 24h per device
     if (s.last_sent_at && now - new Date(s.last_sent_at).getTime() < DAY - 3600000) { skipped++; continue }
-    const { data: p } = await sb.from('profiles').select('last_seen_at, display_name').eq('id', s.user_id).maybeSingle()
+    const { data: p } = await sb.from('profiles').select('last_seen_at, display_name, streak, streak_date').eq('id', s.user_id).maybeSingle()
     const seen = p?.last_seen_at ? new Date(p.last_seen_at).getTime() : new Date(s.created_at).getTime()
     const days = Math.floor((now - seen) / DAY)
     const name = String((p as any)?.display_name || '').trim().split(/\s+/)[0] || ''
-    const m = messageFor(days, name, Math.floor(now / DAY))
+    // Streak at risk: opened yesterday (UTC) but not yet today → remind them, takes priority
+    const todayStr = new Date(now).toISOString().slice(0, 10)
+    const yesterdayStr = new Date(now - DAY).toISOString().slice(0, 10)
+    const sd = (p as any)?.streak_date ? String((p as any).streak_date) : ''
+    const sn = Number((p as any)?.streak) || 0
+    const atRisk = sn >= 2 && sd === yesterdayStr && sd !== todayStr
+    const m = atRisk ? streakMessage(sn, name, Math.floor(now / DAY)) : messageFor(days, name, Math.floor(now / DAY))
     if (!m) { skipped++; continue }
     // don't repeat the same escalation step twice in a row
     if (s.last_kind === m.kind && days < 30) { skipped++; continue }

@@ -551,7 +551,9 @@
     try {
       const sb = window.MNSupabaseAuth?._sb;
       if (!sb || !window.MNAuth?.getUser?.()?.email) return;
-      await sb.rpc('touch_last_seen');
+      const st = _jget('mn_streak', {});
+      const okDate = /^\d{4}-\d{2}-\d{2}$/.test(st.lastOpenDate || '');
+      await sb.rpc('touch_presence', { p_streak: Number(st.streak) || 0, p_streak_date: okDate ? st.lastOpenDate : null });
     } catch {}
   }
 
