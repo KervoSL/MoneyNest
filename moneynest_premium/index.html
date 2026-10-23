@@ -39,21 +39,21 @@
 <link rel="apple-touch-icon" sizes="512x512" href="./assets/icon-512.png">
 <!-- PWA Manifest -->
 <link rel="manifest" href="./manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Fuentes y librerías servidas desde nuestro propio dominio (sin Google Fonts / jsDelivr / cdnjs). Ver vendor/README.md -->
+<link rel="preload" href="vendor/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/supabase.min.js"></script>
 <script>
   // ── Cloudflare Turnstile ──────────────────────────────────────────
   // Reemplaza con tu Site Key real de https://dash.cloudflare.com/?to=/:account/turnstile
   // Déjalo vacío ('') para desactivar Turnstile en desarrollo local.
   window._MN_TURNSTILE_SITE_KEY = '';
 </script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+<!-- El script de Turnstile solo se descarga si _MN_TURNSTILE_SITE_KEY está definida (ver components/auth-ui.js) -->
 <script src="https://js.stripe.com/v3/"></script>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/billing.css">
