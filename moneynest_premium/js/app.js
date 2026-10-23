@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.23.4'
+const VERSION = '1.23.8'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -13324,7 +13324,10 @@ function _obLeftHTML(step) {
   if (step === 4) {
     const planInfo = {
       trial: { icon: '🕐', color: '#F59E0B', label: 'Prueba gratuita', desc: '100 movimientos gratis' },
-      local: { icon: '💾', color: '#10B981', label: 'Local', desc: '9,99 €/año' },
+      local_monthly: { icon: '💾', color: '#10B981', label: 'Local', desc: '1 €/mes' },
+      local_yearly:  { icon: '💾', color: '#10B981', label: 'Local', desc: '9,99 €/año' },
+      pro_monthly:   { icon: '☁️', color: '#EC4899', label: 'Pro', desc: '2 €/mes' },
+      pro_yearly:    { icon: '☁️', color: '#EC4899', label: 'Pro', desc: '19,99 €/año' },
     }
     const p = planInfo[obData.plan] || planInfo.trial
     return `
@@ -13509,78 +13512,67 @@ function _obRightHTML(step) {
       </button>
     </div>`
 
-  // ── STEP 4: Plan selector ─────────────────────────────────────
-  if (step === 4) return `
+  // ── STEP 4: Plan selector (same cards as Plan y facturación) ───
+  if (step === 4) {
+    const fmt = n => n.toFixed(2).replace('.', ',').replace(',00', '')
+    const sel = obData.plan
+    const card = (key, o) => {
+      const saving = fmt(o.monthly * 12 - o.yearly)
+      const equiv = (o.yearly / 12).toFixed(2).replace('.', ',')
+      const mOn = sel === key + '_monthly', yOn = sel === key + '_yearly'
+      return `
+      <div class="pf-card pf-card--${key}" style="--pf:${o.color}">
+        <div class="pf-card__top">
+          <div>
+            <div class="pf-card__name">${o.icon} MoneyNest ${o.label}</div>
+            <div class="pf-card__tag">${o.tag}</div>
+          </div>
+          ${o.badge ? `<span class="pf-card__badge">${o.badge}</span>` : ''}
+        </div>
+        <div class="pf-prices">
+          <button type="button" class="pf-price${mOn ? ' pf-price--on' : ''}" aria-pressed="${mOn}" onclick="obSelectPlan('${key}_monthly')">
+            <span class="pf-price__lbl">Mensual</span>
+            <span class="pf-price__num">${fmt(o.monthly)}<small> €</small></span>
+            <span class="pf-price__per">al mes</span>
+          </button>
+          <button type="button" class="pf-price pf-price--best${yOn ? ' pf-price--on' : ''}" aria-pressed="${yOn}" onclick="obSelectPlan('${key}_yearly')">
+            <span class="pf-price__save">Ahorras ${saving} €</span>
+            <span class="pf-price__lbl">Anual</span>
+            <span class="pf-price__num">${fmt(o.yearly)}<small> €</small></span>
+            <span class="pf-price__per">al año · ${equiv} €/mes</span>
+          </button>
+        </div>
+        <ul class="pf-feats">${o.feats.map(f => `<li class="${f[0] ? 'ok' : 'no'}">${f[1]}</li>`).join('')}</ul>
+      </div>`
+    }
+    const cardLocal = card('local', {
+      color: '#00C896', icon: '💾', label: 'Local', tag: 'Tus finanzas. En tu dispositivo.', monthly: 1, yearly: 9.99, badge: '',
+      feats: [[1,'Todas las herramientas financieras'],[1,'Importación bancaria'],[1,'Datos 100% locales y privados'],[0,'Cloud Sync']],
+    })
+    const cardPro = card('pro', {
+      color: '#EC4899', icon: '☁️', label: 'Pro', tag: 'Tus finanzas. En todas partes.', monthly: 2, yearly: 19.99, badge: '⭐ Más elegido',
+      feats: [[1,'Todo lo de Local'],[1,'Cloud Sync automático'],[1,'Sincronización entre dispositivos'],[1,'Backup en la nube']],
+    })
+    const trialOn = sel === 'trial'
+    return `
     <div class="ob-step-pill"><div class="ob-step-pill-dot"></div>${t('ob_paso','Paso')} 4 ${t('ob_de','de')} ${OB_TOTAL}</div>
     <div class="ob-headline">${t('ob_plan_h1','Elige tu')}<br><span class="ob-headline-accent">${t('ob_plan_h2','plan')}</span></div>
-    <p class="ob-lead">Sin permanencia. Cambia cuando quieras.</p>
-    <div class="ob-plan-cards" id="obPlanCards">
-
-      <div class="ob-plan-card ob-plan-card--trial ${obData.plan === 'trial' ? 'selected' : ''}" onclick="obSelectPlan('trial')">
-        <div class="ob-pc-top">
-          <span class="ob-pc-emoji">🕐</span>
-          <span class="ob-pc-tag ob-pc-tag--free">Gratis</span>
-        </div>
-        <div class="ob-pc-name">Prueba gratuita</div>
-        <div class="ob-pc-price-main">0<span class="ob-pc-cur">€</span></div>
-        <div class="ob-pc-period">100 movimientos</div>
-        <div class="ob-pc-divider"></div>
-        <ul class="ob-pc-feats">
-          <li class="ok">100 movimientos incluidos</li>
-          <li class="ok">Todos los módulos</li>
-          <li class="no">Sin sincronización cloud</li>
-        </ul>
-        <div class="ob-pc-check ${obData.plan === 'trial' ? 'active' : ''}">
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-
-      <div class="ob-plan-card ob-plan-card--local ${obData.plan === 'local' ? 'selected' : ''}" onclick="obSelectPlan('local')">
-        <div class="ob-pc-top">
-          <span class="ob-pc-emoji">💾</span>
-          <span class="ob-pc-tag ob-pc-tag--local">Anual</span>
-        </div>
-        <div class="ob-pc-name">MoneyNest Local</div>
-        <div class="ob-pc-price-main">10<span class="ob-pc-cur">€</span></div>
-        <div class="ob-pc-period">al año</div>
-        <div class="ob-pc-divider"></div>
-        <ul class="ob-pc-feats">
-          <li class="ok">Acceso ilimitado</li>
-          <li class="no">Sin sincronización cloud</li>
-        </ul>
-        <div class="ob-pc-check ${obData.plan === 'local' ? 'active' : ''}">
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-
-      <div class="ob-plan-card ob-plan-card--pro ${obData.plan === 'pro' ? 'selected' : ''}" onclick="obSelectPlan('pro')">
-        <div class="ob-pc-popular">Más popular</div>
-        <div class="ob-pc-top">
-          <span class="ob-pc-emoji">☁️</span>
-          <span class="ob-pc-tag ob-pc-tag--pro">Anual</span>
-        </div>
-        <div class="ob-pc-name">MoneyNest Pro</div>
-        <div class="ob-pc-price-main">20<span class="ob-pc-cur">€</span></div>
-        <div class="ob-pc-period">al año</div>
-        <div class="ob-pc-divider"></div>
-        <ul class="ob-pc-feats">
-          <li class="ok">Todo lo de Local</li>
-          <li class="ok">Sincronización cloud</li>
-          <li class="ok">Backup y restauración</li>
-        </ul>
-        <div class="ob-pc-check ${obData.plan === 'pro' ? 'active' : ''}">
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      </div>
-
+    <p class="ob-lead">Sin permanencia. Elige pago mensual o anual y ahorra con el anual.</p>
+    <div class="ob-pf-wrap" id="obPlanCards">
+      <button type="button" class="ob-pf-trial${trialOn ? ' on' : ''}" aria-pressed="${trialOn}" onclick="obSelectPlan('trial')">
+        <span class="ob-pf-trial__ico">🕐</span>
+        <span class="ob-pf-trial__txt"><strong>Prueba gratuita</strong><small>100 movimientos · todos los módulos · sin tarjeta</small></span>
+        <span class="ob-pf-trial__tag">0 €</span>
+      </button>
+      <div class="pf-grid">${cardLocal}${cardPro}</div>
     </div>
     <div class="ob-actions-row" style="margin-top:20px">
       ${backBtn}
       <button class="ob-next-btn" onclick="obNext()">
-        Continuar <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:inline;vertical-align:middle"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        ${sel === 'trial' ? 'Continuar' : 'Continuar al pago'} <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:inline;vertical-align:middle"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>`
+  }
 
   // ── STEP 5: Start mode ───────────────────────────────────────
   if (step === 5) {
@@ -13640,18 +13632,18 @@ function _obRightHTML(step) {
 
 function obSelectPlan(plan) {
   obData.plan = plan
-  document.querySelectorAll('#obPlanCards .ob-plan-card').forEach(el => {
-    el.classList.remove('selected')
-    const chk = el.querySelector('.ob-pc-check')
-    if (chk) chk.classList.remove('active')
-  })
-  const map = { trial: 0, local: 1, pro: 2 }
-  const els = document.querySelectorAll('#obPlanCards .ob-plan-card')
-  if (els[map[plan]]) {
-    els[map[plan]].classList.add('selected')
-    const chk = els[map[plan]].querySelector('.ob-pc-check')
-    if (chk) chk.classList.add('active')
+  const root = document.getElementById('obPlanCards')
+  if (root) {
+    root.querySelectorAll('.pf-price').forEach(el => {
+      const on = (el.getAttribute('onclick') || '').includes("'" + plan + "'")
+      el.classList.toggle('pf-price--on', on)
+      el.setAttribute('aria-pressed', String(on))
+    })
+    const tr = root.querySelector('.ob-pf-trial')
+    if (tr) { tr.classList.toggle('on', plan === 'trial'); tr.setAttribute('aria-pressed', String(plan === 'trial')) }
   }
+  const nb = document.querySelector('#obContentArea .ob-next-btn')
+  if (nb) nb.firstChild.textContent = (plan === 'trial' ? 'Continuar' : 'Continuar al pago') + ' '
   const leftPanel = document.getElementById('obLeftPanel')
   if (leftPanel) leftPanel.innerHTML = _obLeftHTML(4)
 }
@@ -13969,8 +13961,9 @@ async function obNext() {
   // instead of just advancing. Trial (or no selection) continues
   // normally. If the user cancels/closes the payment modal, onboarding
   // still continues — "sin permanencia, cambia cuando quieras".
-  if (obStep === 4 && (obData.plan === 'local' || obData.plan === 'pro')) {
-    const priceId = obData.plan === 'pro' ? window.MNStripeConfig?.prices?.pro : window.MNStripeConfig?.prices?.local
+  const _obPm = /^(local|pro)_(monthly|yearly)$/.exec(obData.plan || '')
+  if (obStep === 4 && _obPm) {
+    const priceId = window.MNStripeConfig?.prices?.[_obPm[1]]?.[_obPm[2]]
     if (priceId && window.MNPayment) {
       const btn = document.querySelector('#obContentArea .ob-next-btn')
 

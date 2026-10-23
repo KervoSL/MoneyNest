@@ -1168,6 +1168,18 @@
       </div>`}
       <input type="file" id="mnbiFileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none">
 
+      ${hasFile ? '' : `
+      <details class="mnbi-help" open>
+        <summary>${_t('bi_help_title', '¿No sabes cómo hacerlo? Te lo explicamos paso a paso')}</summary>
+        <ol class="mnbi-help-steps">
+          <li><strong>${_t('bi_help_1_t', 'Entra en tu banco')}</strong><span>${_t('bi_help_1_d', 'Abre la web o la app de tu banco (desde el ordenador suele ser más fácil) e inicia sesión como siempre.')}</span></li>
+          <li><strong>${_t('bi_help_2_t', 'Busca tus movimientos')}</strong><span>${_t('bi_help_2_d', 'Ve a tu cuenta y abre "Movimientos" o "Extracto". Elige las fechas que quieras traer (por ejemplo, los últimos 3 meses).')}</span></li>
+          <li><strong>${_t('bi_help_3_t', 'Descarga el archivo')}</strong><span>${_t('bi_help_3_d', 'Busca un botón como "Descargar", "Exportar" o "Excel/CSV" y elige formato CSV o Excel (XLSX). No sirve el PDF. El archivo se guardará en tu dispositivo.')}</span></li>
+          <li><strong>${_t('bi_help_4_t', 'Súbelo aquí')}</strong><span>${_t('bi_help_4_d', 'Pulsa en el recuadro de arriba y selecciona ese archivo. MoneyNest detectará solo las columnas y las categorías; tú revisas todo antes de importar.')}</span></li>
+        </ol>
+        <div class="mnbi-help-note">🔒 ${_t('bi_help_note', 'El archivo se procesa en tu dispositivo. No se envía a ningún servidor ni necesitas dar tus claves bancarias.')}</div>
+      </details>`}
+
       ${hasFile ? `
       <div class="mnbi-file-card">
         <div class="mnbi-file-icon">📄</div>

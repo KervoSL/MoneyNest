@@ -2366,3 +2366,21 @@
   .pf-card{padding:18px}
   .pf-price__num{font-size:2.2rem}
 }
+
+/* ── Onboarding plan step (reuses .pf-card from Plan y facturación) ── */
+.pf-price--on{border-color:var(--pf);background:color-mix(in srgb,var(--pf) 20%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pf) 22%,transparent)}
+.pf-price--on::after{content:"✓";position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--pf);color:#fff;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+.ob-pf-wrap{display:flex;flex-direction:column;gap:14px}
+.ob-pf-wrap .pf-grid{gap:14px;grid-template-columns:1fr}
+.ob-pf-wrap .pf-card{padding:18px;gap:14px}
+.ob-pf-wrap .pf-price__num{font-size:2rem}
+.ob-pf-trial{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 16px;border-radius:16px;cursor:pointer;font:inherit;color:inherit;
+  background:var(--card,rgba(255,255,255,.03));border:1.5px solid rgba(245,158,11,.25);transition:border-color .2s,background .2s}
+.ob-pf-trial:hover{border-color:#F59E0B}
+.ob-pf-trial.on{border-color:#F59E0B;background:rgba(245,158,11,.1);box-shadow:0 0 0 3px rgba(245,158,11,.15)}
+.ob-pf-trial__ico{font-size:1.4rem}
+.ob-pf-trial__txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ob-pf-trial__txt strong{font-size:.95rem;color:var(--text,#fff)}
+.ob-pf-trial__txt small{font-size:.74rem;color:var(--text3,rgba(255,255,255,.55))}
+.ob-pf-trial__tag{font-size:.8rem;font-weight:800;color:#F59E0B;padding:4px 10px;border-radius:99px;background:rgba(245,158,11,.14)}
+@media (max-width:640px){.ob-pf-wrap .pf-price{padding-top:18px}}

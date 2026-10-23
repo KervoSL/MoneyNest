@@ -1,13 +1,11 @@
 {
-  "version": "1.23.7",
+  "version": "1.23.8",
   "changelog": {
-    "title": "Novedades de la versión 1.23.7",
+    "title": "Novedades de la versión 1.23.8",
     "items": [
-      "Pantalla de bienvenida en el móvil: título arriba y botón siempre en el mismo sitio abajo; el contenido del medio se adapta y lo que no cabe se quita en vez de solaparse",
-      "Aviso de racha: si llevas días seguidos entrando y hoy aún no has abierto la app, te recordamos por la tarde que no pierdas tu racha",
-      "La pantalla de bienvenida se actualiza sola a la última versión en el móvil",
-      "Notificaciones push arregladas: ahora se registra tu última visita y el botón de prueba envía un push real a tus dispositivos",
-      "Saldo de la barra superior en formato compacto en pantallas pequeñas (ya no se corta)"
+      "Onboarding: elige tu plan con las mismas tarjetas que Plan y facturación, ahora con pago mensual (1 € y 2 €) y anual (9,99 € y 19,99 €)",
+      "Importador bancario: guía paso a paso para quien no sabe cómo descargar el extracto de su banco",
+      "Instalar en iPhone: nuevo paso para tocar la flecha «Ver más» del menú Compartir y se elimina el paso de confirmar"
     ]
   }
 }
