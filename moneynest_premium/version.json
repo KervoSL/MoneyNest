@@ -1,11 +1,10 @@
 {
-  "version": "1.23.9",
+  "version": "1.23.10",
   "changelog": {
-    "title": "Novedades de la versión 1.23.9",
+    "title": "Novedades de la versión 1.23.10",
     "items": [
-      "Privacidad: aviso para aceptar o rechazar la analítica de uso, modificable en Configuración",
-      "Restaurar acceso: ya no revela si un email tiene cuenta",
-      "El botón de copia de seguridad ya no envía datos a terceros: descarga el archivo en tu dispositivo"
+      "Eliminar cuenta: ahora cancela de verdad tus suscripciones, borra tu cliente de pagos y depura tus datos personales; si algo falla no se borra nada para que puedas reintentar",
+      "Correos: el email de bienvenida solo se envía a tu propia cuenta y los mensajes de sugerencias tienen límite anti-abuso"
     ]
   }
 }
