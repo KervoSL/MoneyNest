@@ -11,6 +11,12 @@
   const ENDPOINT = 'https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/track-event';
   const SESSION_KEY = 'mn_analytics_session_id';
 
+  // H-07: sin consentimiento previo no se genera ni se guarda ningún identificador
+  // y no se envía ningún evento (ver js/consent.js).
+  function _consented() {
+    try { return !!(window.MNConsent && window.MNConsent.has('analytics')); } catch (_) { return false; }
+  }
+
   function _getSessionId() {
     try {
       let id = localStorage.getItem(SESSION_KEY);
@@ -24,6 +30,7 @@
 
   function track(eventName, metadata) {
     try {
+      if (!_consented()) return;
       const payload = {
         event: eventName,
         sessionId: _getSessionId(),

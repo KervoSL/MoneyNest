@@ -1,5 +1,5 @@
 // ─── CONSTANTS ────────────────────────────────────────────────
-const VERSION = '1.23.8'
+const VERSION = '1.23.9'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
@@ -350,40 +350,22 @@ function _openRestoreAccessModal(user) {
     _setMsg('Buscando tu licencia…', 'pending')
 
     try {
-      const res = await fetch('https://jwddciqqhmfkbqhdrfre.supabase.co/functions/v1/check-license', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      // H-13: respuesta neutra. Ya no se consulta check-license ni se confirma si un
+      // email tiene cuenta o licencia. La propiedad del email se prueba con el enlace
+      // mágico; restore-access reconcilia con Stripe en el servidor, solo después.
+      if (!window.MNSupabaseAuth) throw new Error('auth_unavailable')
+      const { error: otpError } = await window.MNSupabaseAuth._sb.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname },
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'lookup_failed')
-
-      if (data.found) {
-        // Security: check-license only confirms *something* exists for
-        // this email — it never grants access itself (anyone could type
-        // any email otherwise). Before restoring anything, we require
-        // real proof of ownership via a Supabase magic link; the actual
-        // Stripe↔Supabase reconciliation happens server-side in
-        // restore-access, only once that proof exists.
-        if (!window.MNSupabaseAuth) throw new Error('auth_unavailable')
-        const { error: otpError } = await window.MNSupabaseAuth._sb.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: location.origin + location.pathname },
-        })
-        if (otpError) throw otpError
-        _setMsg('✅ Licencia encontrada. Te hemos enviado un enlace a tu email — ábrelo en este dispositivo para restaurar tu acceso.', 'success')
-        submitBtn.style.display = 'none'
-        cancelBtn.textContent = 'Cerrar'
-        submitting = false
-        emailInput.disabled = true
-      } else {
-        _setMsg('No hemos encontrado una licencia asociada a este email.', 'error')
-        submitting = false
-        emailInput.disabled = false
-        cancelBtn.disabled = false
-        submitBtn.textContent = originalBtnLabel
-        _updateSubmitState()
-      }
+      // Se ocultan a propósito los errores de "usuario inexistente"; solo se muestran
+      // fallos de red, límite de envíos o del servidor.
+      if (otpError && (!otpError.status || otpError.status === 429 || otpError.status >= 500)) throw otpError
+      _setMsg('Si existe una cuenta con licencia asociada a este email, te hemos enviado un enlace. Ábrelo en este dispositivo para restaurar tu acceso.', 'success')
+      submitBtn.style.display = 'none'
+      cancelBtn.textContent = 'Cerrar'
+      submitting = false
+      emailInput.disabled = true
     } catch (err) {
       console.error('[restoreAccess] Error verificando la licencia:', err)
       _setMsg('No se pudo comprobar tu licencia. Comprueba tu conexión e inténtalo de nuevo.', 'error')
@@ -612,7 +594,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Importar / Exportar datos',
     cfg_exportar_pdf: '📊 Exportar informe completo (PDF / Excel)',
     cfg_backup_json: '📤 Copia de seguridad (JSON)',
-    cfg_drive: '☁️ Guardar en Google Drive',
+    cfg_drive: '💾 Descargar copia local (archivo)',
     cfg_importar: '↓ Importar copia de seguridad',
     cfg_borrar_todo: '🗑 Borrar todos los datos',
     cfg_demo_titulo: 'Modo demo',
@@ -1136,7 +1118,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Import / Export data',
     cfg_exportar_pdf: '📊 Export full report (PDF / Excel)',
     cfg_backup_json: '📤 Backup (JSON)',
-    cfg_drive: '☁️ Save to Google Drive',
+    cfg_drive: '💾 Download a local backup (file)',
     cfg_importar: '↓ Import backup',
     cfg_borrar_todo: '🗑 Delete all data',
     cfg_demo_titulo: 'Demo mode',
@@ -1554,7 +1536,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Importa / Esporta dati',
     cfg_exportar_pdf: '📊 Esporta report completo (PDF / Excel)',
     cfg_backup_json: '📤 Backup (JSON)',
-    cfg_drive: '☁️ Salva su Google Drive',
+    cfg_drive: '💾 Scarica una copia locale (file)',
     cfg_importar: '↓ Importa backup',
     cfg_borrar_todo: '🗑 Elimina tutti i dati',
     cfg_demo_titulo: 'Modalità demo',
@@ -1972,7 +1954,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Importer / Exporter des données',
     cfg_exportar_pdf: '📊 Exporter rapport complet (PDF / Excel)',
     cfg_backup_json: '📤 Sauvegarde (JSON)',
-    cfg_drive: '☁️ Sauvegarder sur Google Drive',
+    cfg_drive: '💾 Télécharger une copie locale (fichier)',
     cfg_importar: '↓ Importer une sauvegarde',
     cfg_borrar_todo: '🗑 Supprimer toutes les données',
     cfg_demo_titulo: 'Mode démo',
@@ -2390,7 +2372,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Importieren / Exportieren',
     cfg_exportar_pdf: '📊 Vollständigen Bericht exportieren (PDF / Excel)',
     cfg_backup_json: '📤 Sicherungskopie (JSON)',
-    cfg_drive: '☁️ Auf Google Drive speichern',
+    cfg_drive: '💾 Lokale Sicherung herunterladen (Datei)',
     cfg_importar: '↓ Sicherung importieren',
     cfg_borrar_todo: '🗑 Alle Daten löschen',
     cfg_demo_titulo: 'Demo-Modus',
@@ -2808,7 +2790,7 @@ const TRANSLATIONS = {
     cfg_datos: 'Importar / Exportar dados',
     cfg_exportar_pdf: '📊 Exportar relatório completo (PDF / Excel)',
     cfg_backup_json: '📤 Cópia de segurança (JSON)',
-    cfg_drive: '☁️ Guardar no Google Drive',
+    cfg_drive: '💾 Transferir cópia local (ficheiro)',
     cfg_importar: '↓ Importar cópia de segurança',
     cfg_borrar_todo: '🗑 Apagar todos os dados',
     cfg_demo_titulo: 'Modo demo',
@@ -7908,6 +7890,9 @@ function renderConfiguracion() {
           ${t('cfg_drive')}
           <span id="driveBackupStatus" style="font-size:.7rem;margin-left:6px;opacity:.8"></span>
         </button>
+        <button class="btn btn-secondary btn-sm" onclick="window.MNConsent && MNConsent.open()">
+          🔒 ${(localStorage.getItem('mn7_lang') || 'es') === 'es' ? 'Preferencias de privacidad' : 'Privacy preferences'}
+        </button>
         <button class="btn btn-secondary btn-sm" onclick="openDmPanel('dm-import-panel')" style="cursor:pointer;justify-content:flex-start">
           ${t('cfg_importar')}
         </button>
@@ -11130,43 +11115,18 @@ function nuevoIngresoCliente(clienteId) {
 }
 
 // ─── EXPORT ────────────────────────────────────────────────────
-// ─── GOOGLE DRIVE BACKUP ──────────────────────────────────────
-// Uses the Anthropic MCP proxy already connected to the user's Drive.
-// Falls back to a plain download if Drive is not available.
+// ─── COPIA DE SEGURIDAD (descarga local) ──────────────────────
+// H-15: antes esta función llamaba a api.anthropic.com con los primeros 500
+// caracteres de los datos del usuario y nunca subía nada a Drive. Ahora hace
+// una descarga local real y no envía datos a ningún tercero.
+// El nombre `exportarADrive` se conserva para no romper el botón existente.
 async function exportarADrive() {
   const btn = document.getElementById('driveBackupBtn')
   const status = document.getElementById('driveBackupStatus')
-  if (btn) { btn.disabled = true }
-  if (status) status.textContent = t('drive_guardando')
-
+  if (btn) btn.disabled = true
   try {
-    const data = JSON.stringify(S, null, 2)
-    const fecha = new Date().toISOString().slice(0,10)
-    const filename = `MoneyNest_backup_${fecha}.json`
-
-    // Try Anthropic Google Drive MCP endpoint
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 256,
-        messages: [{ role:'user', content: `Sube este JSON a Google Drive con el nombre "${filename}". Contenido: ${data.slice(0,500)}...` }],
-        mcp_servers: [{ type:'url', url:'https://drivemcp.googleapis.com/mcp/v1', name:'gdrive' }]
-      })
-    })
-
-    if (resp.ok) {
-      if (status) status.textContent = t('drive_guardado')
-      toast(t('toast_drive_ok'))
-    } else {
-      throw new Error('Drive no disponible')
-    }
-  } catch(e) {
-    // Fallback: plain file download
     exportarJSON()
     if (status) status.textContent = t('drive_local')
-    toast(t('toast_drive_error'),'error')
   } finally {
     if (btn) btn.disabled = false
     setTimeout(() => { if (status) status.textContent = '' }, 4000)
@@ -15708,7 +15668,7 @@ function renderFAQ() {
 
     <div style="margin-top:32px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center">
       <div style="font-size:.82rem;color:var(--text2)">${t('faq_contacto_intro','¿No encuentras lo que buscas?')}</div>
-      <a href="mailto:invest.grid.main@gmail.com" style="font-size:.88rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">invest.grid.main@gmail.com</a>
+      <a href="mailto:${MN_CONFIG.SUPPORT_EMAIL}" style="font-size:.88rem;font-weight:700;color:var(--accent);text-decoration:none;user-select:text">${MN_CONFIG.SUPPORT_EMAIL}</a>
     </div>
   </div>`
 }
@@ -15744,7 +15704,7 @@ function borrarSugerencia(id) {
 }
 
 function copiarEmailSugerencias() {
-  const email = 'invest.grid.main@gmail.com'
+  const email = MN_CONFIG.SUPPORT_EMAIL
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(email).then(()=>toast(t('toast_email_copiado','Email copiado al portapapeles 📋'))).catch(()=>{
       _copiarEmailFallback(email)
@@ -15848,7 +15808,7 @@ function renderSugerencias() {
       </div>
       <div style="margin-top:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:.72rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Contacto:</span>
-        <span style="font-size:.82rem;font-weight:700;color:var(--accent);user-select:text;-webkit-user-select:text">invest.grid.main@gmail.com</span>
+        <span style="font-size:.82rem;font-weight:700;color:var(--accent);user-select:text;-webkit-user-select:text">${MN_CONFIG.SUPPORT_EMAIL}</span>
       </div>
     </div>
     <div class="card">
