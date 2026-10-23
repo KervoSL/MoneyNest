@@ -708,7 +708,19 @@ function _initTurnstile() {
   if (!container) return;
   // Only init if Turnstile SDK loaded and site key configured
   const siteKey = window._MN_TURNSTILE_SITE_KEY;
-  if (!siteKey || typeof window.turnstile === 'undefined') return;
+  if (!siteKey) return; // H-18: sin clave no se carga nada de Cloudflare
+  if (typeof window.turnstile === 'undefined') {
+    // Carga perezosa: el SDK solo se descarga cuando hay clave configurada.
+    if (!window._mnTurnstileLoading) {
+      window._mnTurnstileLoading = true;
+      const sc = document.createElement('script');
+      sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      sc.async = true;
+      sc.onload = () => { _initTurnstile(); };
+      document.head.appendChild(sc);
+    }
+    return;
+  }
   try {
     _turnstileToken = null;
     if (_turnstileWidgetId !== null) {

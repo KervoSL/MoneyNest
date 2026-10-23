@@ -3,7 +3,7 @@
 // browser only detects a new app version when this file's bytes change,
 // and files are served cache-first, so a deploy that forgets this bump
 // never reaches users who already have the app installed.
-const CACHE_NAME = 'moneynest-v59'
+const CACHE_NAME = 'moneynest-v60'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,15 @@ const LOCAL_ASSETS = [
   './css/styles.css',
   './css/billing.css',
   './css/wizard-shared.css',
+  './css/fonts.css',
+  './vendor/chart.umd.min.js',
+  './vendor/jspdf.umd.min.js',
+  './vendor/jspdf.plugin.autotable.min.js',
+  './vendor/xlsx.full.min.js',
+  './vendor/supabase.min.js',
+  './vendor/fonts/inter-latin-wght-normal.woff2',
+  './vendor/fonts/inter-latin-ext-wght-normal.woff2',
+  './vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2',
 
   './css/data-manager.css',
   './css/premium-ux.css',
@@ -56,13 +65,8 @@ const LOCAL_ASSETS = [
   './js/premium-ux.js',
   './js/install-prompt.js',
 ]
-const REMOTE_ASSETS = [
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-]
+// Ya no hay recursos remotos precacheados (fuentes y librerías son locales).
+const REMOTE_ASSETS = []
 
 self.addEventListener('install', event => {
   event.waitUntil(

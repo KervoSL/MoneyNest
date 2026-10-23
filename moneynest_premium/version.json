@@ -1,10 +1,11 @@
 {
-  "version": "1.23.10",
+  "version": "1.23.11",
   "changelog": {
-    "title": "Novedades de la versión 1.23.10",
+    "title": "Novedades de la versión 1.23.11",
     "items": [
-      "Eliminar cuenta: ahora cancela de verdad tus suscripciones, borra tu cliente de pagos y depura tus datos personales; si algo falla no se borra nada para que puedas reintentar",
-      "Correos: el email de bienvenida solo se envía a tu propia cuenta y los mensajes de sugerencias tienen límite anti-abuso"
+      "Privacidad y rapidez: fuentes y librerías se sirven desde MoneyNest (ya no se contactan Google ni CDN externos)",
+      "Seguridad: política de contenido más estricta",
+      "Email de bienvenida con los datos correctos de la prueba y los planes"
     ]
   }
 }

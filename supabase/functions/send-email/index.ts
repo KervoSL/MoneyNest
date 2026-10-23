@@ -105,7 +105,7 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
             <h1 style="margin:0 0 16px 0;font-size:28px;font-weight:900;color:#F1F5F9;letter-spacing:-1px;line-height:1.2">${greeting} &#128075;</h1>
             <p style="margin:0 0 28px 0;font-size:15px;color:#94A3B8;line-height:1.7">
               Tu cuenta MoneyNest esta lista. Tienes
-              <strong style="color:#F1F5F9;background-color:rgba(0,212,170,0.12);padding:1px 7px;border-radius:5px">24 horas de prueba gratuita</strong>
+              <strong style="color:#F1F5F9;background-color:rgba(0,212,170,0.12);padding:1px 7px;border-radius:5px">una prueba gratuita de 100 movimientos</strong>
               para explorar todas las funciones.
             </p>
 
@@ -161,8 +161,8 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
               <tr>
                 <td style="font-size:20px;vertical-align:middle;padding-right:12px">&#9203;</td>
                 <td>
-                  <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#A5B4FC">Tu prueba gratuita &middot; 24 horas</p>
-                  <p style="margin:0;font-size:11px;color:#64748B">Despues puedes continuar con el Plan Local por solo 5&euro; unico</p>
+                  <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#A5B4FC">Tu prueba gratuita &middot; 100 movimientos</p>
+                  <p style="margin:0;font-size:11px;color:#64748B">Despues puedes continuar con el Plan Local desde 1&euro; al mes</p>
                 </td>
               </tr>
               </table>
