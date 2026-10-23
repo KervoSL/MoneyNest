@@ -395,6 +395,7 @@
     if (document.getElementById('mnDesktopModalOverlay')) return;
 
     const isIosDevice = isIOS();
+    const moreIcon = `<span style="display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid #00D4AA;margin:0 2px"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1.5 1.5L6 6l4.5-4.5" stroke="#00D4AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
     const shareIcon = `<svg width="12" height="15" viewBox="0 0 13 16" fill="none" style="display:inline;vertical-align:middle;margin:0 2px;position:relative;top:-1px">
       <path d="M6.5 1v9M3.5 3.5L6.5 1l3 2.5" stroke="#00D4AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="1" y="6" width="11" height="9" rx="2" stroke="rgba(255,255,255,0.4)" stroke-width="1.3" fill="none"/>
@@ -440,11 +441,11 @@
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5">
                 <span style="width:20px;height:20px;border-radius:50%;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);color:#00D4AA;font-size:.65rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
-                <span>${_t('install_ios_step2','Selecciona')} <strong style="color:#fff">${_t('install_ios_add','Añadir a Inicio')}</strong> ${_t('install_ios_step2b','en el menú que aparece')}</span>
+                <span>${_t('install_ios_step_more','Dentro del menú, toca la flecha')} ${moreIcon} <strong style="color:#fff">${_t('install_ios_more','Ver más')}</strong> ${_t('install_ios_step_moreb','(abajo a la derecha, junto a las acciones) para desplegar todas las opciones')}</span>
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5">
                 <span style="width:20px;height:20px;border-radius:50%;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);color:#00D4AA;font-size:.65rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
-                <span>${_t('install_ios_step3','Confirma tocando')} <strong style="color:#fff">${_t('install_ios_confirm','Añadir')}</strong> ${_t('install_ios_step3b','en la esquina superior derecha')}</span>
+                <span>${_t('install_ios_step2','Selecciona')} <strong style="color:#fff">${_t('install_ios_add','Añadir a pantalla de inicio')}</strong></span>
               </div>
             </div>
           </div>
@@ -505,6 +506,7 @@
     if (document.getElementById('mnIOSBanner')) return;
     _injectStyles();
 
+    const moreIcon = `<span style="display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid #00D4AA;margin:0 2px"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1.5 1.5L6 6l4.5-4.5" stroke="#00D4AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
     const shareIcon = `<svg width="13" height="16" viewBox="0 0 13 16" fill="none" style="display:inline;vertical-align:middle;margin:0 1px;position:relative;top:-1px">
       <path d="M6.5 1v9M3.5 3.5L6.5 1l3 2.5" stroke="#00D4AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="1" y="6" width="11" height="9" rx="2" stroke="rgba(255,255,255,0.4)" stroke-width="1.3" fill="none"/>
@@ -532,11 +534,11 @@
         </div>
         <div class="mn-ios-step">
           <div class="mn-ios-num">2</div>
-          <div class="mn-ios-step-text">${_t('install_ios_step2', 'Selecciona')} <strong>${_t('install_ios_add', 'Añadir a pantalla de inicio')}</strong></div>
+          <div class="mn-ios-step-text">${_t('install_ios_step_more', 'Dentro del menú, toca la flecha')} ${moreIcon} <strong>${_t('install_ios_more', 'Ver más')}</strong> ${_t('install_ios_step_moreb', '(abajo a la derecha, junto a las acciones) para desplegar todas las opciones')}</div>
         </div>
         <div class="mn-ios-step">
           <div class="mn-ios-num">3</div>
-          <div class="mn-ios-step-text">${_t('install_ios_step3', 'Toca')} <strong>${_t('install_ios_confirm', 'Añadir')}</strong> ${_t('install_ios_step3b', 'para confirmar')}</div>
+          <div class="mn-ios-step-text">${_t('install_ios_step2', 'Selecciona')} <strong>${_t('install_ios_add', 'Añadir a pantalla de inicio')}</strong></div>
         </div>
       </div>
     `;
