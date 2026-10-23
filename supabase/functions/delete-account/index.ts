@@ -11,6 +11,8 @@ const supabase = createClient(
 
 const ALLOWED_ORIGINS = new Set([
   'https://money-nest-nk2u.vercel.app',
+  'https://moneynest.es',
+  'https://www.moneynest.es',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
@@ -55,20 +57,69 @@ Deno.serve(async (req) => {
     .eq('id', userId)
     .maybeSingle();
 
+  // H-05: cancelar TODAS las suscripciones vivas antes de borrar nada, y no
+  // seguir adelante si una cancelación falla de verdad. Un cliente de Stripe
+  // existe solo en un modo (test o live): "resource_missing" en el otro modo es
+  // normal y no es un error; cualquier otro fallo aborta el borrado.
+  const LIVE_STATUSES = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete', 'paused'];
   const stripeErrors: string[] = [];
+  let cancelled = 0;
   if (profile?.stripe_customer_id) {
-    for (const stripe of [stripeTest, stripeLive]) {
+    const modes: [string, Stripe | null][] = [
+      ['test', Deno.env.get('STRIPE_SECRET_KEY_TEST') ? stripeTest : null],
+      ['live', Deno.env.get('STRIPE_SECRET_KEY') ? stripeLive : null],
+    ];
+    for (const [label, stripe] of modes) {
+      if (!stripe) continue;
       try {
-        const subs = await stripe.subscriptions.list({ customer: profile.stripe_customer_id, status: 'all', limit: 10 });
-        for (const sub of subs.data) {
-          if (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due') {
-            await stripe.subscriptions.cancel(sub.id);
-          }
+        const cust = await stripe.customers.retrieve(profile.stripe_customer_id);
+        if ((cust as Stripe.DeletedCustomer).deleted) continue;
+        const subs = await stripe.subscriptions
+          .list({ customer: profile.stripe_customer_id, status: 'all', limit: 100 })
+          .autoPagingToArray({ limit: 1000 });
+        for (const sub of subs) {
+          if (!LIVE_STATUSES.includes(sub.status)) continue;
+          await stripe.subscriptions.cancel(sub.id);
+          cancelled++;
         }
       } catch (err) {
-        stripeErrors.push(err instanceof Error ? err.message : 'unknown_stripe_error');
+        const code = (err as { code?: string })?.code;
+        if (code === 'resource_missing') continue; // el cliente no existe en este modo
+        stripeErrors.push(`${label}: ${err instanceof Error ? err.message : 'unknown_stripe_error'}`);
       }
     }
+    if (stripeErrors.length) {
+      // No se borra nada: el usuario puede reintentar o contactar con soporte.
+      return json({ error: 'stripe_cancellation_failed', cancelled, stripeErrors }, 502, cors);
+    }
+  }
+
+  // H-11: borrar el cliente de Stripe (ya sin suscripciones vivas) y depurar los
+  // datos personales que de otro modo sobrevivirían a la eliminación.
+  // El historial de cobros/facturas permanece en Stripe (obligación contable).
+  const deleteErrors: string[] = [];
+  if (profile?.stripe_customer_id) {
+    for (const [label, stripe] of [
+      ['test', Deno.env.get('STRIPE_SECRET_KEY_TEST') ? stripeTest : null],
+      ['live', Deno.env.get('STRIPE_SECRET_KEY') ? stripeLive : null],
+    ] as [string, Stripe | null][]) {
+      if (!stripe) continue;
+      try {
+        await stripe.customers.del(profile.stripe_customer_id);
+      } catch (err) {
+        if ((err as { code?: string })?.code === 'resource_missing') continue;
+        deleteErrors.push(`${label}: ${err instanceof Error ? err.message : 'unknown_stripe_error'}`);
+      }
+    }
+  }
+  const { error: scrubErr } = await supabase.rpc('scrub_user_data', {
+    p_user_id: userId,
+    p_stripe_customer_id: profile?.stripe_customer_id ?? null,
+  });
+  if (scrubErr) deleteErrors.push(`scrub: ${scrubErr.message}`);
+  if (deleteErrors.length) {
+    // Aún no se ha borrado el perfil: el usuario puede reintentar sin perder la cuenta.
+    return json({ error: 'cleanup_failed', cleanupErrors: deleteErrors }, 502, cors);
   }
 
   await supabase.from('subscriptions').delete().eq('user_id', userId);
@@ -76,8 +127,8 @@ Deno.serve(async (req) => {
 
   const { error: deleteUserErr } = await supabase.auth.admin.deleteUser(userId);
   if (deleteUserErr) {
-    return json({ error: 'user_deletion_failed', detail: deleteUserErr.message, stripeErrors }, 500, cors);
+    return json({ error: 'user_deletion_failed', detail: deleteUserErr.message }, 500, cors);
   }
 
-  return json({ ok: true, stripeErrors: stripeErrors.length ? stripeErrors : undefined }, 200, cors);
+  return json({ ok: true, cancelledSubscriptions: cancelled }, 200, cors);
 });
