@@ -48,7 +48,8 @@
       const payload = {
         message: String(message).slice(0, 2000),
         stack: stack ? String(stack).slice(0, 8000) : null,
-        url: location.href,
+        // H-16: solo origen + ruta; la query/hash puede contener tokens o códigos de autenticación.
+        url: location.origin + location.pathname,
         appVersion: (typeof window.VERSION !== 'undefined') ? window.VERSION : null,
         fingerprint: fp,
         ...extra,
@@ -57,9 +58,13 @@
       const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY };
       // Include the user's own session if available, so errors can be
       // linked to a real account for easier follow-up — never required.
+      // H-07: sin consentimiento de analítica el error se envía de forma anónima
+      // (sin token, por tanto sin vincularlo a la cuenta).
       try {
-        const token = window.MNSupabaseAuth?.getSession?.()?.access_token;
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (window.MNConsent && window.MNConsent.has('analytics')) {
+          const token = window.MNSupabaseAuth?.getSession?.()?.access_token;
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+        }
       } catch (_) {}
 
       // sendBeacon survives the page unloading right after a crash;

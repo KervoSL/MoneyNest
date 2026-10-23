@@ -1,11 +1,11 @@
 {
-  "version": "1.23.8",
+  "version": "1.23.9",
   "changelog": {
-    "title": "Novedades de la versión 1.23.8",
+    "title": "Novedades de la versión 1.23.9",
     "items": [
-      "Onboarding: elige tu plan con las mismas tarjetas que Plan y facturación, ahora con pago mensual (1 € y 2 €) y anual (9,99 € y 19,99 €)",
-      "Importador bancario: guía paso a paso para quien no sabe cómo descargar el extracto de su banco",
-      "Instalar en iPhone: nuevo paso para tocar la flecha «Ver más» del menú Compartir y se elimina el paso de confirmar"
+      "Privacidad: aviso para aceptar o rechazar la analítica de uso, modificable en Configuración",
+      "Restaurar acceso: ya no revela si un email tiene cuenta",
+      "El botón de copia de seguridad ya no envía datos a terceros: descarga el archivo en tu dispositivo"
     ]
   }
 }
