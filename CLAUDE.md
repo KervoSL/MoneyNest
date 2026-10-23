@@ -207,7 +207,6 @@ MoneyNest/
 ├── supabase/
 │   ├── migrations/              # DB migrations
 │   └── functions/               # Edge functions (Stripe webhook etc.)
-├── package.json
 └── vercel.json
 ```
 
