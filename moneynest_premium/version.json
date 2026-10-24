@@ -1,11 +1,11 @@
 {
-  "version": "1.23.11",
+  "version": "1.23.12",
   "changelog": {
-    "title": "Novedades de la versión 1.23.11",
+    "title": "Novedades de la versión 1.23.12",
     "items": [
-      "Privacidad y rapidez: fuentes y librerías se sirven desde MoneyNest (ya no se contactan Google ni CDN externos)",
-      "Seguridad: política de contenido más estricta",
-      "Email de bienvenida con los datos correctos de la prueba y los planes"
+      "Pagos más robustos: los pagos que fallan temporalmente se reintentan y activan tu plan",
+      "No se puede contratar dos veces el mismo plan",
+      "Restaurar acceso solo con email verificado; pagos y portal también desde moneynest.es"
     ]
   }
 }
