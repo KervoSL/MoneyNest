@@ -26,6 +26,8 @@ const PRICE_TO_PLAN: Record<string, string> = {
 
 const ALLOWED_ORIGINS = new Set([
   'https://money-nest-nk2u.vercel.app',
+  'https://moneynest.es',
+  'https://www.moneynest.es',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
@@ -96,6 +98,12 @@ Deno.serve(async (req) => {
   if (userErr || !userData?.user?.email) return json({ error: 'invalid_session' }, 401, cors);
   const userId = userData.user.id;
   const email = userData.user.email;
+
+  // H-09: restaurar derechos de pago solo si el email de la cuenta está
+  // VERIFICADO; si no, cualquiera podría registrar el email de un cliente.
+  if (!userData.user.email_confirmed_at) {
+    return json({ restored: false, error: 'email_not_verified', message: 'Verifica tu correo electrónico para restaurar tu acceso.' }, 403, cors);
+  }
 
   // Server-side rate limit — this endpoint makes real (costly) calls to
   // Stripe's customer/subscription search on every invocation, so it's

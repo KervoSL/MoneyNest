@@ -3,7 +3,7 @@
 // browser only detects a new app version when this file's bytes change,
 // and files are served cache-first, so a deploy that forgets this bump
 // never reaches users who already have the app installed.
-const CACHE_NAME = 'moneynest-v60'
+const CACHE_NAME = 'moneynest-v61'
 const LOCAL_ASSETS = [
   './',
   './index.html',
