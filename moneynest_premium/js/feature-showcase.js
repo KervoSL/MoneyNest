@@ -175,6 +175,20 @@
               <div class="showcase-left-bullet">Ingresos, gastos, inversiones y patrimonio</div>
               <div class="showcase-left-bullet">Privado, seguro y sin conexión obligatoria</div>
             </div>
+
+            <!-- Extra content: shown depending on screen size (CSS) -->
+            <div class="showcase-left-stats">
+              <div><b>100</b><span>movimientos gratis</span></div>
+              <div><b>100&nbsp;%</b><span>privado en tu dispositivo</span></div>
+              <div><b>2&nbsp;min</b><span>para empezar</span></div>
+            </div>
+            <div class="showcase-left-steps">
+              <div class="showcase-left-steps-title">Cómo funciona</div>
+              <div class="showcase-left-step"><i>1</i><span>Crea tus cuentas o importa tu banco</span></div>
+              <div class="showcase-left-step"><i>2</i><span>Anota o importa tus movimientos</span></div>
+              <div class="showcase-left-step"><i>3</i><span>Descubre en qué gastas y cumple tus objetivos</span></div>
+            </div>
+            <div class="showcase-left-foot">🔒 Sin tarjeta · Sin anuncios · Tus datos son tuyos</div>
           </div>
         </div>
 
@@ -236,27 +250,40 @@
   function fitShowcaseScreen() {
     const screen = document.querySelector('.showcase-screen.active:not(.welcome-screen)');
     if (!screen) return;
-    const content = screen.querySelector('.showcase-screen-content');
     const visual = screen.querySelector('.showcase-visual');
-    if (!content || !visual) return;
+    const scene = visual && visual.querySelector('.obs-scene');
+    if (!visual || !scene) return;
     screen.querySelectorAll('.sc-hide').forEach(el => el.classList.remove('sc-hide'));
+    screen.querySelectorAll('.sc-show').forEach(el => el.classList.remove('sc-show'));
+    // La escena ocupa el alto disponible (overflow:hidden): hay desbordamiento si su contenido no cabe.
     // offsetHeight ignora transform (las animaciones de entrada desplazan 16px y falseaban scrollHeight)
     const overflows = () => {
-      const need = Array.from(visual.children).reduce((a, c) => a + (c.classList.contains('sc-hide') ? 0 : c.offsetHeight), 0);
-      const sh = screen.clientHeight;
-      // La pila (cabecera + visual + botones) no puede superar la altura de la pantalla
-      const stack = Array.from(content.children).reduce((a, c) => a + (c === visual ? need : c.offsetHeight), 0);
-      return need > visual.clientHeight + 1;
+      const kids = Array.from(scene.children).filter(c => getComputedStyle(c).display !== 'none');
+      const gap = parseFloat(getComputedStyle(scene).rowGap) || 0;
+      const need = kids.reduce((a, c) => a + c.offsetHeight, 0) + gap * Math.max(0, kids.length - 1);
+      const nav = screen.querySelector('.showcase-nav');
+      let avail = Math.min(scene.clientHeight, visual.clientHeight);
+      // En móvil los botones van fijados abajo: el contenido no puede pasar por debajo de ellos
+      if (nav) { const room = nav.getBoundingClientRect().top - scene.getBoundingClientRect().top - 12; if (room > 0) avail = Math.min(avail, room); }
+      return need > avail + 1;
     };
-    for (const sel of FIT_ORDER) {
-      if (!overflows()) return;
-      screen.querySelectorAll(sel).forEach(el => el.classList.add('sc-hide'));
+    let fits = !overflows();
+    if (!fits) {
+      for (const sel of FIT_ORDER) {
+        screen.querySelectorAll(sel).forEach(el => el.classList.add('sc-hide'));
+        if (!overflows()) { fits = true; break; }
+      }
     }
-    // Último recurso: quitar filas sueltas desde el final
-    const rows = Array.from(screen.querySelectorAll('.obs-bank-row, .obs-tx-row, .obs-debt-row, .obs-goal-card, .obs-final-feat, .obs-feat-item')).reverse();
-    for (const r of rows) {
-      if (!overflows()) return;
-      r.classList.add('sc-hide');
+    if (!fits) {
+      // Último recurso: quitar filas sueltas desde el final
+      const rows = Array.from(screen.querySelectorAll('.obs-bank-row, .obs-tx-row, .obs-debt-row, .obs-goal-card, .obs-final-feat, .obs-feat-item')).reverse();
+      for (const r of rows) { r.classList.add('sc-hide'); if (!overflows()) break; }
+      return;
+    }
+    // Si sobra espacio, se RELLENA con piezas extra (de una en una, mientras quepan)
+    for (const ex of screen.querySelectorAll('.obs-extra')) {
+      ex.classList.add('sc-show');
+      if (overflows()) { ex.classList.remove('sc-show'); break; }
     }
   }
   let _fitRaf = 0;
@@ -438,6 +465,7 @@
                 <div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(transparent,rgba(10,15,30,0.95));pointer-events:none"></div>
               </div>
             </div>
+            <div class="obs-extra obs-anim" style="--d:7"><span class="obs-feat-icon">📄</span><div><strong>¿Tu banco no está?</strong><span>Importa tu extracto en CSV o Excel en segundos</span></div></div>
             <div class="obs-feature-strip obs-anim" style="--d:8">
               <div class="obs-feat-item"><span class="obs-feat-icon">🔒</span><div><strong>Conexión segura</strong><span>Tus datos siempre protegidos</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">🚀</span><div><strong>Sin complicaciones</strong><span>En menos de 2 minutos</span></div></div>
@@ -477,6 +505,7 @@
                 </div>
               </div>
             </div>
+            <div class="obs-extra obs-gcard obs-extra-bars obs-anim" style="--d:7"><div class="obs-card-head">Gasto de los últimos 6 meses</div><div class="obs-mini-bars"><i style="--h:55%"></i><i style="--h:70%"></i><i style="--h:48%"></i><i style="--h:82%"></i><i style="--h:60%"></i><i class="on" style="--h:44%"></i></div></div><div class="obs-extra obs-tip obs-anim" style="--d:8"><span class="obs-feat-icon">💡</span><div><strong>Consejo inteligente</strong><span>Este mes gastas un 3,2 % menos en ocio. ¡Sigue así!</span></div></div>
             <div class="obs-feature-strip obs-anim" style="--d:8">
               <div class="obs-feat-item"><span class="obs-feat-icon">🤖</span><div><strong>Categorización automática</strong><span>Más del 90% de precisión</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">📊</span><div><strong>Gráficos y estadísticas</strong><span>Visualiza tus hábitos</span></div></div>
@@ -515,6 +544,7 @@
                 <div class="obs-alloc-chip"><span class="obs-dot" style="--c:#475569"></span>Otros<b>10%</b></div>
               </div>
             </div>
+            <div class="obs-extra obs-stats3 obs-anim" style="--d:6"><div><span>Aportado</span><b>12.400 €</b></div><div><span>Ganancia</span><b class="up">+2.830 €</b></div><div><span>Rentabilidad</span><b class="up">+22,8 %</b></div></div><div class="obs-extra obs-tip obs-anim" style="--d:7"><span class="obs-feat-icon">🌍</span><div><strong>Diversificación</strong><span>Tu cartera reparte el riesgo entre 4 tipos de activo</span></div></div>
             <div class="obs-feature-strip obs-anim" style="--d:5">
               <div class="obs-feat-item"><span class="obs-feat-icon">📊</span><div><strong>Portafolio unificado</strong><span>Todas tus inversiones</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">⚡</span><div><strong>Rendimiento en tiempo real</strong><span>Actualizado al instante</span></div></div>
@@ -547,6 +577,7 @@
                 </div>
               </div>
             </div>
+            <div class="obs-extra obs-gcard obs-tip obs-anim" style="--d:7"><span class="obs-feat-icon">🏁</span><div><strong>Libre de deudas en 2 años y 4 meses</strong><span>Con tu plan ahorrarías 1.240 € en intereses</span></div></div>
             <div class="obs-feature-strip obs-anim" style="--d:6">
               <div class="obs-feat-item"><span class="obs-feat-icon">📋</span><div><strong>Vista general</strong><span>Todas tus deudas en un solo lugar</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">🎯</span><div><strong>Estrategias personalizadas</strong><span>Snowball, avalanche o a medida</span></div></div>
@@ -572,6 +603,7 @@
                 <div class="obs-goal-bar"><div class="obs-progress"><div class="obs-progress-fill obs-grow" style="--w:50%;background:linear-gradient(90deg,#F59E0B,#FBBF24)"></div></div><b>50%</b></div>
               </div>
             </div>
+            <div class="obs-extra obs-gcard obs-tip obs-anim" style="--d:7"><span class="obs-feat-icon">⏱️</span><div><strong>Próximo hito: Viaje a Japón</strong><span>Te faltan 700 €: ahorrando 175 € al mes lo logras en 4 meses</span></div></div>
             <div class="obs-feature-strip obs-anim" style="--d:6">
               <div class="obs-feat-item"><span class="obs-feat-icon">🎯</span><div><strong>Objetivos personalizados</strong><span>A corto y largo plazo</span></div></div>
               <div class="obs-feat-item"><span class="obs-feat-icon">🤖</span><div><strong>Ahorro automático</strong><span>Avanza sin pensarlo</span></div></div>
