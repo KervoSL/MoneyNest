@@ -105,10 +105,20 @@ Deno.serve(async (req) => {
     const sd = (p as any)?.streak_date ? String((p as any).streak_date) : ''
     const sn = Number((p as any)?.streak) || 0
     const atRisk = sn >= 2 && sd === yesterdayStr && sd !== todayStr
-    const m = atRisk ? streakMessage(sn, name, Math.floor(now / DAY)) : messageFor(days, name, Math.floor(now / DAY))
+    // Per-device preferences chosen in the app (empty object = defaults)
+    const pr = (s.prefs && typeof s.prefs === 'object') ? s.prefs : {}
+    const wantStreak = pr.streak !== false, wantAway = pr.reminders !== false, wantDaily = pr.daily === true
+    const seenToday = new Date(seen).toISOString().slice(0, 10) === todayStr
+    let m: Msg | null = null
+    if (atRisk && wantStreak) m = streakMessage(sn, name, Math.floor(now / DAY))
+    else if (wantAway) m = messageFor(days, name, Math.floor(now / DAY))
+    if (!m && wantDaily && !seenToday && days < 3) {
+      const hi = name ? `${name}, ` : ''
+      m = { kind: 'daily', title: pick(['📝 ¿Has apuntado tus gastos de hoy?', 'Un minuto para tus finanzas'], Math.floor(now / DAY)), body: `${hi}anota lo de hoy mientras lo recuerdas.` }
+    }
     if (!m) { skipped++; continue }
     // don't repeat the same escalation step twice in a row
-    if (s.last_kind === m.kind && days < 30) { skipped++; continue }
+    if (s.last_kind === m.kind && m.kind !== 'daily' && days < 30) { skipped++; continue }
     const r = await sendTo(sb, [s], { title: m.title, body: m.body, tag: 'reengage', url: SITE })
     if (r.sent) { await sb.from('push_subscriptions').update({ last_sent_at: new Date().toISOString(), last_kind: m.kind }).eq('id', s.id); sent++ }
     removed += r.removed
