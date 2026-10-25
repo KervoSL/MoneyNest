@@ -10,9 +10,11 @@
   const PREFS_KEY = 'mn_notif_prefs';
   const PERM_KEY  = 'mn_notif_permission';
 
+  const PREF_DEFAULTS = { budget: true, streak: true, recurring: true, trial: true, reminders: true, tips: true, goals: true, daily: false };
   function getPrefs() {
-    try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{"budget":true,"streak":true,"recurring":true,"trial":true,"reminders":true,"tips":true}'); }
-    catch { return { budget: true, streak: true, recurring: true, trial: true, reminders: true, tips: true }; }
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch {}
+    return Object.assign({}, PREF_DEFAULTS, stored);
   }
 
   function savePrefs(p) {
@@ -248,6 +250,9 @@
         ${_toggle(_nt('notif_pref_trial','Aviso expiración trial'), 'trial', prefs.trial)}
         ${_toggle(_nt('notif_pref_reminders','Recordatorios si dejas de entrar'), 'reminders', prefs.reminders !== false)}
         ${_toggle(_nt('notif_pref_tips','Consejos y resumen semanal'), 'tips', prefs.tips !== false)}
+        ${_toggle(_nt('notif_pref_goals','Avances de tus objetivos'), 'goals', prefs.goals !== false)}
+        ${_toggle(_nt('notif_pref_daily','Recordatorio diario para anotar gastos'), 'daily', !!prefs.daily)}
+        <button type="button" onclick="MNNotifications.showPanel(true)" style="margin-top:10px;padding:9px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text,#fff);font-size:.8rem;cursor:pointer;font-family:inherit">⚙️ ${_nt('notif_personalizar','Personalizar notificaciones')}</button>
         <button onclick="MNNotifications._sendTest()" style="margin-top:12px;padding:8px 16px;border-radius:9px;border:1px solid var(--border2,rgba(255,255,255,.1));background:transparent;color:var(--text2,rgba(255,255,255,.5));font-size:.78rem;cursor:pointer;font-family:inherit">
           ${_nt('notif_test_btn','Enviar notificación de prueba')}
         </button>
@@ -272,6 +277,7 @@
     const p = getPrefs();
     p[key] = val;
     savePrefs(p);
+    syncPrefs();
     // Re-render settings so toggle visual state is consistent
     const containerId = 'mn-notif-settings-container';
     // If enabling any pref, ensure permission is requested
@@ -397,6 +403,21 @@
       const gas = Array.isArray(data.gastos) ? data.gastos : [];
       const all = ing.concat(gas);
       const today = _dayKey();
+      if (prefs.goals !== false && Array.isArray(data.objetivos)) {
+        data.objetivos.forEach(o => {
+          const meta = Number(o && o.objetivo) || 0, act = Number(o && o.actual) || 0;
+          if (meta <= 0 || act <= 0) return;
+          const pct = act / meta * 100;
+          const hit = [100, 75, 50, 25].find(m => pct >= m);
+          if (!hit) return;
+          const key = 'goal:' + (o.id || o.nombre) + ':' + hit;
+          // Marcar hitos inferiores como ya vistos para no disparar varios a la vez
+          [25, 50, 75, 100].filter(m => m < hit).forEach(m => { const k = 'goal:' + (o.id || o.nombre) + ':' + m; if (!fired[k]) fired[k] = now; });
+          const title = hit >= 100 ? '🎯 ' + _nt('notif_goal_done', '¡Objetivo conseguido!') : '🎯 ' + _nt('notif_goal_progress', 'Avance en tu objetivo');
+          const body = hit >= 100 ? hi + '«' + o.nombre + '» ' + _nt('notif_goal_done_b', 'completado. ¡Enhorabuena!') : hi + '«' + o.nombre + '» ' + _nt('notif_goal_at', 'ya va al') + ' ' + hit + '%';
+          push(key, title, body, 'objetivos');
+        });
+      }
 
       // Welcome back after being away
       if (prefs.reminders !== false && prevOpen) {
@@ -542,6 +563,7 @@
       await sb.from('push_subscriptions').upsert({
         user_id: uid, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
         user_agent: (navigator.userAgent || '').slice(0, 200),
+        prefs: getPrefs(),
       }, { onConflict: 'endpoint' });
       return true;
     } catch (e) { console.warn('[MNNotifications] subscribePush', e); return false; }
@@ -579,6 +601,123 @@
     _renderPanel();
   }
 
+
+  // ─── Onboarding / personalization panel ───────────────────────────
+  const ONB_KEY = 'mn_notif_onboard';       // {status:'done'|'snoozed', until, snoozes}
+  const SESS_KEY = 'mn_notif_sessions';
+  const SESS_MARK = 'mn_notif_sess_counted';
+  const PRESETS = {
+    min:  { budget: true,  streak: false, recurring: true,  trial: true,  reminders: false, tips: false, goals: false, daily: false },
+    bal:  { budget: true,  streak: true,  recurring: true,  trial: true,  reminders: true,  tips: false, goals: true,  daily: false },
+    all:  { budget: true,  streak: true,  recurring: true,  trial: true,  reminders: true,  tips: true,  goals: true,  daily: true  },
+  };
+  const PANEL_ITEMS = [
+    ['daily',     '📝', 'notif_pref_daily',     'Recordatorio diario para anotar gastos', 'notif_d_daily', 'Un aviso suave al día si aún no has entrado.'],
+    ['goals',     '🎯', 'notif_pref_goals',     'Avances de tus objetivos',               'notif_d_goals', 'Cuando llegues al 25%, 50%, 75% y 100%.'],
+    ['budget',    '💶', 'notif_pref_budget',    'Alertas de presupuesto',                 'notif_d_budget','Cuando te acerques o superes un presupuesto.'],
+    ['recurring', '🔁', 'notif_pref_recurring', 'Facturas y suscripciones próximas',      'notif_d_recurring','Antes de que venza un pago recurrente.'],
+    ['streak',    '🔥', 'notif_pref_streak',    'Recordatorios de racha',                 'notif_d_streak','Para que no pierdas tu racha de días.'],
+    ['reminders', '👋', 'notif_pref_reminders', 'Recordatorios si dejas de entrar',       'notif_d_reminders','Tras varios días sin abrir la app.'],
+    ['tips',      '💡', 'notif_pref_tips',      'Consejos y resumen semanal',             'notif_d_tips','Un resumen cada lunes y algún consejo útil.'],
+    ['trial',     '⏳', 'notif_pref_trial',     'Aviso expiración trial',                 'notif_d_trial','Antes de que termine tu prueba.'],
+  ];
+
+  async function syncPrefs() {
+    try {
+      const sb = window.MNSupabaseAuth?._sb;
+      if (!sb || !window.MNAuth?.getUser?.()?.email) return;
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) return;
+      await sb.from('push_subscriptions').update({ prefs: getPrefs() }).eq('endpoint', sub.endpoint);
+    } catch {}
+  }
+
+  function _panelOpen() { return !!document.getElementById('mnNotifPanelOnb'); }
+
+  function showPanel(force) {
+    if (_panelOpen() || !('Notification' in window)) return;
+    const prefs = getPrefs();
+    const draft = Object.assign({}, prefs);
+    const el = document.createElement('div');
+    el.id = 'mnNotifPanelOnb';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.style.cssText = 'position:fixed;inset:0;z-index:9900;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(12px);padding:16px;box-sizing:border-box';
+    const chip = (id, label) => `<button type="button" data-preset="${id}" style="flex:1;padding:8px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text,#fff);font-size:.78rem;cursor:pointer;font-family:inherit">${label}</button>`;
+    const rows = () => PANEL_ITEMS.map(([k, ic, lk, lf, dk, df]) => `
+      <label style="display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid rgba(255,255,255,.06);cursor:pointer">
+        <span style="font-size:1.3rem;width:26px;text-align:center">${ic}</span>
+        <span style="flex:1;min-width:0"><span style="display:block;font-size:.84rem;font-weight:600;color:var(--text,#fff)">${_nt(lk, lf)}</span><span style="display:block;font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.4">${_nt(dk, df)}</span></span>
+        <input type="checkbox" data-k="${k}" ${draft[k] ? 'checked' : ''} style="width:20px;height:20px;accent-color:#00D4AA;flex-shrink:0">
+      </label>`).join('');
+    el.innerHTML = `
+      <div style="background:var(--card,#0F172A);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 20px;max-width:420px;width:100%;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.6)">
+        <div style="text-align:center;font-size:2.2rem;margin-bottom:6px">🔔</div>
+        <div style="text-align:center;font-size:1.05rem;font-weight:700;color:var(--text,#fff);margin-bottom:6px">${_nt('notif_onb_title', '¿Quieres activar las notificaciones?')}</div>
+        <div style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">${_nt('notif_onb_desc', 'Tú decides cuáles y cuántas recibes. Puedes cambiarlo cuando quieras en Ajustes.')}</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">${chip('min', _nt('notif_preset_min', 'Mínimo'))}${chip('bal', _nt('notif_preset_bal', 'Equilibrado'))}${chip('all', _nt('notif_preset_all', 'Todo'))}</div>
+        <div id="mnNotifRows">${rows()}</div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button id="mnNotifOnbNo" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:.82rem;cursor:pointer;font-family:inherit">${_nt('notif_ahora_no', 'Ahora no')}</button>
+          <button id="mnNotifOnbYes" style="flex:2;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366F1,#00D4AA);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">${_nt('notif_activar', 'Activar notificaciones')}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    const readDraft = () => el.querySelectorAll('input[data-k]').forEach(i => { draft[i.dataset.k] = i.checked; });
+    el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+      Object.assign(draft, PRESETS[b.dataset.preset]);
+      el.querySelectorAll('input[data-k]').forEach(i => { i.checked = !!draft[i.dataset.k]; });
+    });
+    const close = () => el.remove();
+    document.getElementById('mnNotifOnbNo').onclick = () => {
+      close();
+      if (force) return;
+      const st = _jget(ONB_KEY, {});
+      const snoozes = (st.snoozes || 0) + 1;
+      _jset(ONB_KEY, snoozes >= 2 ? { status: 'done', snoozes } : { status: 'snoozed', snoozes, until: Date.now() + 3 * 864e5 });
+    };
+    document.getElementById('mnNotifOnbYes').onclick = async () => {
+      readDraft();
+      savePrefs(Object.assign({}, getPrefs(), draft));
+      _jset(ONB_KEY, { status: 'done' });
+      close();
+      let perm = 'Notification' in window ? Notification.permission : 'denied';
+      if (perm !== 'granted' && perm !== 'denied') { try { perm = await Notification.requestPermission(); } catch {} }
+      try { localStorage.setItem(PERM_KEY, perm); } catch {}
+      if (perm === 'granted') { await subscribePush(); await syncPrefs(); if (typeof toast === 'function') toast('🔔 ' + _nt('notif_saved', 'Notificaciones configuradas'), 'success'); }
+      else if (typeof toast === 'function') toast(_nt('notif_blocked', 'Las notificaciones están bloqueadas en tu navegador'), 'error');
+      _renderPanel();
+      if (typeof renderConfiguracion === 'function' && document.getElementById('mn-notif-settings-container')) renderSettingsUI('mn-notif-settings-container');
+    };
+  }
+
+  function _blockedByOverlay() {
+    const vis = e => !!e && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden';
+    return Array.from(document.querySelectorAll('#onboardingOverlay,#showcaseOverlay,#mnBankImportOverlay,#mnNotifPanelOnb,.modal-overlay.open,#mnPaymentOverlay.mnpo--open,#lockScreen')).some(vis)
+      || document.body.style.overflow === 'hidden';
+  }
+
+  function maybeShowPanel(delay) {
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'default') return;
+      if (!localStorage.getItem('mn7_ob_seen_v2') || !localStorage.getItem('mn_showcase_seen')) return;
+      const st = _jget(ONB_KEY, {});
+      if (st.status === 'done') return;
+      if (st.status === 'snoozed' && Date.now() < (st.until || 0)) return;
+      let n = Number(localStorage.getItem(SESS_KEY)) || 0;
+      if (!sessionStorage.getItem(SESS_MARK)) { n++; localStorage.setItem(SESS_KEY, String(n)); sessionStorage.setItem(SESS_MARK, '1'); }
+      // 1ª sesión: tras unos minutos de uso; a partir de la 2ª: a los pocos segundos.
+      const wait = delay != null ? delay : (n <= 1 ? 4 * 60e3 : 6e3);
+      const tryShow = (left) => {
+        if (_panelOpen() || Notification.permission !== 'default') return;
+        if (_blockedByOverlay()) { if (left > 0) setTimeout(() => tryShow(left - 1), 15e3); return; }
+        showPanel(false);
+      };
+      setTimeout(() => tryShow(20), wait);
+    } catch {}
+  }
+
   // ─── Auto listeners ───────────────────────────────────────────────
   window.addEventListener('mn:data:saved', () => { checkBudgetAlerts(); checkUpcomingBills(); });
 
@@ -591,6 +730,8 @@
     _updateBadge();
     subscribePush();
     touchLastSeen();
+    syncPrefs();
+    maybeShowPanel();
   }
   try { window.MNSupabaseAuth?.onAuthChange?.(() => { subscribePush(); touchLastSeen(); }); } catch {}
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { generateSmartNotifications(); touchLastSeen(); } });
@@ -606,6 +747,7 @@
     renderSettingsUI,
     _setPref,
     _sendTest, sendPushTest,
+    showPanel, maybeShowPanel, syncPrefs,
     togglePanel, getInbox, clearInbox, enablePush, subscribePush, generateSmartNotifications,
   };
 })();
