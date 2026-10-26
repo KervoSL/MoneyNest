@@ -26,7 +26,7 @@
     return !isIOS() && !/android/i.test(navigator.userAgent) && window.innerWidth >= 768;
   }
   function _t(k, fb) {
-    return (typeof window.t === 'function' ? window.t(k) || fb : fb);
+    if (typeof window.t !== 'function') return fb; var v = window.t(k); return (v && v !== k) ? v : fb;
   }
 
   // ── Estilos ────────────────────────────────────────────────────────
