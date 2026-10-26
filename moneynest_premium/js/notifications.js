@@ -5,7 +5,7 @@
 ;(function () {
   'use strict';
 
-  function _nt(key, fb) { return (typeof window.t === 'function' ? window.t(key) || fb : fb); }
+  function _nt(key, fb) { if (typeof window.t !== 'function') return fb; var v = window.t(key); return (v && v !== key) ? v : fb; }
 
   const PREFS_KEY = 'mn_notif_prefs';
   const PERM_KEY  = 'mn_notif_permission';
@@ -78,6 +78,7 @@
 
   // ─── Send notification ────────────────────────────────────────────
   function sendNotification(title, body, icon, tag) {
+    if (typeof window.mnTr === 'function') { title = window.mnTr(title); body = window.mnTr(body); }
     addToInbox({ title, body, tag: tag || 'moneynest' });
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;

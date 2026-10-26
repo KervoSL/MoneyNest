@@ -3,7 +3,7 @@
 // browser only detects a new app version when this file's bytes change,
 // and files are served cache-first, so a deploy that forgets this bump
 // never reaches users who already have the app installed.
-const CACHE_NAME = 'moneynest-v63'
+const CACHE_NAME = 'moneynest-v64'
 const LOCAL_ASSETS = [
   './',
   './index.html',
@@ -63,6 +63,7 @@ const LOCAL_ASSETS = [
   './js/premium-empty-states.js',
   './js/premium-features.js',
   './js/premium-ux.js',
+  './js/i18n-es-en.js',
   './js/install-prompt.js',
 ]
 // Ya no hay recursos remotos precacheados (fuentes y librerías son locales).
