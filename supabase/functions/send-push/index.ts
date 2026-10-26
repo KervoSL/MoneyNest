@@ -11,15 +11,28 @@ type Msg = { kind: string; title: string; body: string }
 
 function pick<T>(a: T[], seed: number): T { return a[seed % a.length] }
 
-function streakMessage(n: number, name: string, seed: number): Msg {
+function streakMessage(n: number, name: string, seed: number, en = false): Msg {
   const hi = name ? `${name}, ` : ''
+  if (en) {
+    if (n >= 30) return { kind: `streak-${n}`, title: `🔥 ${n}-day streak!`, body: `${hi}a champion's streak. Don't let it slip: open the app today and add one more day.` }
+    if (n >= 7) return { kind: `streak-${n}`, title: pick([`🔥 ${n} days in a row`, `Don't lose your ${n}-day streak`], seed), body: `${hi}you just need to open the app today to keep it. It takes 10 seconds.` }
+    return { kind: `streak-${n}`, title: pick([`🔥 You're on a ${n}-day streak`, `Your ${n}-day streak is waiting`], seed), body: `${hi}open the app today and keep what you've built.` }
+  }
   if (n >= 30) return { kind: `streak-${n}`, title: `🔥 ¡${n} días de racha!`, body: `${hi}una racha de campeón. No la dejes escapar: entra hoy y suma un día más.` }
   if (n >= 7) return { kind: `streak-${n}`, title: pick([`🔥 ${n} días seguidos`, `No pierdas tu racha de ${n} días`], seed), body: `${hi}te falta entrar hoy para mantenerla. Te lleva 10 segundos.` }
   return { kind: `streak-${n}`, title: pick([`🔥 Llevas ${n} días de racha`, `Tu racha de ${n} días te espera`], seed), body: `${hi}entra hoy y no pierdas lo que has conseguido.` }
 }
 
-function messageFor(days: number, name: string, seed: number): Msg | null {
+function messageFor(days: number, name: string, seed: number, en = false): Msg | null {
   const hi = name ? `${name}, ` : ''
+  if (en) {
+    if (days >= 30) return { kind: 'away30', title: 'Shall we continue? 💙', body: `${hi}it's been a month since you visited MoneyNest. Your numbers are still here, one tap away.` }
+    if (days >= 14) return { kind: 'away14', title: pick(['Your finances miss you', 'Two weeks without you 👀'], seed), body: `${hi}it's been ${days} days since you last opened the app. Catching up takes 2 minutes.` }
+    if (days >= 7) return { kind: 'away7', title: 'A week without opening the app', body: `${hi}shall we log the last few days' expenses? The sooner, the easier.` }
+    if (days >= 5) return { kind: 'away5', title: `It's been ${days} days`, body: `${hi}your streak is paused. Log one expense and you're back in the race 🔥` }
+    if (days >= 3) return { kind: 'away3', title: pick(['How are those expenses going?', 'A quick check-in 💡'], seed), body: `${hi}you haven't stopped by in ${days} days. Any expenses to log?` }
+    return null
+  }
   if (days >= 30) return { kind: 'away30', title: '¿Seguimos? 💙', body: `${hi}hace un mes que no pasas por MoneyNest. Tus números siguen aquí, a un toque.` }
   if (days >= 14) return { kind: 'away14', title: pick(['Tus finanzas te echan de menos', 'Dos semanas sin verte 👀'], seed), body: `${hi}hace ${days} días que no entras. Ponerlo al día te llevará 2 minutos.` }
   if (days >= 7) return { kind: 'away7', title: 'Una semana sin entrar', body: `${hi}¿registramos los gastos de estos días? Cuanto antes, menos cuesta.` }
@@ -110,11 +123,14 @@ Deno.serve(async (req) => {
     const wantStreak = pr.streak !== false, wantAway = pr.reminders !== false, wantDaily = pr.daily === true
     const seenToday = new Date(seen).toISOString().slice(0, 10) === todayStr
     let m: Msg | null = null
-    if (atRisk && wantStreak) m = streakMessage(sn, name, Math.floor(now / DAY))
-    else if (wantAway) m = messageFor(days, name, Math.floor(now / DAY))
+    const en = !!pr.lang && pr.lang !== 'es'
+    if (atRisk && wantStreak) m = streakMessage(sn, name, Math.floor(now / DAY), en)
+    else if (wantAway) m = messageFor(days, name, Math.floor(now / DAY), en)
     if (!m && wantDaily && !seenToday && days < 3) {
       const hi = name ? `${name}, ` : ''
-      m = { kind: 'daily', title: pick(['📝 ¿Has apuntado tus gastos de hoy?', 'Un minuto para tus finanzas'], Math.floor(now / DAY)), body: `${hi}anota lo de hoy mientras lo recuerdas.` }
+      m = en
+        ? { kind: 'daily', title: pick(['📝 Have you logged today\'s expenses?', 'One minute for your finances'], Math.floor(now / DAY)), body: `${hi}log today's while you still remember.` }
+        : { kind: 'daily', title: pick(['📝 ¿Has apuntado tus gastos de hoy?', 'Un minuto para tus finanzas'], Math.floor(now / DAY)), body: `${hi}anota lo de hoy mientras lo recuerdas.` }
     }
     if (!m) { skipped++; continue }
     // don't repeat the same escalation step twice in a row

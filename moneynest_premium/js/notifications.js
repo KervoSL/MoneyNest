@@ -17,6 +17,8 @@
     return Object.assign({}, PREF_DEFAULTS, stored);
   }
 
+  function _prefsWithLang() { var l = 'es'; try { l = typeof _currentLang !== 'undefined' ? _currentLang : 'es'; } catch (e) {} return Object.assign({}, getPrefs(), { lang: l }); }
+
   function savePrefs(p) {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {}
   }
@@ -564,7 +566,7 @@
       await sb.from('push_subscriptions').upsert({
         user_id: uid, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
         user_agent: (navigator.userAgent || '').slice(0, 200),
-        prefs: getPrefs(),
+        prefs: _prefsWithLang(),
       }, { onConflict: 'endpoint' });
       return true;
     } catch (e) { console.warn('[MNNotifications] subscribePush', e); return false; }
@@ -631,7 +633,7 @@
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (!sub) return;
-      await sb.from('push_subscriptions').update({ prefs: getPrefs() }).eq('endpoint', sub.endpoint);
+      await sb.from('push_subscriptions').update({ prefs: _prefsWithLang() }).eq('endpoint', sub.endpoint);
     } catch {}
   }
 
@@ -735,6 +737,7 @@
     maybeShowPanel();
   }
   try { window.MNSupabaseAuth?.onAuthChange?.(() => { subscribePush(); touchLastSeen(); }); } catch {}
+  window.addEventListener('mn:lang', function () { syncPrefs(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { generateSmartNotifications(); touchLastSeen(); } });
   if (document.readyState === 'complete') setTimeout(_boot, 1500);
   else window.addEventListener('load', () => setTimeout(_boot, 1500));
