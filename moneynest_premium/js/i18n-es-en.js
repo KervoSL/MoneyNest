@@ -3159,6 +3159,7 @@
     var orig = window.setLang;
     var wrapped = function (code) {
       var r = orig.apply(this, arguments);
+      try { window.dispatchEvent(new Event('mn:lang')); } catch (e) {}
       if (code === 'es') { restoreAll(); setTimeout(function () { if (lang() === 'es') restoreAll(); }, 450); }
       else { setTimeout(applyAll, 60); setTimeout(applyAll, 450); }
       return r;
