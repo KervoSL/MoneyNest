@@ -14,6 +14,7 @@
 | Auth | Supabase |
 | Payments | Stripe |
 | Storage | `localStorage` key: `mn7_data` · Global state: `S` |
+| App version | `1.0.0` — first public release (2026-10-26); keep `VERSION` in `js/app.js`, `version.json` and the `app-version` meta in sync |
 | Last commit | `dc7d992` (fix: demo auto-activation) · **New uncommitted:** Feature Showcase (2026-09-24) |
 
 ---

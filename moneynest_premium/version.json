@@ -1,11 +1,13 @@
 {
-  "version": "1.23.12",
+  "version": "1.0.0",
   "changelog": {
-    "title": "Novedades de la versión 1.23.12",
+    "title": "Novedades de la versión 1.0",
     "items": [
-      "Pagos más robustos: los pagos que fallan temporalmente se reintentan y activan tu plan",
-      "No se puede contratar dos veces el mismo plan",
-      "Restaurar acceso solo con email verificado; pagos y portal también desde moneynest.es"
+      "Primera versión pública de MoneyNest",
+      "Panel de notificaciones personalizable: elige qué avisos recibes y con qué frecuencia",
+      "Apple Pay y Google Pay disponibles en el pago integrado",
+      "Pantalla de bienvenida mejorada y adaptada a cada tamaño de pantalla",
+      "Toda la app disponible en español e inglés"
     ]
   }
 }
