@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     try {
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${/^https:\/\/[a-z0-9.-]+$/i.test(req.headers.get('origin') ?? '') ? req.headers.get('origin') : 'https://money-nest-nk2u.vercel.app'}/?portal=return`,
+        return_url: `${/^https:\/\/[a-z0-9.-]+$/i.test(req.headers.get('origin') ?? '') ? req.headers.get('origin') : 'https://moneynest.es'}/?portal=return`,
       });
       portalUrl = session.url;
       break;

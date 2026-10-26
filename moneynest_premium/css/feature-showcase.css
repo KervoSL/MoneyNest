@@ -108,7 +108,7 @@ body:has(.showcase-screen.welcome-screen.active) .showcase-split-right {
   overflow: hidden;
 }
 
-.showcase-brand-icon svg {
+.showcase-brand-icon svg, .showcase-brand-icon img {
   width: 100%;
   height: 100%;
   display: block;

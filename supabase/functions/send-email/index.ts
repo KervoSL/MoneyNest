@@ -48,12 +48,12 @@ const escHtml = (s: string) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
-const LOGO_URL = 'https://jwddciqqhmfkbqhdrfre.supabase.co/storage/v1/object/public/assets/Icon-192%20sin%20letras.png';
+const LOGO_URL = 'https://moneynest.es/assets/logo.png';
 
 // Envuelve cualquier card en el layout base
-function wrap(cardHtml: string): string {
+function wrap(cardHtml: string, lang = 'es'): string {
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -66,7 +66,7 @@ function wrap(cardHtml: string): string {
 
   <!-- LOGO -->
   <tr><td align="center" style="padding-bottom:32px">
-    <img src="${LOGO_URL}" width="160" height="90" alt="MoneyNest" style="display:block;border:0;border-radius:16px;margin:0 auto">
+    <img src="${LOGO_URL}" width="96" height="96" alt="MoneyNest" style="display:block;border:0;border-radius:22px;margin:0 auto">
   </td></tr>
 
   <!-- CARD -->
@@ -85,12 +85,36 @@ function wrap(cardHtml: string): string {
 //  TEMPLATE — BIENVENIDA
 // ════════════════════════════════════════════════
 
-function templateConfirmacion(nombre: string): { subject: string; html: string } {
+const WELCOME_TXT: Record<string, Record<string, string>> = {
+  es: {
+    subject: 'Bienvenido a MoneyNest! Tu prueba gratuita ha empezado',
+    hello: 'Hola, {n}!', hello0: 'Bienvenido!', badge: 'Cuenta activada',
+    intro1: 'Tu cuenta MoneyNest esta lista. Tienes', intro2: 'una prueba gratuita de 100 movimientos', intro3: 'para explorar todas las funciones.',
+    what: 'Que puedes hacer ahora mismo',
+    f1: 'Ingresos y gastos', f1s: 'Registra y categoriza', f2: 'Inversiones', f2s: 'Cartera y rendimiento',
+    f3: 'Objetivos', f3s: 'Metas de ahorro', f4: 'Analisis', f4s: 'Tendencias y reportes',
+    trial: 'Tu prueba gratuita &middot; 100 movimientos', after: 'Despues puedes continuar con el Plan Local desde 1&euro; al mes',
+    foot: 'Si no creaste esta cuenta, ignora este email.',
+  },
+  en: {
+    subject: 'Welcome to MoneyNest! Your free trial has started',
+    hello: 'Hi, {n}!', hello0: 'Welcome!', badge: 'Account activated',
+    intro1: 'Your MoneyNest account is ready. You have', intro2: 'a free trial of 100 transactions', intro3: 'to explore every feature.',
+    what: 'What you can do right now',
+    f1: 'Income &amp; expenses', f1s: 'Record and categorize', f2: 'Investments', f2s: 'Portfolio and returns',
+    f3: 'Goals', f3s: 'Savings targets', f4: 'Analytics', f4s: 'Trends and reports',
+    trial: 'Your free trial &middot; 100 transactions', after: 'Afterwards you can continue with the Local Plan from &euro;1 per month',
+    foot: "If you didn't create this account, ignore this email.",
+  },
+};
+
+function templateConfirmacion(nombre: string, lang = 'es'): { subject: string; html: string } {
+  const L = WELCOME_TXT[lang] ?? WELCOME_TXT.es;
   const firstName = nombre ? escHtml(nombre.split(' ')[0].slice(0, 40)) : '';
-  const greeting  = firstName ? `Hola, ${firstName}!` : `Bienvenido!`;
+  const greeting  = firstName ? L.hello.replace('{n}', firstName) : L.hello0;
 
   return {
-    subject: 'Bienvenido a MoneyNest! Tu prueba gratuita ha empezado',
+    subject: L.subject,
     html: wrap(`
       <tr><td style="background-color:#0D1424;border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden">
         <table width="100%" border="0" cellpadding="0" cellspacing="0">
@@ -101,24 +125,24 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
           <!-- cuerpo -->
           <tr><td style="padding:36px 36px 32px">
 
-            <p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:#00D4AA;text-transform:uppercase;letter-spacing:2px">Cuenta activada</p>
+            <p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:#00D4AA;text-transform:uppercase;letter-spacing:2px">${L.badge}</p>
             <h1 style="margin:0 0 16px 0;font-size:28px;font-weight:900;color:#F1F5F9;letter-spacing:-1px;line-height:1.2">${greeting} &#128075;</h1>
             <p style="margin:0 0 28px 0;font-size:15px;color:#94A3B8;line-height:1.7">
-              Tu cuenta MoneyNest esta lista. Tienes
-              <strong style="color:#F1F5F9;background-color:rgba(0,212,170,0.12);padding:1px 7px;border-radius:5px">una prueba gratuita de 100 movimientos</strong>
-              para explorar todas las funciones.
+              ${L.intro1}
+              <strong style="color:#F1F5F9;background-color:rgba(0,212,170,0.12);padding:1px 7px;border-radius:5px">${L.intro2}</strong>
+              ${L.intro3}
             </p>
 
             <!-- features 2x2 -->
-            <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">Que puedes hacer ahora mismo</p>
+            <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">${L.what}</p>
             <table width="100%" border="0" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="50%" style="padding:0 5px 10px 0">
                   <table width="100%" border="0" cellpadding="0" cellspacing="0">
                   <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
                     <p style="margin:0 0 5px 0;font-size:20px">&#128176;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">Ingresos y gastos</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">Registra y categoriza</p>
+                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f1}</p>
+                    <p style="margin:0;font-size:11px;color:#64748B">${L.f1s}</p>
                   </td></tr>
                   </table>
                 </td>
@@ -126,8 +150,8 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
                   <table width="100%" border="0" cellpadding="0" cellspacing="0">
                   <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
                     <p style="margin:0 0 5px 0;font-size:20px">&#128200;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">Inversiones</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">Cartera y rendimiento</p>
+                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f2}</p>
+                    <p style="margin:0;font-size:11px;color:#64748B">${L.f2s}</p>
                   </td></tr>
                   </table>
                 </td>
@@ -137,8 +161,8 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
                   <table width="100%" border="0" cellpadding="0" cellspacing="0">
                   <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
                     <p style="margin:0 0 5px 0;font-size:20px">&#127919;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">Objetivos</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">Metas de ahorro</p>
+                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f3}</p>
+                    <p style="margin:0;font-size:11px;color:#64748B">${L.f3s}</p>
                   </td></tr>
                   </table>
                 </td>
@@ -146,8 +170,8 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
                   <table width="100%" border="0" cellpadding="0" cellspacing="0">
                   <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
                     <p style="margin:0 0 5px 0;font-size:20px">&#128202;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">Analisis</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">Tendencias y reportes</p>
+                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f4}</p>
+                    <p style="margin:0;font-size:11px;color:#64748B">${L.f4s}</p>
                   </td></tr>
                   </table>
                 </td>
@@ -161,8 +185,8 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
               <tr>
                 <td style="font-size:20px;vertical-align:middle;padding-right:12px">&#9203;</td>
                 <td>
-                  <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#A5B4FC">Tu prueba gratuita &middot; 100 movimientos</p>
-                  <p style="margin:0;font-size:11px;color:#64748B">Despues puedes continuar con el Plan Local desde 1&euro; al mes</p>
+                  <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#A5B4FC">${L.trial}</p>
+                  <p style="margin:0;font-size:11px;color:#64748B">${L.after}</p>
                 </td>
               </tr>
               </table>
@@ -173,11 +197,11 @@ function templateConfirmacion(nombre: string): { subject: string; html: string }
 
           <!-- card footer -->
           <tr><td style="background-color:#080E1A;padding:16px 36px;border-top:1px solid rgba(255,255,255,0.05)">
-            <p style="margin:0;font-size:11px;color:#334155;text-align:center">MoneyNest &middot; InvestGrid &middot; Si no creaste esta cuenta, ignora este email.</p>
+            <p style="margin:0;font-size:11px;color:#334155;text-align:center">MoneyNest &middot; InvestGrid &middot; ${L.foot}</p>
           </td></tr>
 
         </table>
-      </td></tr>`),
+      </td></tr>`, lang),
   };
 }
 
@@ -302,7 +326,7 @@ Deno.serve(async (req) => {
     // El destinatario es SIEMPRE el email de la sesión; el cliente no elige `to`.
     if (!user?.email) return json({ error: 'auth_required' }, 401);
     if (!(await rateAllowed(`send-email:confirmacion:${user.id}`, 3, 3600))) return json({ error: 'rate_limited' }, 429);
-    template  = templateConfirmacion(nombre);
+    template  = templateConfirmacion(nombre, String(body.lang ?? '').toLowerCase().startsWith('en') ? 'en' : 'es');
     recipient = user.email;
 
   } else if (type === 'sugerencia') {

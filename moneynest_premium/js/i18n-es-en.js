@@ -1464,7 +1464,7 @@
  "Volver": "Back",
  "Elige una contraseña segura para tu cuenta MoneyNest.": "Choose a secure password for your MoneyNest account.",
  "Regístrate para asociar tus datos a tu email y poder recuperar el acceso desde cualquier dispositivo.": "Sign up to link your data to your email and be able to recover access from any device.",
- "Con el Plan Local (5€ único) nunca expira.": "With the Local Plan (one-time €5) it never expires.",
+ "Con el Plan Local (desde 1€/mes) nunca expira.": "With the Local Plan (from €1/month) it never expires.",
  "Comprar Plan Local — desde 1 €/mes →": "Buy Local Plan — from €1/month →",
  "Comprar MoneyNest — desde 1 €/mes": "Buy MoneyNest — from €1/month",
  "Tu prueba gratuita ha finalizado.": "Your free trial has ended.",
