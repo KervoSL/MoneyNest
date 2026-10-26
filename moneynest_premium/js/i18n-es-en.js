@@ -2525,7 +2525,13 @@
  "· Banco:": "· Bank:",
  "Banco:": "Bank:",
  "Cuenta:": "Account:",
- "Movimientos": "Transactions"
+ "Movimientos": "Transactions",
+ "Novedades de la versión 1.0": "What's new in version 1.0",
+ "Primera versión pública de MoneyNest": "First public release of MoneyNest",
+ "Panel de notificaciones personalizable: elige qué avisos recibes y con qué frecuencia": "Customizable notifications panel: choose which alerts you get and how often",
+ "Apple Pay y Google Pay disponibles en el pago integrado": "Apple Pay and Google Pay available in the built-in checkout",
+ "Pantalla de bienvenida mejorada y adaptada a cada tamaño de pantalla": "Improved welcome screen that adapts to every screen size",
+ "Toda la app disponible en español e inglés": "The whole app available in Spanish and English"
 };
   var PATTERNS = [
  [
