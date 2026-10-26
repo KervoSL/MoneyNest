@@ -36,7 +36,9 @@
   async function sendWelcome(to, nombre) {
     if (!to) return;
     // El servidor envía siempre al email de la sesión; `to` ya no se usa como destinatario.
-    return _send({ type: 'confirmacion', nombre: nombre || '' });
+    let lang = 'es';
+    try { lang = (window._currentLang || localStorage.getItem('mn7_lang') || 'es'); } catch (_) {}
+    return _send({ type: 'confirmacion', nombre: nombre || '', lang });
   }
 
   /**

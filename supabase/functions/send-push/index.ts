@@ -4,7 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 
 const VAPID_PUBLIC = 'BNRtUPwIF2L3DncNvx0yZOuQQxXPPCeMd0ZkdZRUKSwTo2PbsFyIaJ1I9ZyE5VMRB8bq3SwYjvoswOmIbEOE1xo'
-const SITE = 'https://money-nest-nk2u.vercel.app/'
+const SITE = 'https://moneynest.es/'
 const DAY = 86400000
 
 type Msg = { kind: string; title: string; body: string }

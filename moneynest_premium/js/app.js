@@ -3,31 +3,13 @@ const VERSION = '1.0.0'
 
 // ─── LOGO SVGs ────────────────────────────────────────────────
 const LOGO_DARK = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
-  <defs>
-    <linearGradient id='mnSbGradD' x1='0%' y1='0%' x2='100%' y2='100%'>
-      <stop offset='0%' stop-color='#00D4AA'/>
-      <stop offset='100%' stop-color='#00A882'/>
-    </linearGradient>
-  </defs>
-  <path d='M8 30 Q22 36 36 30' stroke='rgba(255,255,255,0.8)' stroke-width='3' fill='none' stroke-linecap='round'/>
-  <path d='M11 26 Q22 31 33 26' stroke='rgba(255,255,255,0.5)' stroke-width='2' fill='none' stroke-linecap='round'/>
-  <polyline points='10,26 17,18 24,22 34,10' stroke='url(#mnSbGradD)' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
-  <polyline points='29,9 34,10 33,15' stroke='url(#mnSbGradD)' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
-  <text x='46' y='28' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='800' letter-spacing='-0.5' fill='white'>Money<tspan fill='#00D4AA'>Nest</tspan></text>
+  <image href='./assets/logo.png' x='2' y='4' width='36' height='36'/>
+  <text x='46' y='29' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='800' letter-spacing='-0.5' fill='white'>Money<tspan fill='#00D4AA'>Nest</tspan></text>
 </svg>`
 
 const LOGO_LIGHT = `<svg viewBox='0 0 200 44' xmlns='http://www.w3.org/2000/svg' style='width:160px;height:44px;flex-shrink:0'>
-  <defs>
-    <linearGradient id='mnSbGradL' x1='0%' y1='0%' x2='100%' y2='100%'>
-      <stop offset='0%' stop-color='#009E82'/>
-      <stop offset='100%' stop-color='#007A66'/>
-    </linearGradient>
-  </defs>
-  <path d='M8 30 Q22 36 36 30' stroke='#0F172A' stroke-width='3' fill='none' stroke-linecap='round'/>
-  <path d='M11 26 Q22 31 33 26' stroke='#334155' stroke-width='2' fill='none' stroke-linecap='round' opacity='0.6'/>
-  <polyline points='10,26 17,18 24,22 34,10' stroke='url(#mnSbGradL)' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
-  <polyline points='29,9 34,10 33,15' stroke='url(#mnSbGradL)' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
-  <text x='46' y='28' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='800' letter-spacing='-0.5' fill='#0F172A'>Money<tspan fill='#009E82'>Nest</tspan></text>
+  <image href='./assets/logo.png' x='2' y='4' width='36' height='36'/>
+  <text x='46' y='29' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='800' letter-spacing='-0.5' fill='#0F172A'>Money<tspan fill='#009E82'>Nest</tspan></text>
 </svg>`
 
 function getCurrentLogo() {
@@ -4319,6 +4301,7 @@ function _sanitizeAmountInput(el) {
   }
 }
 function pct(n, d=1) { return fmt(n,d) + '%' }
+function _dloc() { return {'es':'es-ES','en':'en-GB','it':'it-IT','fr':'fr-FR','de':'de-DE','pt':'pt-PT'}[_currentLang]||'es-ES' }
 function fmtDate(d) { if(!d) return '—'; const locale = {'es':'es-ES','en':'en-GB','it':'it-IT','fr':'fr-FR','de':'de-DE','pt':'pt-PT'}[_currentLang]||'es-ES'; return new Date(d+'T12:00:00').toLocaleDateString(locale,{day:'2-digit',month:'short',year:'numeric'}) }
 function todayISO() { return new Date().toISOString().slice(0,10) }
 function currentMonth() { return new Date().toISOString().slice(0,7) }
@@ -5973,7 +5956,7 @@ function renderDeudas() {
     if (!months || months <= 0) return null
     const d = new Date()
     d.setMonth(d.getMonth() + months)
-    return d.toLocaleDateString(_currentLang === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(_dloc(), { month: 'long', year: 'numeric' })
   }
 
   // Construir lista de orden de pago
@@ -6232,7 +6215,7 @@ function renderChartDeudaProyeccion(totalPendiente, mensualPago) {
     acumMeses += meses
     const fechaLibre = (() => {
       const fd = new Date(); fd.setMonth(fd.getMonth() + acumMeses)
-      return fd.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+      return fd.toLocaleDateString(_dloc(), { month: 'short', year: 'numeric' })
     })()
     // Siguiente deuda recibe el pago liberado (efecto bola de nieve / avalancha)
     presupuesto += pend / Math.max(meses, 1) * 0.3
@@ -6313,7 +6296,7 @@ function calcLibertad3Cards() {
 
   const fechaLibre = (() => {
     const fd = new Date(); fd.setMonth(fd.getMonth() + meses)
-    return fd.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+    return fd.toLocaleDateString(_dloc(), { day:'numeric', month:'long', year:'numeric' })
   })()
 
   box.innerHTML = `
@@ -11187,7 +11170,7 @@ function exportarPDF() {
     doc.setFontSize(11); doc.setFont('helvetica','normal')
     doc.text('Informe Financiero Personal', 16, 52)
     doc.setFontSize(9)
-    doc.text(monthLabel(m) + '  ·  ' + new Date().toLocaleDateString('es-ES'), 16, 62)
+    doc.text(monthLabel(m) + '  ·  ' + new Date().toLocaleDateString(_dloc()), 16, 62)
     doc.text(`${S.usuario.nombre}${S.usuario.empresa?' · '+S.usuario.empresa:''}`, 16, 70)
 
     let y = 96
@@ -11310,7 +11293,7 @@ function exportarPDF() {
       doc.setPage(p)
       doc.setFillColor(241,245,249); doc.rect(0,287,210,10,'F')
       doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal')
-      doc.text('MoneyNest v'+VERSION+'  ·  '+new Date().toLocaleDateString('es-ES')+'  ·  '+S.usuario.nombre, 14, 293)
+      doc.text('MoneyNest v'+VERSION+'  ·  '+new Date().toLocaleDateString(_dloc())+'  ·  '+S.usuario.nombre, 14, 293)
       doc.text('Página '+p+' de '+pages, 196, 293, { align:'right' })
       // Teal top strip on pages > 1
       if (p > 1) {
@@ -11361,7 +11344,7 @@ function exportarExcel() {
     // ─── RESUMEN ───────────────────────────────────────────────
     const resumenRows = [
       ['MoneyNest v'+VERSION, ''],
-      ['Generado el', new Date().toLocaleDateString('es-ES')],
+      ['Generado el', new Date().toLocaleDateString(_dloc())],
       ['',''],
       ['── MES ACTUAL ──', ''],
       ['Ingresos', calcIngresosMes(m)],
@@ -12255,7 +12238,7 @@ function renderAnalisis() {
     if (!subs.length) return ''
     const toMonthly = s => s.frecuencia === 'anual' ? s.importe/12 : s.frecuencia === 'semanal' ? s.importe*4.33 : s.importe
     const totalMes = subs.reduce((a,s) => a + toMonthly(s), 0)
-    const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : '—'
+    const fmtDate = ts => ts ? new Date(ts).toLocaleDateString(_dloc(),{day:'numeric',month:'short'}) : '—'
     subs.sort((a,b) => toMonthly(b) - toMonthly(a))
     const groups = [
       { key: 'mensual', label: t('mensuales','Mensuales'), items: subs.filter(s => s.frecuencia === 'mensual') },
@@ -12866,7 +12849,7 @@ function renderAnalisis() {
       const cfp = avgInc3p - avgGas3p
       const saldo0 = S.cuentas.reduce((a,c)=>a+(Number(c.saldo)||0),0)
       const mkSeries = mul => { let v=saldo0; return Array.from({length:12},()=>{ v+=cfp*mul; return Math.round(v) }) }
-      const labels12 = Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()+i+1);return d.toLocaleString('es-ES',{month:'short'})})
+      const labels12 = Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()+i+1);return d.toLocaleString(_dloc(),{month:'short'})})
       charts['financialPlanner'] = new Chart(planCtx,{type:'line',data:{labels:labels12,datasets:[
         {label:'Optimista',   data:mkSeries(1.2),borderColor:'#10B981',fill:false,tension:.4,pointRadius:0,borderWidth:2},
         {label:'Moderado',    data:mkSeries(1.0),borderColor:'#00D4AA',fill:'+1',tension:.4,pointRadius:0,borderWidth:2,backgroundColor:'rgba(0,212,170,0.06)'},
@@ -12961,7 +12944,7 @@ function renderDebtAdvisor() {
   const avalMonths = avalSeries.findIndex(v => v <= 0) || avalSeries.length
   const freeDate = (months) => {
     const d = new Date(); d.setMonth(d.getMonth() + months)
-    return d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(_dloc(), { month: 'long', year: 'numeric' })
   }
 
   // Ahorro de intereses (avalancha vs bola de nieve)
@@ -18564,7 +18547,7 @@ window.updateCustomCalc = function() {
     if (!months) return '—'
     const fd = new Date()
     fd.setMonth(fd.getMonth() + months)
-    return fd.toLocaleDateString(_currentLang === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })
+    return fd.toLocaleDateString(_dloc(), { month: 'long', year: 'numeric' })
   })()
 
   // Calculate baseline (minimum payment = 2% of balance)

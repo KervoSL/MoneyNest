@@ -147,19 +147,7 @@
             <!-- Logo -->
             <div class="showcase-brand">
               <div class="showcase-brand-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                  <defs>
-                    <linearGradient id="mnShowcaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00D4AA"/>
-                      <stop offset="100%" stop-color="#00A882"/>
-                    </linearGradient>
-                  </defs>
-                  <rect width="512" height="512" fill="#0A0E17" rx="96"/>
-                  <path d="M96 344 Q256 416 416 344" stroke="rgba(255,255,255,0.8)" stroke-width="34" fill="none" stroke-linecap="round"/>
-                  <path d="M130 300 Q256 356 382 300" stroke="rgba(255,255,255,0.5)" stroke-width="22" fill="none" stroke-linecap="round"/>
-                  <polyline points="115,300 195,207 275,253 393,115" stroke="url(#mnShowcaseGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="333,103 393,115 380,172" stroke="url(#mnShowcaseGrad)" stroke-width="40" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="./assets/logo.png" alt="MoneyNest" width="64" height="64" style="width:100%;height:100%;display:block;border-radius:22%">
               </div>
               <div class="showcase-brand-name">MoneyNest</div>
             </div>
@@ -410,24 +398,12 @@
             <!-- Center hero content -->
             <div class="welcome-center">
               <div class="welcome-brand">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="welcome-brand-icon">
-                  <defs>
-                    <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00D4AA"/>
-                      <stop offset="100%" stop-color="#00A882"/>
-                    </linearGradient>
-                  </defs>
-                  <rect width="48" height="48" fill="none"/>
-                  <path d="M8 32 Q24 38 40 32" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-                  <path d="M11 28 Q24 33 37 28" stroke="rgba(255,255,255,0.5)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-                  <polyline points="10,28 18,20 26,23 38,12" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="33,11 38,12 37,17" stroke="url(#wbGrad)" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="./assets/logo.png" alt="MoneyNest" class="welcome-brand-icon" width="40" height="40">
                 <span class="welcome-brand-text">MoneyNest</span>
               </div>
 
               <h1 class="welcome-headline">
-                Tu dinero,<br>bajo <span>control</span>.
+                Tu dinero,<br><span>bajo control.</span>
               </h1>
 
               <p class="welcome-subheadline">
