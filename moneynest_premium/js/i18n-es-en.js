@@ -2544,7 +2544,12 @@
  "ROI medio": "Average ROI",
  "ROI de cada inversión": "ROI of each investment",
  "Total acumulado": "Running total",
- "Ganancia por inversión": "Profit per investment"
+ "Ganancia por inversión": "Profit per investment",
+ "liquidadas": "liquidated",
+ "con beneficio": "profitable",
+ "Mejor inversión": "Best investment",
+ "Peor inversión": "Worst investment",
+ "Última actualización: 27 de octubre de 2026": "Last updated: October 27, 2026"
 };
   var PATTERNS = [
  [
