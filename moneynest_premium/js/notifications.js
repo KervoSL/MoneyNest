@@ -734,7 +734,7 @@
 
   function _blockedByOverlay() {
     const vis = e => !!e && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden';
-    return Array.from(document.querySelectorAll('#onboardingOverlay,#showcaseOverlay,#mnBankImportOverlay,#mnNotifPanelOnb,.modal-overlay.open,#mnPaymentOverlay.mnpo--open,#lockScreen')).some(vis)
+    return Array.from(document.querySelectorAll('#onboardingOverlay,#showcaseOverlay,#mnBankImportOverlay,#mnNotifPanelOnb,#mn-consent-banner,.modal-overlay.open,#mnPaymentOverlay.mnpo--open,#lockScreen')).some(vis)
       || document.body.style.overflow === 'hidden';
   }
 
