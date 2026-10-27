@@ -1464,7 +1464,7 @@
  "Volver": "Back",
  "Elige una contraseña segura para tu cuenta MoneyNest.": "Choose a secure password for your MoneyNest account.",
  "Regístrate para asociar tus datos a tu email y poder recuperar el acceso desde cualquier dispositivo.": "Sign up to link your data to your email and be able to recover access from any device.",
- "Con el Plan Local (desde 1€/mes) nunca expira.": "With the Local Plan (from €1/month) it never expires.",
+ "Con el Plan Local (5€ único) nunca expira.": "With the Local Plan (one-time €5) it never expires.",
  "Comprar Plan Local — desde 1 €/mes →": "Buy Local Plan — from €1/month →",
  "Comprar MoneyNest — desde 1 €/mes": "Buy MoneyNest — from €1/month",
  "Tu prueba gratuita ha finalizado.": "Your free trial has ended.",
@@ -2531,7 +2531,20 @@
  "Panel de notificaciones personalizable: elige qué avisos recibes y con qué frecuencia": "Customizable notifications panel: choose which alerts you get and how often",
  "Apple Pay y Google Pay disponibles en el pago integrado": "Apple Pay and Google Pay available in the built-in checkout",
  "Pantalla de bienvenida mejorada y adaptada a cada tamaño de pantalla": "Improved welcome screen that adapts to every screen size",
- "Toda la app disponible en español e inglés": "The whole app available in Spanish and English"
+ "Toda la app disponible en español e inglés": "The whole app available in Spanish and English",
+ "Acepto los": "I accept the",
+ "⚠ Debes aceptar los Términos de Servicio y la Política de Privacidad para crear tu cuenta.": "⚠ You must accept the Terms of Service and the Privacy Policy to create your account.",
+ "⚠ Debes aceptar los Términos de Servicio y la Política de Privacidad.": "⚠ You must accept the Terms of Service and the Privacy Policy.",
+ "Debes aceptar los Términos de Servicio y la Política de Privacidad.": "You must accept the Terms of Service and the Privacy Policy.",
+ "Retorno de inversión (ROI)": "Return on investment (ROI)",
+ "ROI medio tras cada inversión liquidada": "Average ROI after each liquidated investment",
+ "Dinero ganado": "Money earned",
+ "Ganancia de cada liquidación y total acumulado": "Profit from each sale and running total",
+ "El gráfico aparecerá cuando liquides inversiones": "The chart will appear once you liquidate investments",
+ "ROI medio": "Average ROI",
+ "ROI de cada inversión": "ROI of each investment",
+ "Total acumulado": "Running total",
+ "Ganancia por inversión": "Profit per investment"
 };
   var PATTERNS = [
  [

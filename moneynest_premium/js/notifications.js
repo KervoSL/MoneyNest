@@ -647,23 +647,59 @@
     el.id = 'mnNotifPanelOnb';
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
     el.style.cssText = 'position:fixed;inset:0;z-index:9900;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(12px);padding:16px;box-sizing:border-box';
-    const chip = (id, label) => `<button type="button" data-preset="${id}" style="flex:1;padding:8px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text,#fff);font-size:.78rem;cursor:pointer;font-family:inherit">${label}</button>`;
+    if (!document.getElementById('mnNotifPanelCss')) {
+      const st = document.createElement('style'); st.id = 'mnNotifPanelCss';
+      st.textContent = `
+      #mnNotifPanelOnb{animation:mnNpFade .2s ease}
+      #mnNotifPanelOnb .np-card{background:var(--card,#0F172A);border:1px solid rgba(255,255,255,.08);border-radius:22px;max-width:440px;width:100%;max-height:min(680px,calc(100dvh - 32px));display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.55);animation:mnNpPop .28s cubic-bezier(.2,.9,.3,1.1)}
+      #mnNotifPanelOnb .np-head{padding:22px 22px 14px;text-align:center;background:radial-gradient(120% 90% at 50% 0%,rgba(0,212,170,.14),transparent 70%)}
+      #mnNotifPanelOnb .np-ico{width:48px;height:48px;border-radius:15px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(0,212,170,.25));border:1px solid rgba(255,255,255,.1)}
+      #mnNotifPanelOnb .np-title{font-size:1.1rem;font-weight:700;color:var(--text,#fff);letter-spacing:-.2px;margin-bottom:5px}
+      #mnNotifPanelOnb .np-desc{font-size:.8rem;color:rgba(255,255,255,.55);line-height:1.5}
+      #mnNotifPanelOnb .np-seg{display:flex;gap:4px;margin:14px 22px 6px;padding:4px;border-radius:12px;background:rgba(255,255,255,.05)}
+      #mnNotifPanelOnb .np-seg button{flex:1;padding:8px 4px;border:none;border-radius:9px;background:transparent;color:rgba(255,255,255,.6);font:600 .78rem inherit;font-family:inherit;cursor:pointer;transition:all .15s}
+      #mnNotifPanelOnb .np-seg button.on{background:rgba(0,212,170,.16);color:#00D4AA}
+      #mnNotifPanelOnb .np-list{overflow-y:auto;padding:6px 14px;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+      #mnNotifPanelOnb .np-row{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px;cursor:pointer;transition:background .15s}
+      #mnNotifPanelOnb .np-row:hover{background:rgba(255,255,255,.04)}
+      #mnNotifPanelOnb .np-tile{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+      #mnNotifPanelOnb .np-txt{flex:1;min-width:0}
+      #mnNotifPanelOnb .np-t{display:block;font-size:.84rem;font-weight:600;color:var(--text,#fff);line-height:1.25}
+      #mnNotifPanelOnb .np-d{display:block;font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.35;margin-top:1px}
+      #mnNotifPanelOnb .np-sw{position:relative;width:40px;height:24px;flex-shrink:0}
+      #mnNotifPanelOnb .np-sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1}
+      #mnNotifPanelOnb .np-sw i{position:absolute;inset:0;border-radius:24px;background:rgba(255,255,255,.14);transition:background .2s}
+      #mnNotifPanelOnb .np-sw i:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+      #mnNotifPanelOnb .np-sw input:checked+i{background:#00D4AA}
+      #mnNotifPanelOnb .np-sw input:checked+i:after{transform:translateX(16px)}
+      #mnNotifPanelOnb .np-sw input:focus-visible+i{outline:2px solid #00D4AA;outline-offset:2px}
+      #mnNotifPanelOnb .np-foot{display:flex;gap:10px;padding:14px 22px 20px;border-top:1px solid rgba(255,255,255,.06)}
+      #mnNotifPanelOnb .np-no{flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.6);font:600 .82rem inherit;font-family:inherit;cursor:pointer}
+      #mnNotifPanelOnb .np-yes{flex:2;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#00D4AA,#00A882);color:#04121A;font:700 .84rem inherit;font-family:inherit;cursor:pointer;box-shadow:0 6px 20px rgba(0,212,170,.25)}
+      @keyframes mnNpFade{from{opacity:0}to{opacity:1}}
+      @keyframes mnNpPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+      @media (max-width:480px){#mnNotifPanelOnb{align-items:flex-end!important;padding:0!important}#mnNotifPanelOnb .np-card{max-width:none;border-radius:22px 22px 0 0;max-height:calc(100dvh - 24px)}}`;
+      document.head.appendChild(st);
+    }
+    const chip = (id, label) => `<button type="button" data-preset="${id}">${label}</button>`;
     const rows = () => PANEL_ITEMS.map(([k, ic, lk, lf, dk, df]) => `
-      <label style="display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid rgba(255,255,255,.06);cursor:pointer">
-        <span style="font-size:1.3rem;width:26px;text-align:center">${ic}</span>
-        <span style="flex:1;min-width:0"><span style="display:block;font-size:.84rem;font-weight:600;color:var(--text,#fff)">${_nt(lk, lf)}</span><span style="display:block;font-size:.72rem;color:rgba(255,255,255,.5);line-height:1.4">${_nt(dk, df)}</span></span>
-        <input type="checkbox" data-k="${k}" ${draft[k] ? 'checked' : ''} style="width:20px;height:20px;accent-color:#00D4AA;flex-shrink:0">
+      <label class="np-row">
+        <span class="np-tile">${ic}</span>
+        <span class="np-txt"><span class="np-t">${_nt(lk, lf)}</span><span class="np-d">${_nt(dk, df)}</span></span>
+        <span class="np-sw"><input type="checkbox" data-k="${k}" ${draft[k] ? 'checked' : ''}><i></i></span>
       </label>`).join('');
     el.innerHTML = `
-      <div style="background:var(--card,#0F172A);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 20px;max-width:420px;width:100%;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.6)">
-        <div style="text-align:center;font-size:2.2rem;margin-bottom:6px">🔔</div>
-        <div style="text-align:center;font-size:1.05rem;font-weight:700;color:var(--text,#fff);margin-bottom:6px">${_nt('notif_onb_title', '¿Quieres activar las notificaciones?')}</div>
-        <div style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">${_nt('notif_onb_desc', 'Tú decides cuáles y cuántas recibes. Puedes cambiarlo cuando quieras en Ajustes.')}</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">${chip('min', _nt('notif_preset_min', 'Mínimo'))}${chip('bal', _nt('notif_preset_bal', 'Equilibrado'))}${chip('all', _nt('notif_preset_all', 'Todo'))}</div>
-        <div id="mnNotifRows">${rows()}</div>
-        <div style="display:flex;gap:10px;margin-top:14px">
-          <button id="mnNotifOnbNo" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:.82rem;cursor:pointer;font-family:inherit">${_nt('notif_ahora_no', 'Ahora no')}</button>
-          <button id="mnNotifOnbYes" style="flex:2;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366F1,#00D4AA);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">${_nt('notif_activar', 'Activar notificaciones')}</button>
+      <div class="np-card">
+        <div class="np-head">
+          <div class="np-ico">🔔</div>
+          <div class="np-title">${_nt('notif_onb_title', '¿Quieres activar las notificaciones?')}</div>
+          <div class="np-desc">${_nt('notif_onb_desc', 'Tú decides cuáles y cuántas recibes. Puedes cambiarlo cuando quieras en Ajustes.')}</div>
+        </div>
+        <div class="np-seg">${chip('min', _nt('notif_preset_min', 'Mínimo'))}${chip('bal', _nt('notif_preset_bal', 'Equilibrado'))}${chip('all', _nt('notif_preset_all', 'Todo'))}</div>
+        <div class="np-list" id="mnNotifRows">${rows()}</div>
+        <div class="np-foot">
+          <button class="np-no" id="mnNotifOnbNo">${_nt('notif_ahora_no', 'Ahora no')}</button>
+          <button class="np-yes" id="mnNotifOnbYes">${_nt('notif_activar', 'Activar notificaciones')}</button>
         </div>
       </div>`;
     document.body.appendChild(el);
@@ -671,6 +707,7 @@
     el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
       Object.assign(draft, PRESETS[b.dataset.preset]);
       el.querySelectorAll('input[data-k]').forEach(i => { i.checked = !!draft[i.dataset.k]; });
+      el.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x === b));
     });
     const close = () => el.remove();
     document.getElementById('mnNotifOnbNo').onclick = () => {

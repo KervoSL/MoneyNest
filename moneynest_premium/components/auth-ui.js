@@ -302,6 +302,10 @@ function _buildRegisterView() {
       ${_field('email', 'mn-reg-email', _t('auth_email','Correo electrónico'), 'email', 'tu@email.com', 'email')}
       ${_fieldPasswordStrength('mn-reg-password', _t('auth_password_nueva','Contraseña (mín. 8 caracteres)'), 'new-password')}
       ${_fieldPassword('mn-reg-password2', _t('auth_confirmar_password','Confirmar contraseña'), 'new-password')}
+      <label id="mn-reg-termsWrap" style="display:flex;align-items:flex-start;gap:10px;margin:14px 0 2px;cursor:pointer;text-align:left;font-size:.78rem;line-height:1.5;color:rgba(255,255,255,.6)">
+        <input type="checkbox" id="mn-reg-terms" style="width:18px;height:18px;margin:1px 0 0;flex-shrink:0;accent-color:#00D4AA;cursor:pointer">
+        <span>${_t('ob_legal_accept','Acepto los')} <a href="./terms.html" target="_blank" rel="noopener" style="color:#00D4AA">${_t('ob_legal_terms','Términos de Servicio')}</a> ${_t('ob_legal_and','y la')} <a href="./privacy.html" target="_blank" rel="noopener" style="color:#00D4AA">${_t('ob_legal_privacy','Política de Privacidad')}</a>.</span>
+      </label>
       <div class="mn-auth-msg" id="mn-reg-msg" style="display:none"></div>
       <!-- Cloudflare Turnstile anti-bot widget -->
       <div id="mn-turnstile-container" style="margin-top:2px"></div>
@@ -749,6 +753,8 @@ async function _handleRegister() {
   if (!_validEmail(email)) { _showMsg(msg, '⚠ ' + _t('auth_error_email','Email no válido.'), 'error'); return; }
   if (pass.length < 8) { _showMsg(msg, '⚠ ' + _t('auth_error_pw_corta','La contraseña debe tener al menos 8 caracteres.'), 'error'); return; }
   if (pass !== pass2) { _showMsg(msg, '⚠ ' + _t('auth_error_pw_no_coincide','Las contraseñas no coinciden.'), 'error'); return; }
+  if (!document.getElementById('mn-reg-terms')?.checked) { _showMsg(msg, '⚠ ' + _t('auth_error_terms','Debes aceptar los Términos de Servicio y la Política de Privacidad.'), 'error'); return; }
+  try { localStorage.setItem('mn_terms_accepted', JSON.stringify({ at: new Date().toISOString() })); } catch (_) {}
   // Turnstile check — only if configured (sitekey present)
   if (window._MN_TURNSTILE_SITE_KEY && !_turnstileToken) {
     _showMsg(msg, '⚠ ' + _t('auth_error_captcha', 'Completa la verificación anti-bot.'), 'error'); return;
