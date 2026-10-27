@@ -5728,6 +5728,8 @@ function renderInversiones() {
     </select>
   </div>
 
+  ${_invSummaryHtml(cerradas)}
+
   <div class="grid-2" style="margin-bottom:16px">
     <div class="card">
       <div class="card-header">
@@ -8482,6 +8484,30 @@ function renderLineEvo(canvasId, type) {
       y: { grid:{color:gridColor()}, border:{color:'transparent'}, ticks:{color:labelColor(),font:{size:11},callback:v=>eur(v)} }
     }}
   })
+}
+
+function _invSummaryHtml(cerradas) {
+  const rows = (cerradas || []).filter(i => i && i.cerrada).map(i => ({
+    n: String(i.nombre || ''), g: Number(i.ganancia ?? i.profit) || 0, r: Number(i.roiReal) || 0
+  }))
+  if (!rows.length) return ''
+  const tot = rows.reduce((s, x) => s + x.g, 0)
+  const avg = rows.reduce((s, x) => s + x.r, 0) / rows.length
+  const wins = rows.filter(x => x.g > 0).length
+  const best = rows.reduce((m, x) => x.g > m.g ? x : m, rows[0])
+  const worst = rows.reduce((m, x) => x.g < m.g ? x : m, rows[0])
+  const col = v => v >= 0 ? 'var(--green,#10B981)' : 'var(--red,#F43F5E)'
+  const sg = v => (v >= 0 ? '+' : '−')
+  const money = v => sg(v) + eur(Math.abs(v))
+  const pctf = v => sg(v) + Math.abs(v).toFixed(1).replace('.', _dloc().startsWith('en') ? '.' : ',') + '%'
+  const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const tile = (label, val, sub, c) => `<div class="card" style="padding:14px 16px;min-width:0"><div style="font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">${label}</div><div style="font-size:1.25rem;font-weight:800;margin-top:4px;color:${c || 'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${val}</div><div style="font-size:.74rem;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div></div>`
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px">
+    ${tile(t('inv_sum_total', 'Dinero ganado'), money(tot), `<span>${rows.length}</span> <span>${t('inv_sum_liq', 'liquidadas')}</span>`, col(tot))}
+    ${tile(t('inv_sum_roi', 'ROI medio'), pctf(avg), `<span>${wins}/${rows.length}</span> <span>${t('inv_sum_wins', 'con beneficio')}</span>`, col(avg))}
+    ${tile(t('inv_sum_best', 'Mejor inversión'), money(best.g), `${esc(best.n)} · ${pctf(best.r)}`, col(best.g))}
+    ${tile(t('inv_sum_worst', 'Peor inversión'), money(worst.g), `${esc(worst.n)} · ${pctf(worst.r)}`, col(worst.g))}
+  </div>`
 }
 
 function renderChartInvROI() {
@@ -13763,7 +13789,7 @@ async function obNext() {
     if (!isLogin && !document.getElementById('obTerms')?.checked) {
       showErr('⚠ Debes aceptar los Términos de Servicio y la Política de Privacidad para crear tu cuenta.'); document.getElementById('obTerms')?.focus(); return
     }
-    if (!isLogin) { try { localStorage.setItem('mn_terms_accepted', JSON.stringify({ at: new Date().toISOString(), v: VERSION })) } catch (_) {} }
+    if (!isLogin) { try { localStorage.setItem('mn_terms_accepted', JSON.stringify({ at: new Date().toISOString(), v: '2026-10-27' })) } catch (_) {} }
 
     obData.email    = email
     obData.password = pw

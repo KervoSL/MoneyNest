@@ -754,7 +754,7 @@ async function _handleRegister() {
   if (pass.length < 8) { _showMsg(msg, '⚠ ' + _t('auth_error_pw_corta','La contraseña debe tener al menos 8 caracteres.'), 'error'); return; }
   if (pass !== pass2) { _showMsg(msg, '⚠ ' + _t('auth_error_pw_no_coincide','Las contraseñas no coinciden.'), 'error'); return; }
   if (!document.getElementById('mn-reg-terms')?.checked) { _showMsg(msg, '⚠ ' + _t('auth_error_terms','Debes aceptar los Términos de Servicio y la Política de Privacidad.'), 'error'); return; }
-  try { localStorage.setItem('mn_terms_accepted', JSON.stringify({ at: new Date().toISOString() })); } catch (_) {}
+  try { localStorage.setItem('mn_terms_accepted', JSON.stringify({ at: new Date().toISOString(), v: '2026-10-27' })); } catch (_) {}
   // Turnstile check — only if configured (sitekey present)
   if (window._MN_TURNSTILE_SITE_KEY && !_turnstileToken) {
     _showMsg(msg, '⚠ ' + _t('auth_error_captcha', 'Completa la verificación anti-bot.'), 'error'); return;

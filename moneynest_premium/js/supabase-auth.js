@@ -149,6 +149,27 @@
     _startWatchdogInterval();
   }
 
+  // Proof of acceptance of Terms/Privacy (set by the sign-up UI right before calling signUp)
+  const TERMS_VERSION = '2026-10-27';
+  function _termsMeta() {
+    try {
+      const r = JSON.parse(localStorage.getItem('mn_terms_accepted') || 'null');
+      if (r && r.at) return { terms_accepted: true, terms_version: TERMS_VERSION };
+    } catch (_) {}
+    return {};
+  }
+  // Best-effort: store acceptance on the profile if it isn't recorded yet (no-op if column missing)
+  async function _recordTerms(userId) {
+    try {
+      const r = JSON.parse(localStorage.getItem('mn_terms_accepted') || 'null');
+      if (!r || !r.at || !userId) return;
+      const { error } = await sb.from('profiles')
+        .update({ terms_accepted_at: r.at, terms_version: TERMS_VERSION })
+        .eq('id', userId).is('terms_accepted_at', null);
+      if (!error) localStorage.removeItem('mn_terms_accepted');
+    } catch (_) {}
+  }
+
   async function signUp(email, password, displayName) {
     if (!_rl.check(`signup:${email}`, 3, 10 * 60 * 1000)) {
       throw Object.assign(new Error('Demasiados intentos. Espera unos minutos.'), { code: 'rate_limited' });
@@ -159,7 +180,7 @@
       password,
       options: {
         emailRedirectTo: '',
-        data: { display_name: displayName || null },
+        data: Object.assign({ display_name: displayName || null }, _termsMeta()),
         // ✅ Desactivar confirmación de email — el usuario puede registrarse sin confirmación
         // Esto requiere que en Supabase Dashboard → Authentication → Email Auth → "Confirm email" esté OFF
         // O usar un servidor SMTP configurado. Si no tienes SMTP, esto evita el error.
@@ -214,6 +235,7 @@
 
     if (data.user) {
       await _ensureProfile(data.user.id, email, displayName);
+      if (data.session) _recordTerms(data.user.id);
       // Assign the session immediately if Supabase returned one — never
       // rely solely on the async onAuthStateChange listener to update
       // it, since that can lag behind (or not fire predictably in every
@@ -482,6 +504,7 @@
       sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || null,
     );
 
+    _recordTerms(sbUser.id);
     const localUser = window.MNAuth.getUser();
 
     // Server plan overrides local — server is authoritative
