@@ -1,9 +1,8 @@
 /**
- * MoneyNest — send-email Edge Function v3
+ * MoneyNest — send-email Edge Function v4
  *
  * Tipos:
- *   confirmacion  — email de bienvenida
- *   (otp eliminado: no lo usa ningún cliente y permitía abuso)
+ *   confirmacion  — email de bienvenida (ES/EN según body.lang)
  *   sugerencia    — feedback de usuarios a soporte
  *
  * Variables de entorno:
@@ -33,10 +32,8 @@ function json(body: unknown, status = 200) {
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     ?? 'noreply@moneynest.app';
-// H-12: configurable (variable SUPPORT_EMAIL). Mantener sincronizado con js/config.js.
 const SUPPORT_EMAIL  = Deno.env.get('SUPPORT_EMAIL') ?? 'invest.grid.main@gmail.com';
 
-// Rate limiting compartido (tabla rate_limits vía RPC), no en memoria.
 async function rateAllowed(key: string, max: number, windowSeconds: number): Promise<boolean> {
   const { data, error } = await supabase.rpc('check_rate_limit', {
     p_key: key, p_max_attempts: max, p_window_seconds: windowSeconds,
@@ -50,7 +47,6 @@ const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
 const LOGO_URL = 'https://moneynest.es/assets/logo.png';
 
-// Envuelve cualquier card en el layout base
 function wrap(cardHtml: string, lang = 'es'): string {
   return `<!DOCTYPE html>
 <html lang="${lang}">
@@ -64,14 +60,11 @@ function wrap(cardHtml: string, lang = 'es'): string {
 <tr><td align="center" style="padding:40px 16px">
 <table width="560" border="0" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
 
-  <!-- LOGO -->
   <tr><td align="center" style="padding-bottom:32px">
     <img src="${LOGO_URL}" width="96" height="96" alt="MoneyNest" style="display:block;border:0;border-radius:22px;margin:0 auto">
   </td></tr>
 
-  <!-- CARD -->
   ${cardHtml}
-
 
 </table>
 </td></tr>
@@ -79,11 +72,6 @@ function wrap(cardHtml: string, lang = 'es'): string {
 </body>
 </html>`;
 }
-
-
-// ════════════════════════════════════════════════
-//  TEMPLATE — BIENVENIDA
-// ════════════════════════════════════════════════
 
 const WELCOME_TXT: Record<string, Record<string, string>> = {
   es: {
@@ -108,23 +96,35 @@ const WELCOME_TXT: Record<string, Record<string, string>> = {
   },
 };
 
+function card(inner: string, grad: string, pad: string, foot: string, footPad: string): string {
+  return `
+      <tr><td style="background-color:#0D1424;border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr><td height="3" style="background:${grad};font-size:0;line-height:0">&nbsp;</td></tr>
+          <tr><td style="padding:${pad}">${inner}</td></tr>
+          <tr><td style="background-color:#080E1A;padding:${footPad};border-top:1px solid rgba(255,255,255,0.05)">
+            <p style="margin:0;font-size:11px;color:#334155;text-align:center">${foot}</p>
+          </td></tr>
+        </table>
+      </td></tr>`;
+}
+
 function templateConfirmacion(nombre: string, lang = 'es'): { subject: string; html: string } {
   const L = WELCOME_TXT[lang] ?? WELCOME_TXT.es;
   const firstName = nombre ? escHtml(nombre.split(' ')[0].slice(0, 40)) : '';
   const greeting  = firstName ? L.hello.replace('{n}', firstName) : L.hello0;
+  const feat = (emoji: string, t: string, s: string, pr: string) => `
+                <td width="50%" style="padding:${pr}">
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
+                    <p style="margin:0 0 5px 0;font-size:20px">${emoji}</p>
+                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${t}</p>
+                    <p style="margin:0;font-size:11px;color:#64748B">${s}</p>
+                  </td></tr>
+                  </table>
+                </td>`;
 
-  return {
-    subject: L.subject,
-    html: wrap(`
-      <tr><td style="background-color:#0D1424;border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden">
-        <table width="100%" border="0" cellpadding="0" cellspacing="0">
-
-          <!-- barra gradiente -->
-          <tr><td height="3" style="background:linear-gradient(90deg,#00D4AA,#6366F1,#00D4AA);font-size:0;line-height:0">&nbsp;</td></tr>
-
-          <!-- cuerpo -->
-          <tr><td style="padding:36px 36px 32px">
-
+  const inner = `
             <p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:#00D4AA;text-transform:uppercase;letter-spacing:2px">${L.badge}</p>
             <h1 style="margin:0 0 16px 0;font-size:28px;font-weight:900;color:#F1F5F9;letter-spacing:-1px;line-height:1.2">${greeting} &#128075;</h1>
             <p style="margin:0 0 28px 0;font-size:15px;color:#94A3B8;line-height:1.7">
@@ -132,53 +132,11 @@ function templateConfirmacion(nombre: string, lang = 'es'): { subject: string; h
               <strong style="color:#F1F5F9;background-color:rgba(0,212,170,0.12);padding:1px 7px;border-radius:5px">${L.intro2}</strong>
               ${L.intro3}
             </p>
-
-            <!-- features 2x2 -->
             <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">${L.what}</p>
             <table width="100%" border="0" cellpadding="0" cellspacing="0">
-              <tr>
-                <td width="50%" style="padding:0 5px 10px 0">
-                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
-                    <p style="margin:0 0 5px 0;font-size:20px">&#128176;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f1}</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">${L.f1s}</p>
-                  </td></tr>
-                  </table>
-                </td>
-                <td width="50%" style="padding:0 0 10px 5px">
-                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
-                    <p style="margin:0 0 5px 0;font-size:20px">&#128200;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f2}</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">${L.f2s}</p>
-                  </td></tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td width="50%" style="padding:0 5px 0 0">
-                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
-                    <p style="margin:0 0 5px 0;font-size:20px">&#127919;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f3}</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">${L.f3s}</p>
-                  </td></tr>
-                  </table>
-                </td>
-                <td width="50%" style="padding:0 0 0 5px">
-                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
-                    <p style="margin:0 0 5px 0;font-size:20px">&#128202;</p>
-                    <p style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#E2E8F0">${L.f4}</p>
-                    <p style="margin:0;font-size:11px;color:#64748B">${L.f4s}</p>
-                  </td></tr>
-                  </table>
-                </td>
-              </tr>
+              <tr>${feat('&#128176;', L.f1, L.f1s, '0 5px 10px 0')}${feat('&#128200;', L.f2, L.f2s, '0 0 10px 5px')}</tr>
+              <tr>${feat('&#127919;', L.f3, L.f3s, '0 5px 0 0')}${feat('&#128202;', L.f4, L.f4s, '0 0 0 5px')}</tr>
             </table>
-
-            <!-- trial reminder -->
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:20px">
             <tr><td style="background-color:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px 16px">
               <table border="0" cellpadding="0" cellspacing="0">
@@ -191,27 +149,15 @@ function templateConfirmacion(nombre: string, lang = 'es'): { subject: string; h
               </tr>
               </table>
             </td></tr>
-            </table>
+            </table>`;
 
-          </td></tr>
-
-          <!-- card footer -->
-          <tr><td style="background-color:#080E1A;padding:16px 36px;border-top:1px solid rgba(255,255,255,0.05)">
-            <p style="margin:0;font-size:11px;color:#334155;text-align:center">MoneyNest &middot; InvestGrid &middot; ${L.foot}</p>
-          </td></tr>
-
-        </table>
-      </td></tr>`, lang),
+  return {
+    subject: L.subject,
+    html: wrap(card(inner, 'linear-gradient(90deg,#00D4AA,#6366F1,#00D4AA)', '36px 36px 32px', `MoneyNest &middot; InvestGrid &middot; ${L.foot}`, '16px 36px'), lang),
   };
 }
 
-
-// ════════════════════════════════════════════════
-//  TEMPLATE — SUGERENCIA
-// ════════════════════════════════════════════════
-
 function templateSugerencia(tipo: string, categoria: string, mensaje: string, userEmail: string): { subject: string; html: string } {
-  // Escapar caracteres especiales para evitar simbolos raros
   const esc = (s: string) => s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -221,82 +167,39 @@ function templateSugerencia(tipo: string, categoria: string, mensaje: string, us
   const fecha = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   const hora  = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-  return {
-    subject: `[MoneyNest] ${esc(tipo)}: ${esc(categoria)}`,
-    html: wrap(`
-      <tr><td style="background-color:#0D1424;border:1px solid rgba(255,255,255,0.07);border-radius:20px;overflow:hidden">
-        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+  const row = (label: string, val: string, color: string, last = false) => `
+              <tr>
+                <td style="padding:12px 16px;${last ? '' : 'border-bottom:1px solid rgba(255,255,255,0.05)'}">
+                  <table border="0" cellpadding="0" cellspacing="0"><tr>
+                    <td width="80" style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">${label}</td>
+                    <td style="font-size:13px;font-weight:600;color:${color}">${val}</td>
+                  </tr></table>
+                </td>
+              </tr>`;
 
-          <!-- barra gradiente -->
-          <tr><td height="3" style="background:linear-gradient(90deg,#6366F1,#00D4AA);font-size:0;line-height:0">&nbsp;</td></tr>
-
-          <!-- cuerpo -->
-          <tr><td style="padding:32px 32px 28px">
-
-            <!-- header -->
+  const inner = `
             <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:2px">Nueva ${esc(tipo.toLowerCase())}</p>
             <h1 style="margin:0 0 24px 0;font-size:22px;font-weight:900;color:#F1F5F9;letter-spacing:-0.5px">${esc(categoria)}</h1>
-
-            <!-- meta tabla -->
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:20px;background-color:#111827;border:1px solid rgba(255,255,255,0.06);border-radius:10px">
-              <tr>
-                <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05)">
-                  <table border="0" cellpadding="0" cellspacing="0"><tr>
-                    <td width="80" style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">Tipo</td>
-                    <td style="font-size:13px;font-weight:600;color:#E2E8F0">${esc(tipo)}</td>
-                  </tr></table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05)">
-                  <table border="0" cellpadding="0" cellspacing="0"><tr>
-                    <td width="80" style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">Categoria</td>
-                    <td style="font-size:13px;font-weight:600;color:#E2E8F0">${esc(categoria)}</td>
-                  </tr></table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:12px 16px">
-                  <table border="0" cellpadding="0" cellspacing="0"><tr>
-                    <td width="80" style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">De</td>
-                    <td style="font-size:13px;font-weight:600;color:#00D4AA">${esc(userEmail || 'Anonimo')}</td>
-                  </tr></table>
-                </td>
-              </tr>
+              ${row('Tipo', esc(tipo), '#E2E8F0')}${row('Categoria', esc(categoria), '#E2E8F0')}${row('De', esc(userEmail || 'Anonimo'), '#00D4AA', true)}
             </table>
-
-            <!-- mensaje -->
             <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px">Mensaje</p>
             <table width="100%" border="0" cellpadding="0" cellspacing="0">
             <tr><td style="background-color:#111827;border:1px solid rgba(255,255,255,0.07);border-left:3px solid #6366F1;border-radius:10px;padding:18px;font-size:14px;line-height:1.75;color:#CBD5E1;white-space:pre-wrap">${esc(mensaje)}</td></tr>
             </table>
+            <p style="margin:16px 0 0 0;font-size:11px;color:#334155;text-align:right">${fecha} &middot; ${hora}</p>`;
 
-            <!-- timestamp -->
-            <p style="margin:16px 0 0 0;font-size:11px;color:#334155;text-align:right">${fecha} &middot; ${hora}</p>
-
-          </td></tr>
-
-          <!-- card footer -->
-          <tr><td style="background-color:#080E1A;padding:16px 32px;border-top:1px solid rgba(255,255,255,0.05)">
-            <p style="margin:0;font-size:11px;color:#334155;text-align:center">MoneyNest &middot; InvestGrid &middot; Panel de soporte</p>
-          </td></tr>
-
-        </table>
-      </td></tr>`),
+  return {
+    subject: `[MoneyNest] ${esc(tipo)}: ${esc(categoria)}`,
+    html: wrap(card(inner, 'linear-gradient(90deg,#6366F1,#00D4AA)', '32px 32px 28px', 'MoneyNest &middot; InvestGrid &middot; Panel de soporte', '16px 32px')),
   };
 }
-
-
-// ════════════════════════════════════════════════
-//  HANDLER
-// ════════════════════════════════════════════════
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
   if (!RESEND_API_KEY)          return json({ error: 'RESEND_API_KEY not configured' }, 500);
 
-  // Primera IP de x-forwarded-for (el resto de la cadena puede ser falsificada).
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || req.headers.get('cf-connecting-ip') || 'unknown';
 
@@ -310,7 +213,6 @@ Deno.serve(async (req) => {
   const categoria = String(body.categoria ?? '').slice(0, 60);
   const mensaje = String(body.mensaje ?? '').slice(0, 4000);
 
-  // Usuario autenticado (opcional según el tipo).
   let user: { id: string; email?: string } | null = null;
   const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (jwt) {
@@ -323,14 +225,12 @@ Deno.serve(async (req) => {
   let replyTo: string | undefined;
 
   if (type === 'confirmacion') {
-    // El destinatario es SIEMPRE el email de la sesión; el cliente no elige `to`.
     if (!user?.email) return json({ error: 'auth_required' }, 401);
     if (!(await rateAllowed(`send-email:confirmacion:${user.id}`, 3, 3600))) return json({ error: 'rate_limited' }, 429);
     template  = templateConfirmacion(nombre, String(body.lang ?? '').toLowerCase().startsWith('en') ? 'en' : 'es');
     recipient = user.email;
 
   } else if (type === 'sugerencia') {
-    // Destinatario fijo (soporte): no es un relé. Se permite sin sesión pero con límite.
     if (!mensaje.trim()) return json({ error: 'mensaje_required' }, 400);
     if (!(await rateAllowed(`send-email:sugerencia:ip:${ip}`, 5, 600))) return json({ error: 'rate_limited' }, 429);
     if (user && !(await rateAllowed(`send-email:sugerencia:user:${user.id}`, 10, 3600))) return json({ error: 'rate_limited' }, 429);
