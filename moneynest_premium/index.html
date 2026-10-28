@@ -8,14 +8,19 @@
 <meta name="apple-mobile-web-app-title" content="MoneyNest">
 <meta name="theme-color" content="#0A0E17" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F1F5F9" media="(prefers-color-scheme: light)">
-<meta name="description" content="Tu gestor de finanzas personales. Ingresos, gastos, inversiones, deudas y patrimonio en un solo lugar.">
+<meta name="description" content="MoneyNest es tu gestor de finanzas personales: controla ingresos, gastos, presupuestos, inversiones, deudas y patrimonio. Privado, funciona sin conexión y con importación de tu banco.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://moneynest.es/">
+<link rel="alternate" hreflang="es" href="https://moneynest.es/">
+<link rel="alternate" hreflang="x-default" href="https://moneynest.es/">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="MoneyNest">
 <meta name="app-version" content="1.0.0">
 <!-- Open Graph -->
 <meta property="og:type"        content="website">
-<meta property="og:title"       content="MoneyNest — Personal Finance">
-<meta property="og:description" content="Tu gestor de finanzas personales. Ingresos, gastos, inversiones y patrimonio.">
+<meta property="og:title"       content="MoneyNest — Gestor de finanzas personales: gastos, inversiones y patrimonio">
+<meta property="og:locale"      content="es_ES">
+<meta property="og:description" content="MoneyNest es tu gestor de finanzas personales: controla ingresos, gastos, presupuestos, inversiones, deudas y patrimonio. Privado, funciona sin conexión y con importación de tu banco.">
 <meta property="og:image"       content="https://moneynest.es/assets/og-image.png?v=2">
 <meta property="og:image:width"  content="1200">
 <meta property="og:image:height" content="630">
@@ -24,13 +29,16 @@
 <meta property="og:site_name"    content="MoneyNest">
 <!-- Twitter Card -->
 <meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="MoneyNest — Personal Finance">
-<meta name="twitter:description" content="Tu gestor de finanzas personales inteligente.">
+<meta name="twitter:title"       content="MoneyNest — Gestor de finanzas personales: gastos, inversiones y patrimonio">
+<meta name="twitter:description" content="MoneyNest es tu gestor de finanzas personales: controla ingresos, gastos, presupuestos, inversiones, deudas y patrimonio. Privado, funciona sin conexión y con importación de tu banco.">
 <meta name="twitter:image"       content="https://moneynest.es/assets/og-image.png?v=2">
 <!-- Security -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<title>MoneyNest — Personal Finance</title>
+<title>MoneyNest — Gestor de finanzas personales: gastos, inversiones y patrimonio</title>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MoneyNest","url":"https://moneynest.es/","applicationCategory":"FinanceApplication","operatingSystem":"Web, iOS, Android","inLanguage":["es","en"],"description":"Gestor de finanzas personales: ingresos, gastos, presupuestos, inversiones, deudas y patrimonio.","image":"https://moneynest.es/assets/og-image.png","offers":[{"@type":"Offer","name":"MoneyNest Local","price":"1.00","priceCurrency":"EUR"},{"@type":"Offer","name":"MoneyNest Pro","price":"2.00","priceCurrency":"EUR"}],"publisher":{"@type":"Organization","name":"KERVO","email":"hello@kervo.info","url":"https://moneynest.es/"}}</script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <!-- Favicon & Icons -->
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=2">
@@ -45,10 +53,20 @@
 <link rel="preload" href="vendor/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fonts.css">
 <script src="vendor/chart.umd.min.js"></script>
-<script src="vendor/jspdf.umd.min.js"></script>
-<script src="vendor/jspdf.plugin.autotable.min.js"></script>
-<script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/supabase.min.js"></script>
+<script>
+// Librerías pesadas de exportación/importación (PDF, Excel): se cargan tras el primer pintado
+window.mnLoadHeavyLibs = function () {
+  if (window.__mnHeavy) return window.__mnHeavy;
+  var load = function (src) { return new Promise(function (res) { var s = document.createElement('script'); s.src = src; s.onload = s.onerror = res; document.head.appendChild(s); }); };
+  window.__mnHeavy = Promise.all([
+    load('vendor/jspdf.umd.min.js').then(function () { return load('vendor/jspdf.plugin.autotable.min.js'); }),
+    load('vendor/xlsx.full.min.js')
+  ]).then(function () { try { window.mnPatchExports && window.mnPatchExports(); } catch (e) {} });
+  return window.__mnHeavy;
+};
+window.addEventListener('load', function () { setTimeout(window.mnLoadHeavyLibs, 1200); });
+</script>
 <script>
   // ── Cloudflare Turnstile ──────────────────────────────────────────
   // Reemplaza con tu Site Key real de https://dash.cloudflare.com/?to=/:account/turnstile
@@ -56,7 +74,7 @@
   window._MN_TURNSTILE_SITE_KEY = '';
 </script>
 <!-- El script de Turnstile solo se descarga si _MN_TURNSTILE_SITE_KEY está definida (ver components/auth-ui.js) -->
-<script src="https://js.stripe.com/v3/"></script>
+<script src="https://js.stripe.com/v3/" async></script>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/billing.css">
 <link rel="stylesheet" href="css/wizard-shared.css">
@@ -66,6 +84,7 @@
 <link rel="stylesheet" href="css/feature-showcase.css">
 </head>
 <body>
+<noscript><div style="max-width:560px;margin:60px auto;padding:0 20px;font-family:system-ui,sans-serif;color:#e8ecf5;text-align:center"><h1>MoneyNest</h1><p>Gestor de finanzas personales: ingresos, gastos, inversiones, deudas y patrimonio. Activa JavaScript para usar la aplicación.</p><p><a href="/terms.html" style="color:#00D4AA">Términos</a> · <a href="/privacy.html" style="color:#00D4AA">Privacidad</a></p></div></noscript>
 <div class="app">
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
@@ -1396,38 +1415,38 @@
 </div>
 
 <!-- Multi-profile system disabled per user request -->
-<script src="js/config.js"></script>
-<script src="js/consent.js"></script>
-<script src="js/error-logging.js"></script>
-<script src="js/analytics.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/supabase-auth.js"></script>
-<script src="js/entitlements.js"></script>
-<script src="js/data.js"></script>
-<script src="js/feature-showcase.js"></script>
-<script src="js/app.js"></script>
-<script src="js/i18n-patch.js"></script>
-<script src="js/app-i18n-patch.js"></script>
-<script src="js/i18n-es-en.js"></script>
-<script src="js/mn-email.js"></script>
-<script src="components/auth-ui.js"></script>
-<script src="js/stripe-config.js"></script>
-<script src="js/stripe-payment.js"></script>
-<script src="js/billing.js"></script>
-<script src="js/billing-ui.js"></script>
-<script src="js/auth-ui.js"></script>
-<script src="js/billing-i18n-patch.js"></script>
-<script src="js/data-manager.js"></script>
-<script src="js/sync.js"></script>
+<script defer src="js/config.js"></script>
+<script defer src="js/consent.js"></script>
+<script defer src="js/error-logging.js"></script>
+<script defer src="js/analytics.js"></script>
+<script defer src="js/auth.js"></script>
+<script defer src="js/supabase-auth.js"></script>
+<script defer src="js/entitlements.js"></script>
+<script defer src="js/data.js"></script>
+<script defer src="js/feature-showcase.js"></script>
+<script defer src="js/app.js"></script>
+<script defer src="js/i18n-patch.js"></script>
+<script defer src="js/app-i18n-patch.js"></script>
+<script defer src="js/i18n-es-en.js"></script>
+<script defer src="js/mn-email.js"></script>
+<script defer src="components/auth-ui.js"></script>
+<script defer src="js/stripe-config.js"></script>
+<script defer src="js/stripe-payment.js"></script>
+<script defer src="js/billing.js"></script>
+<script defer src="js/billing-ui.js"></script>
+<script defer src="js/auth-ui.js"></script>
+<script defer src="js/billing-i18n-patch.js"></script>
+<script defer src="js/data-manager.js"></script>
+<script defer src="js/sync.js"></script>
 
-<script src="js/gamification-guides.js"></script>
-<script src="js/gamification.js"></script>
-<script src="js/bank-import.js"></script>
-<script src="js/investment-wizard.js"></script>
-<script src="js/transaction-wizard.js"></script>
-<script src="js/debt-wizard.js"></script>
-<script src="js/recurring.js"></script>
-<script src="js/notifications.js"></script>
+<script defer src="js/gamification-guides.js"></script>
+<script defer src="js/gamification.js"></script>
+<script defer src="js/bank-import.js"></script>
+<script defer src="js/investment-wizard.js"></script>
+<script defer src="js/transaction-wizard.js"></script>
+<script defer src="js/debt-wizard.js"></script>
+<script defer src="js/recurring.js"></script>
+<script defer src="js/notifications.js"></script>
 
 
 <!-- ══ AUTH MODAL — gestionado por components/auth-ui.js (MNAuthUI) ══ -->
@@ -1514,7 +1533,7 @@
 
 <!-- ══ MONEYNEST AUTH INIT ══ -->
 <script>
-  (function () {
+  document.addEventListener('DOMContentLoaded', function () {
     // Handle OAuth callback — show loading overlay while Supabase processes session
     (function _handleOAuthReturn() {
       const params = new URLSearchParams(location.search);
@@ -1600,12 +1619,12 @@
     document.addEventListener('mn:restoreAccess', function () {
       MNAuthUI.showAuthModal('login');
     });
-  })();
+  });
 </script>
-<script src="js/kpi-animator.js"></script>
-<script src="js/premium-empty-states.js"></script>
-<script src="js/premium-features.js"></script>
-<script src="js/premium-ux.js"></script>
-<script src="js/install-prompt.js"></script>
+<script defer src="js/kpi-animator.js"></script>
+<script defer src="js/premium-empty-states.js"></script>
+<script defer src="js/premium-features.js"></script>
+<script defer src="js/premium-ux.js"></script>
+<script defer src="js/install-prompt.js"></script>
 </body>
 </html>

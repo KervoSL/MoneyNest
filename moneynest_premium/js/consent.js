@@ -34,14 +34,14 @@
       body: 'MoneyNest puede usar un identificador anónimo en tu dispositivo y registrar eventos de uso (por ejemplo, en qué paso del registro te quedas) para mejorar el producto. No se usa para publicidad. Puedes cambiar tu elección cuando quieras en Ajustes.',
       accept: 'Aceptar',
       reject: 'Rechazar',
-      more: 'Más información',
+      more: 'Política de privacidad',
     },
     en: {
       title: 'Your privacy',
       body: 'MoneyNest may use an anonymous identifier on your device and record usage events (for example, which sign-up step you stop at) to improve the product. It is not used for advertising. You can change your choice at any time in Settings.',
       accept: 'Accept',
       reject: 'Reject',
-      more: 'More information',
+      more: 'Privacy policy',
     },
   };
 
