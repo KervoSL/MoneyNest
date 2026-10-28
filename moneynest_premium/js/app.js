@@ -8043,6 +8043,8 @@ function renderFacturacion() {
     <div class="card">
       <div id="mn-sub-status-info" style="font-size:.8rem;color:var(--text3)"></div>
       <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="_openStripeCustomerPortal(this)">${_aut('cfg_btn_gestionar_suscripcion','Gestionar suscripción')}</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px;color:var(--red,#F43F5E)" onclick="confirmarEliminarCuenta()">🗑️ ${t('cfg_eliminar_cuenta','Eliminar mi cuenta')}</button>
+      <div style="font-size:.7rem;color:var(--text3,rgba(255,255,255,.4));margin-top:4px;text-align:center">${t('cfg_eliminar_sub_hint','Cancela tu suscripción y elimina tu cuenta y todos tus datos.')}</div>
     </div>` : ''
 
   // ── Restaurar acceso ──

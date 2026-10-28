@@ -2514,6 +2514,12 @@
  "En progreso": "In progress",
  "Completados": "Completed",
  "Trimestral": "Quarterly",
+ "movimiento ya existe en esta cuenta": "transaction already exists in this account",
+ "movimientos ya existen en esta cuenta": "transactions already exist in this account",
+ "se importarán de todos modos": "they will be imported anyway",
+ "se omitirán para no duplicarlos": "they will be skipped to avoid duplicates",
+ "Importarlos igualmente (no son duplicados)": "Import them anyway (they are not duplicates)",
+ "Política de privacidad": "Privacy policy",
  "Dinero disponible en cuentas": "Money available in accounts",
  "Disponible en Plan Local o Pro": "Available on the Local or Pro plan",
  "🏦 banco": "🏦 bank",
@@ -2549,7 +2555,8 @@
  "con beneficio": "profitable",
  "Mejor inversión": "Best investment",
  "Peor inversión": "Worst investment",
- "Última actualización: 27 de octubre de 2026": "Last updated: October 27, 2026"
+ "Última actualización: 27 de octubre de 2026": "Last updated: October 27, 2026",
+ "Cancela tu suscripción y elimina tu cuenta y todos tus datos.": "Cancels your subscription and deletes your account and all your data."
 };
   var PATTERNS = [
  [
@@ -3246,6 +3253,7 @@
     } catch (e) {}
   }
   patchExports();
+  window.mnPatchExports = patchExports;
   // CSV: se traduce solo la fila de cabecera
   try {
     var OB = window.Blob;

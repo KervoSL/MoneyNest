@@ -26,6 +26,7 @@
       rawRows: [],
       rows: [],                 // normalized {date, description, amount, isExpense, merchantKey}
       duplicates: [],
+      includeDuplicates: false, // el usuario decide importar también los duplicados detectados
       format: 'generic',
       bankConfidence: 'none',   // 'high' | 'medium' | 'low' | 'none' — ver detectBankWithConfidence()
       suggestedBank: null,      // banco sugerido cuando la confianza no es 'high' (por nombre de archivo/fechas)
@@ -1692,7 +1693,10 @@
     // (a brand-new account is trivially empty, so this only matters when
     // importing into an existing one).
     const targetCuentaId = ST.accountMode === 'existing' ? ST.accountId : null;
-    const { clean, duplicates } = _computeDuplicates(ST.rows, targetCuentaId);
+    const dupResult = _computeDuplicates(ST.rows, targetCuentaId);
+    const duplicates = dupResult.duplicates;
+    // Si el usuario eligió importar también los duplicados, no se filtran
+    const clean = ST.includeDuplicates ? ST.rows.filter(r => !_isRowError(r)) : dupResult.clean;
     ST.duplicates = duplicates;
     ST._cleanRows = clean;
 
@@ -1734,7 +1738,14 @@
         <div class="mnbi-kpi"><div class="mnbi-kpi-label">💸 ${_t('bi_gastos', 'Gastos')}</div><div class="mnbi-kpi-val" style="color:var(--red)">${_fmtEur(totalExpense)}</div></div>
       </div>
 
-      ${ST.duplicates.length ? `<div style="font-size:.76rem;color:var(--gold);margin-bottom:12px">⚠️ ${ST.duplicates.length} ${_t('bi_duplicados_omitidos', 'movimientos duplicados serán omitidos automáticamente')}</div>` : ''}
+      ${ST.duplicates.length ? `<div class="mnbi-skip-notice dup" style="margin-bottom:12px">
+        <div>⚠️ <strong>${ST.duplicates.length}</strong> ${ST.duplicates.length === 1 ? _t('bi_dup_1', 'movimiento ya existe en esta cuenta') : _t('bi_dup_n', 'movimientos ya existen en esta cuenta')} — ${ST.includeDuplicates ? _t('bi_dup_incluidos', 'se importarán de todos modos') : _t('bi_dup_omitidos', 'se omitirán para no duplicarlos')}.</div>
+        ${_skipDetailsHtml(ST.duplicates, '', 'mnbiDupPreview')}
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;color:var(--text2)">
+          <input type="checkbox" ${ST.includeDuplicates ? 'checked' : ''} onchange="MNBankImport._setIncludeDup(this.checked)" style="width:16px;height:16px;accent-color:var(--accent)">
+          <span>${_t('bi_dup_importar', 'Importarlos igualmente (no son duplicados)')}</span>
+        </label>
+      </div>` : ''}
 
       <div class="mnbi-sub" style="margin-bottom:8px">💡 ${_t('bi_s3_hint_corregir', '¿Algo mal clasificado? Toca el importe del movimiento para cambiar entre ingreso y gasto.')}</div>
 
@@ -1760,6 +1771,11 @@
   // Flips a single transaction between expense and income. `rowIndex`
   // refers to ST.rows (the full normalized set, pre-duplicate-filtering),
   // so the correction survives re-renders and feeds into every later step.
+  function _setIncludeDup(v) {
+    ST.includeDuplicates = !!v;
+    _renderStep3();
+  }
+
   function _toggleRowType(rowIndex) {
     const r = ST.rows[rowIndex];
     if (!r) return;
@@ -2498,7 +2514,9 @@
       // import of the same file into the same account idempotent regardless
       // of how the wizard was navigated.
       const readyRows = (ST.rows || []).filter(r => !_isRowError(r));
-      const { clean: dedupedRows, duplicates: skippedDuplicates } = _computeDuplicates(readyRows, cuentaId);
+      const dupCheck = _computeDuplicates(readyRows, cuentaId);
+      const dedupedRows = ST.includeDuplicates ? readyRows : dupCheck.clean;
+      const skippedDuplicates = ST.includeDuplicates ? [] : dupCheck.duplicates;
 
       let importedIncome = 0, importedExpense = 0;
       let incomeTotal = 0, expenseTotal = 0;
@@ -2663,6 +2681,7 @@
     _toStep4: () => { ST.step = 4; _renderStep4(); },
     _toStep5: () => { ST.step = 5; _renderStep5(); },
     _toggleRowType: _toggleRowType,
+    _setIncludeDup: _setIncludeDup,
     _clearFile: _clearFile,
     _pickBank: _pickBank,
     _forceManualBank: _forceManualBank,

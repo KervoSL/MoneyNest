@@ -38,9 +38,12 @@
     return IGNORE_PATTERNS.some(re => re.test(message || ''));
   }
 
+  // Los bots/crawlers ejecutan la app sin interacción real: sus errores solo meten ruido
+  const IS_BOT = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|pagespeed/i.test(navigator.userAgent || '');
+
   function report(message, stack, extra) {
     try {
-      if (!message || _shouldIgnore(message)) return;
+      if (IS_BOT || !message || _shouldIgnore(message)) return;
       const fp = _fingerprint(message, stack);
       seenCounts[fp] = (seenCounts[fp] || 0) + 1;
       if (seenCounts[fp] > MAX_PER_FINGERPRINT) return;
